@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enviar para {{KIOSK}}</title>
+<style>
+  :root {
+    --blue: #1d6fe0;
+    --blue-dark: #1558b4;
+    --bg: #f2f4f7;
+    --card: #ffffff;
+    --ink: #18212b;
+    --muted: #5b6472;
+    --ok: #2e9e5b;
+    --err: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 480px; margin: 0 auto; padding: 28px 18px 40px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--blue);
+  }
+  h1 { font-size: 26px; line-height: 1.2; margin: 6px 0 6px; }
+  p.sub { color: var(--muted); margin: 0 0 24px; }
+  label.pick {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--blue); color: #fff;
+    font-weight: 600; font-size: 19px;
+    border-radius: 999px; padding: 18px 20px;
+    cursor: pointer; user-select: none;
+  }
+  label.pick:active { background: var(--blue-dark); }
+  input[type=file] { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  ul { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 10px; }
+  li { background: var(--card); border-radius: 14px; padding: 12px 14px; display: grid; gap: 8px; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; min-width: 0; }
+  .state { color: var(--muted); flex: none; max-width: 60%; text-align: right; font-size: 14px; }
+  .state.ok { color: var(--ok); font-weight: 600; }
+  .state.err { color: var(--err); }
+  .bar { height: 6px; border-radius: 3px; background: #e3e7ee; overflow: hidden; }
+  .bar span { display: block; height: 100%; width: 0; background: var(--blue); transition: width .2s; }
+  .done .bar span { background: var(--ok); }
+  .summary { margin-top: 20px; font-weight: 600; color: var(--ok); }
+  .note { margin-top: 28px; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="badge">PrintKiosk</div>
+  <h1>Enviar para {{KIOSK}}</h1>
+  <p class="sub">Escolha fotos ou arquivos PDF. Eles aparecem na tela do quiosque em poucos segundos.</p>
+
+  <label class="pick" for="files">Escolher fotos ou PDF</label>
+  <input id="files" type="file" multiple accept="image/*,application/pdf,.pdf">
+
+  <ul id="list"></ul>
+  <p class="summary" id="summary" hidden></p>
+
+  <p class="note">Os arquivos vão só para o quiosque desta loja, pela rede Wi-Fi, e são apagados ao final do atendimento. Limite de 50 MB por arquivo.</p>
+</main>
+<script>
+  var input = document.getElementById('files');
+  var list = document.getElementById('list');
+  var summary = document.getElementById('summary');
+  var queue = [];
+  var busy = false;
+  var sent = 0;
+
+  input.addEventListener('change', function () {
+    for (var i = 0; i < input.files.length; i++) {
+      queue.push(addRow(input.files[i]));
+    }
+    input.value = '';
+    next();
+  });
+
+  function addRow(file) {
+    var li = document.createElement('li');
+    li.innerHTML = '<div class="row"><span class="name"></span><span class="state">Na fila</span></div>' +
+                   '<div class="bar"><span></span></div>';
+    li.querySelector('.name').textContent = file.name;
+    list.appendChild(li);
+    return { file: file, li: li };
+  }
+
+  function finish(job, ok, message) {
+    var state = job.li.querySelector('.state');
+    state.textContent = message;
+    state.className = 'state ' + (ok ? 'ok' : 'err');
+    if (ok) {
+      job.li.classList.add('done');
+      job.li.querySelector('.bar span').style.width = '100%';
+      sent++;
+      summary.hidden = false;
+      summary.textContent = sent === 1
+        ? '1 arquivo enviado. Continue no quiosque.'
+        : sent + ' arquivos enviados. Continue no quiosque.';
+    } else {
+      job.li.querySelector('.bar').remove();
+    }
+    busy = false;
+    next();
+  }
+
+  function next() {
+    if (busy || queue.length === 0) return;
+    busy = true;
+    var job = queue.shift();
+    var bar = job.li.querySelector('.bar span');
+    job.li.querySelector('.state').textContent = 'Enviando…';
+
+    var url = location.pathname.replace(/\/+$/, '') + '/upload?name=' + encodeURIComponent(job.file.name);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.setRequestHeader('Content-Type', job.file.type || 'application/octet-stream');
+    xhr.upload.onprogress = function (e) {
+      if (e.lengthComputable) bar.style.width = Math.round(e.loaded * 100 / e.total) + '%';
+    };
+    xhr.onload = function () {
+      var message = '';
+      try { message = JSON.parse(xhr.responseText).message; } catch (err) {}
+      if (xhr.status === 200) finish(job, true, 'Enviado');
+      else finish(job, false, message || 'Não foi enviado');
+    };
+    xhr.onerror = function () {
+      finish(job, false, 'Sem conexão com o quiosque. Confira se o celular está no Wi-Fi da loja.');
+    };
+    xhr.send(job.file);
+  }
+</script>
+</body>
+</html>
