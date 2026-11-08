@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { one, sql } from "@/lib/db";
-import { todayIso } from "@/lib/format";
+import { isoOf, todayIso } from "@/lib/format";
 import { hashSecret, normalizeStoreCode } from "@/lib/license";
 
 export const dynamic = "force-dynamic";
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     accepted,
     activationCode: code?.code ?? null,
-    validUntil: code ? String(code.valid_until).slice(0, 10) : null,
+    validUntil: code ? isoOf(code.valid_until) : null,
     plan: kiosk.plan,
     dashboardUrl: process.env.APP_URL ?? null,
   });
