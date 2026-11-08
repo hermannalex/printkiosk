@@ -2,8 +2,13 @@
 
 const API = "https://api.mercadopago.com";
 
+/** The access token, without spaces or line breaks that often come along when it is pasted. */
+function accessToken(): string {
+  return (process.env.MERCADOPAGO_ACCESS_TOKEN ?? "").replace(/\s+/g, "").replace(/^Bearer/i, "");
+}
+
 export function mercadoPagoConfigured(): boolean {
-  return !!process.env.MERCADOPAGO_ACCESS_TOKEN;
+  return !!accessToken();
 }
 
 export class MercadoPagoError extends Error {
@@ -13,7 +18,7 @@ export class MercadoPagoError extends Error {
 }
 
 async function call(path: string, init: RequestInit = {}): Promise<any> {
-  const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  const token = accessToken();
   if (!token) throw new Error("O Mercado Pago ainda não foi configurado.");
   const response = await fetch(API + path, {
     ...init,
