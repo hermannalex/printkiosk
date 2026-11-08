@@ -31,9 +31,13 @@ const LABEL: Record<string, string> = {
   mfa_ativado: "Ativou 2 etapas",
   mfa_novos_codigos: "Gerou novos códigos de recuperação",
   mfa_redefinido: "Redefiniu 2 etapas de uma conta",
+  backup_ok: "Backup diário feito",
+  backup_manual: "Fez backup manual",
+  backup_baixado: "Baixou um backup",
+  backup_falhou: "Backup falhou",
 };
 
-const ALERT = new Set(["login_falhou", "login_bloqueado", "cadastro_master_recusado", "vinculo_recusado", "webhook_valor_divergente", "mfa_falhou", "login_com_recuperacao", "mfa_redefinido"]);
+const ALERT = new Set(["login_falhou", "login_bloqueado", "cadastro_master_recusado", "vinculo_recusado", "webhook_valor_divergente", "mfa_falhou", "login_com_recuperacao", "mfa_redefinido", "backup_falhou", "backup_baixado"]);
 
 export default async function MasterAudit() {
   const user = await requireMaster();

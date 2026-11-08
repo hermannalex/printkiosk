@@ -24,3 +24,9 @@ export async function one(strings: TemplateStringsArray, ...values: unknown[]): 
   const rows = await sql(strings, ...values);
   return rows[0] ?? null;
 }
+
+/** Plain query with numbered parameters ($1, $2…), for the few places that build SQL text (backups). */
+export async function query(text: string, params: unknown[] = []): Promise<Row[]> {
+  const client = getClient() as unknown as (q: string, p: unknown[]) => Promise<unknown>;
+  return (await client(text, params)) as Row[];
+}

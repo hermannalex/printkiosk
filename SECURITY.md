@@ -1,4 +1,4 @@
-# Segurança do PrintKiosk
+# Segurança do Quioco
 
 ## Como relatar um problema
 Envie para alex@somainfo.com.br. Não abra issue pública com detalhes de uma falha.
@@ -36,6 +36,19 @@ Envie para alex@somainfo.com.br. Não abra issue pública com detalhes de uma fa
 Ficam só nas variáveis de ambiente da Vercel (tipo Sensitive) e nunca no repositório:
 `DATABASE_URL`, `LICENSE_PRIVATE_KEY`, `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET`, `MASTER_SETUP_CODE`.
 O arquivo `.gitignore` bloqueia `*.pem` e `.env*`.
+
+## Backups
+
+- **Neon:** snapshots automáticos do banco todo dia (guardados 14 dias) e toda semana (35 dias).
+- **Fora do Neon:** todo dia às 3h (Brasília) o Vercel Cron chama `/api/cron/backup` (protegido por `CRON_SECRET`),
+  que exporta todas as tabelas, criptografa (AES-256-GCM com chave embrulhada por RSA-4096) e grava no
+  armazenamento privado `quioco-backups` do Vercel Blob. Guarda 35 dias, nunca menos que os 7 últimos.
+- O servidor só tem a chave **pública** (`web/lib/backup-public-key.ts`). A chave **privada** fica fora da internet,
+  com o dono do Quioco; sem ela nenhum backup abre. Nunca coloque a chave privada no repositório.
+- Master › Backups mostra os arquivos, faz backup na hora e baixa cópias para guardar offline (ex.: pendrive, uma vez por mês).
+- Restaurar: `node tools/restaurar-backup.mjs arquivo.qbk chave-privada.pem --sql` (na pasta `web`) gera um `.json`
+  e um `.sql`; crie um banco vazio com `db/schema.sql` e rode o `.sql` nele.
+- Teste a restauração a cada poucos meses: um backup que nunca foi aberto não é garantia.
 
 ## Rotina recomendada
 - Aceitar os pull requests do Dependabot com correções de segurança.
