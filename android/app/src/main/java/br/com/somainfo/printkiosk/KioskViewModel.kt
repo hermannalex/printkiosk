@@ -64,6 +64,13 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     val storeCode: String = LicenseCodec.storeCode(licenseStore.storeId)
     val canPrint: Boolean get() = license is LicenseState.Active || license is LicenseState.Demo
 
+    // Online dashboard
+    val cloud = CloudSync(application)
+    var lastSync by mutableStateOf(cloud.lastSync)
+        private set
+    var syncError by mutableStateOf<String?>(null)
+        private set
+
     private var activeCharge: PixCharge? = null
     private var paymentJob: Job? = null
     private var lastInteraction = System.currentTimeMillis()
@@ -79,7 +86,64 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                 checkIdle()
             }
         }
+        viewModelScope.launch {
+            while (isActive) {
+                syncWithDashboard()
+                delay(30 * 60_000L)
+            }
+        }
     }
+
+    // region Online dashboard
+
+    /** Sends the print history and applies a newer activation code from the dashboard. */
+    suspend fun syncWithDashboard() {
+        refreshLicense()
+        val version = runCatching {
+            app.packageManager.getPackageInfo(app.packageName, 0).versionName
+        }.getOrNull() ?: ""
+        val response = cloud.sync(storeCode, license, version) ?: return
+        if (!response.ok) {
+            syncError = response.error
+            return
+        }
+        syncError = null
+        lastSync = cloud.lastSync
+        val code = response.activationCode ?: return
+        val until = LicenseCodec.verify(code, licenseStore.storeId) ?: return
+        val current = (license as? LicenseState.Active)?.let { LicenseCodec.dayNumber(it.until) }
+        if (current == null || until > current) {
+            licenseStore.activate(code)
+            refreshLicense()
+        }
+    }
+
+    fun syncNow() {
+        viewModelScope.launch { syncWithDashboard() }
+    }
+
+    private fun recordPrint(success: Boolean, demo: Boolean) {
+        val pages = items.sumOf { it.pageCount }
+        val paid = paidPaymentId
+        cloud.record(
+            PrintJobRecord(
+                id = java.util.UUID.randomUUID().toString(),
+                printedAt = CloudSync.isoNow(),
+                items = items.size,
+                pages = pages,
+                copies = copies,
+                totalPages = pages * copies,
+                amountCents = if (paid != null) amountCents else 0,
+                paidWithPix = paid != null,
+                pixPaymentId = paid?.toString(),
+                success = success,
+                demo = demo,
+            )
+        )
+        syncNow()
+    }
+
+    // endregion
 
     // region Derived values
 
@@ -434,10 +498,12 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                 delay(1_000)
                 when {
                     job.isQueued || job.isStarted || job.isCompleted -> {
-                        if (license !is LicenseState.Active) {
+                        val demo = license !is LicenseState.Active
+                        if (demo) {
                             licenseStore.recordDemoPrint()
                             refreshLicense()
                         }
+                        recordPrint(success = true, demo = demo)
                         step = KioskStep.Finished(true, null)
                         return@launch
                     }
@@ -446,6 +512,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                         return@launch
                     }
                     job.isFailed -> {
+                        recordPrint(success = false, demo = license !is LicenseState.Active)
                         step = KioskStep.Finished(false, "A impressora informou um erro. Verifique se ela está ligada e no mesmo Wi-Fi, e tente de novo.")
                         return@launch
                     }

@@ -137,6 +137,12 @@ final class KioskStore: ObservableObject {
     @Published private(set) var license = License.state()
     let storeCode = License.storeCode(License.storeID)
 
+    // Online dashboard
+    let cloud = CloudSync()
+    @Published private(set) var lastSync: Date?
+    @Published private(set) var syncError: String?
+    private var syncTimer: Timer?
+
     // Files sent from the customer's phone
     @Published private(set) var phoneUpload: PhoneUploadState?
     @Published private(set) var phoneReceivedCount = 0
@@ -156,6 +162,53 @@ final class KioskStore: ObservableObject {
         idleTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.checkIdle() }
         }
+        lastSync = cloud.lastSync
+        syncTimer = Timer.scheduledTimer(withTimeInterval: 30 * 60, repeats: true) { [weak self] _ in
+            Task { @MainActor in await self?.syncWithDashboard() }
+        }
+        Task { await syncWithDashboard() }
+    }
+
+    // MARK: Online dashboard
+
+    /// Sends the print history and applies a newer activation code from the dashboard.
+    func syncWithDashboard() async {
+        refreshLicense()
+        guard let response = await cloud.sync(storeCode: storeCode, license: license) else { return }
+        if let error = response.error {
+            syncError = error
+            return
+        }
+        syncError = nil
+        lastSync = cloud.lastSync
+        if let code = response.activationCode, let until = License.verify(code: code, storeID: License.storeID) {
+            let current: Int? = {
+                if case .active(let date) = license { return License.dayNumber(date) }
+                return nil
+            }()
+            if current == nil || until > current! {
+                _ = License.activate(code: code)
+                refreshLicense()
+            }
+        }
+    }
+
+    private func recordPrint(success: Bool, demo: Bool) {
+        let pages = items.reduce(0) { $0 + $1.pageCount }
+        cloud.record(PrintJobRecord(
+            id: UUID().uuidString,
+            printedAt: CloudSync.isoNow(),
+            items: items.count,
+            pages: pages,
+            copies: copies,
+            totalPages: pages * copies,
+            amountCents: paidPaymentID != nil ? amountCents : 0,
+            paidWithPix: paidPaymentID != nil,
+            pixPaymentId: paidPaymentID.map(String.init),
+            success: success,
+            demo: demo
+        ))
+        Task { await syncWithDashboard() }
     }
 
     // MARK: Derived values
@@ -577,10 +630,12 @@ final class KioskStore: ObservableObject {
         ) { [weak self] success, message in
             Task { @MainActor in
                 guard let self else { return }
-                if success && !self.isSubscribed {
+                let demo = !self.isSubscribed
+                if success && demo {
                     License.recordDemoPrint()
                     self.refreshLicense()
                 }
+                self.recordPrint(success: success, demo: demo)
                 self.step = .finished(success: success, message: message)
             }
         }

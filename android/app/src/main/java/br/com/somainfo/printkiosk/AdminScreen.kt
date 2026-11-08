@@ -149,8 +149,9 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
                 TextButton(onClick = { clipboard.setText(AnnotatedString(vm.storeCode)) }) { Text("Copiar") }
             }
             Text(
-                "Assinatura ${LicenseCodec.PRICE_LABEL}. Envie o código da loja para ${LicenseCodec.VENDOR_CONTACT} " +
-                    "para receber o código de ativação do mês e cole-o abaixo.",
+                "Crie sua conta no painel online e adicione este quiosque com o código da loja. Ao pagar a " +
+                    "assinatura por lá, o quiosque é liberado sozinho na próxima conexão. Se recebeu um código " +
+                    "de ativação, também pode colá-lo abaixo.",
                 style = MaterialTheme.typography.bodyLarge,
             )
             OutlinedTextField(
@@ -171,6 +172,16 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
                 enabled = activationCode.isNotBlank(),
             ) { Text("Ativar") }
             activationMessage?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
+            Text("Painel online: ${vm.cloud.dashboardUrl.removePrefix("https://")}", style = MaterialTheme.typography.titleMedium)
+            val syncText = vm.syncError ?: vm.lastSync?.let {
+                "Última sincronização: " + android.text.format.DateUtils.getRelativeTimeSpanString(it).toString().lowercase()
+            } ?: "Ainda não conectou ao painel"
+            Text(
+                syncText,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (vm.syncError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+            )
+            OutlinedButton(onClick = { vm.syncNow() }) { Text("Sincronizar agora") }
         }
 
         Section("Impressora") {

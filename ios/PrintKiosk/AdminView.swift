@@ -98,10 +98,25 @@ struct AdminView: View {
                     Text(activationMessage)
                         .font(.callout)
                 }
+                LabeledContent("Painel online") {
+                    Link(store.cloud.dashboardURL.host() ?? "Abrir", destination: store.cloud.dashboardURL)
+                }
+                LabeledContent("Última sincronização") {
+                    if let error = store.syncError {
+                        Text(error).foregroundStyle(.red)
+                    } else if let lastSync = store.lastSync {
+                        Text(lastSync, format: .relative(presentation: .named))
+                    } else {
+                        Text("Ainda não conectou")
+                    }
+                }
+                Button("Sincronizar agora") {
+                    Task { await store.syncWithDashboard() }
+                }
             } header: {
                 Text("Assinatura")
             } footer: {
-                Text("Assinatura \(License.priceLabel). Envie o código da loja para \(License.vendorContact) para receber o código de ativação do mês e cole-o acima. Sem assinatura, o app faz \(License.demoPrints) impressões de demonstração.")
+                Text("Crie sua conta no painel online e adicione este quiosque com o código da loja. Ao pagar a assinatura por lá, o quiosque é liberado sozinho na próxima conexão. O painel mostra impressões, cópias e faturamento. Sem assinatura, o app faz \(License.demoPrints) impressões de demonstração.")
             }
 
             Section("Impressora") {
