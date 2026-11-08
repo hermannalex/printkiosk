@@ -141,3 +141,6 @@ create table if not exists login_challenges (
   created_at timestamptz not null default now()
 );
 create index if not exists login_challenges_user_idx on login_challenges(user_id);
+
+-- Entrar com Google: o "sub" da conta Google vinculada (o e-mail pode mudar, o sub não).
+alter table users add column if not exists google_sub text unique;

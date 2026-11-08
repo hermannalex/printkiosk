@@ -31,6 +31,8 @@ const LABEL: Record<string, string> = {
   mfa_ativado: "Ativou 2 etapas",
   mfa_novos_codigos: "Gerou novos códigos de recuperação",
   mfa_redefinido: "Redefiniu 2 etapas de uma conta",
+  google_vinculado: "Conectou conta Google",
+  google_falhou: "Entrada com Google falhou",
   backup_ok: "Backup diário feito",
   backup_manual: "Fez backup manual",
   backup_baixado: "Baixou um backup",

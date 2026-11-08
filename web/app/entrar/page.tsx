@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { login } from "../actions";
+import { GoogleButton } from "@/components/google-button";
 import { Flash, QuiocoMark, param, type SearchParams } from "@/components/ui";
 
 export const metadata = { title: "Entrar · Quioco" };
@@ -14,6 +15,7 @@ export default async function SignIn({ searchParams }: { searchParams: SearchPar
           <p className="muted">Entre para ver os quiosques, as assinaturas e o faturamento da sua loja.</p>
         </div>
         <Flash msg={param(params, "msg")} erro={param(params, "erro")} />
+        <GoogleButton from="entrar" label="Entrar com Google" />
         <form action={login}>
           <div className="field">
             <label htmlFor="email">E-mail</label>

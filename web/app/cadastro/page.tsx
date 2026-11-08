@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { register } from "../actions";
+import { GoogleButton } from "@/components/google-button";
 import { Flash, param, type SearchParams } from "@/components/ui";
 
 export const metadata = { title: "Criar conta · Quioco" };
@@ -17,6 +18,7 @@ export default async function SignUp({ searchParams }: { searchParams: SearchPar
           </p>
         </div>
         <Flash msg={param(params, "msg")} erro={param(params, "erro")} />
+        <GoogleButton from="cadastro" label="Criar conta com Google" />
         <form action={register}>
           <div className="field">
             <label htmlFor="nome">Nome da loja ou responsável</label>

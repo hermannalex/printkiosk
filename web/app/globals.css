@@ -225,3 +225,8 @@ input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible
 .qr svg { width: 100%; height: 100%; display: block; }
 .recovery-codes { columns: 2; margin: 0; padding-left: 24px; line-height: 1.9; }
 .inline-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Entrar com Google */
+.btn-google { width: 100%; justify-content: center; font-weight: 600; }
+.or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+.or::before, .or::after { content: ""; flex: 1; border-top: 1px solid var(--line, var(--border)); }

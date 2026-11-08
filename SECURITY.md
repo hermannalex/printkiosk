@@ -37,6 +37,13 @@ Ficam só nas variáveis de ambiente da Vercel (tipo Sensitive) e nunca no repos
 `DATABASE_URL`, `LICENSE_PRIVATE_KEY`, `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET`, `MASTER_SETUP_CODE`.
 O arquivo `.gitignore` bloqueia `*.pem` e `.env*`.
 
+## Entrar com Google
+
+- OpenID Connect com PKCE, `state` e `nonce`; só aceita e-mail verificado pelo Google.
+- O Google substitui a senha, não a verificação em duas etapas: o código do aplicativo continua obrigatório.
+- Conta com o mesmo e-mail é vinculada pelo `sub` do Google. O e-mail master não é criado pelo Google.
+- Precisa de `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` (Sensitive) na Vercel; sem eles o botão não aparece.
+
 ## Backups
 
 - **Neon:** snapshots automáticos do banco todo dia (guardados 14 dias) e toda semana (35 dias).
