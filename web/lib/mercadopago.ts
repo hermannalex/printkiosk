@@ -6,6 +6,12 @@ export function mercadoPagoConfigured(): boolean {
   return !!process.env.MERCADOPAGO_ACCESS_TOKEN;
 }
 
+export class MercadoPagoError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
 async function call(path: string, init: RequestInit = {}): Promise<any> {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
   if (!token) throw new Error("O Mercado Pago ainda não foi configurado.");
@@ -20,7 +26,7 @@ async function call(path: string, init: RequestInit = {}): Promise<any> {
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(`Mercado Pago recusou: ${body?.message ?? response.status}`);
+    throw new MercadoPagoError(`Mercado Pago recusou: ${body?.message ?? response.status}`, response.status);
   }
   return body;
 }

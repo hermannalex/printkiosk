@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { NextResponse } from "next/server";
 import { one, sql } from "@/lib/db";
 import { extendKiosk } from "@/lib/kiosks";
-import { getAuthorizedPayment, getPreapproval } from "@/lib/mercadopago";
+import { MercadoPagoError, getAuthorizedPayment, getPreapproval } from "@/lib/mercadopago";
 import { audit, ipFromHeaders, rateLimit, safeEqual } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +44,10 @@ export async function POST(request: Request) {
       await recordAuthorizedPayment(id);
     }
   } catch (error) {
+    // Unknown id (Mercado Pago's "Simular notificação" uses made-up ids): nothing to do.
+    if (error instanceof MercadoPagoError && (error.status === 404 || error.status === 400)) {
+      return NextResponse.json({ ok: true, ignored: true });
+    }
     console.error("mp webhook", type, id, error);
     return NextResponse.json({ ok: false }, { status: 500 }); // Mercado Pago retries later
   }
