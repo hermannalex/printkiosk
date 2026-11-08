@@ -10,10 +10,10 @@ export const dynamic = "force-dynamic";
 /**
  * Mercado Pago notifications for the monthly plans.
  *
- * Two independent checks keep forged calls from unlocking a kiosk:
- * 1. When MERCADOPAGO_WEBHOOK_SECRET is set, the x-signature header must match (HMAC-SHA256).
- * 2. Every event is re-read from the Mercado Pago API with our token before anything changes,
- *    and a month is only granted when the approved amount covers the plan price.
+ * Forged calls can't unlock a kiosk: every event is re-read from the Mercado Pago API with our
+ * token before anything changes, and a month is only granted when the approved amount covers
+ * the plan price. The x-signature check is optional and off by default; it runs only when
+ * MERCADOPAGO_WEBHOOK_VERIFY=1 and MERCADOPAGO_WEBHOOK_SECRET are both set.
  */
 export async function POST(request: Request) {
   const url = new URL(request.url);
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
 /** Mercado Pago's documented scheme: HMAC-SHA256 of "id:<data.id>;request-id:<x-request-id>;ts:<ts>;". */
 function validSignature(request: Request, url: URL, bodyId: string): boolean {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
-  if (!secret) return true; // optional: the API re-read below is the main protection
+  if (process.env.MERCADOPAGO_WEBHOOK_VERIFY !== "1" || !secret) return true; // the API re-read below protects either way
   const header = request.headers.get("x-signature") ?? "";
   const parts = Object.fromEntries(
     header.split(",").map((part) => part.split("=").map((s) => s.trim()) as [string, string]),

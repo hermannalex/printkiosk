@@ -22,8 +22,9 @@ Envie para alex@somainfo.com.br. Não abra issue pública com detalhes de uma fa
   assinatura, API dos quiosques e webhook.
 - Registro de auditoria (Master › Auditoria): entradas, senhas erradas, vínculos e ações do master.
 - CSP com nonce por página, HSTS, X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, COOP/CORP.
-- Webhook do Mercado Pago: assinatura `x-signature` conferida quando `MERCADOPAGO_WEBHOOK_SECRET` existe;
-  cada evento é relido na API do Mercado Pago, e um mês só é liberado se o valor aprovado cobre o plano.
+- Webhook do Mercado Pago: cada evento é relido na API do Mercado Pago com o nosso token, e um mês só é
+  liberado se o valor aprovado cobre o plano. A conferência da assinatura `x-signature` está desligada;
+  para religar, crie `MERCADOPAGO_WEBHOOK_VERIFY=1` (com `MERCADOPAGO_WEBHOOK_SECRET` correto) e publique.
 - Prévias (preview) da Vercel exigem login na Vercel.
 
 **Banco (Neon)**
