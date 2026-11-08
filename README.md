@@ -48,3 +48,14 @@ Sem assinatura, cada aparelho faz **5 impressões de demonstração** (cada envi
 Os códigos são assinados com ECDSA P-256. Os apps têm só a chave pública; a **chave privada** fica em `~/Documents/PrintKiosk-Licencas/printkiosk-chave-privada.pem` e **nunca** vai para o repositório. Faça backup dela: sem ela não é possível gerar novos códigos para os apps já instalados.
 
 Preço e contato exibidos no app: `License.swift` (iOS) e `LicenseCodec.kt` (Android).
+
+## Painel online
+
+Endereço: https://printkiosk-one.vercel.app (código em `web/`, Next.js na Vercel + Postgres na Neon).
+
+- **Lojas**: criam conta, adicionam o quiosque pelo código da loja (Configurações → Assinatura), assinam pelo Mercado Pago (Básico R$ 29,90 ou Pro R$ 49,90 com painel) e veem impressões, cópias, páginas e faturamento.
+- **Master**: conta com o e-mail `MASTER_EMAIL`, criada em `/cadastro` com o `MASTER_SETUP_CODE`. Vê todas as lojas, gera códigos de ativação, registra pagamentos manuais, muda plano e bloqueia contas.
+- **Apps**: enviam as impressões para `/api/kiosk/sync` ao abrir, a cada 30 minutos e após cada impressão, e aplicam sozinhos o código de ativação que o painel devolver.
+
+Variáveis na Vercel: `DATABASE_URL`, `SESSION_SECRET`, `LICENSE_PRIVATE_KEY`, `MASTER_EMAIL`, `MASTER_SETUP_CODE`, `APP_URL`, `MERCADOPAGO_ACCESS_TOKEN`.
+Webhook do Mercado Pago: `https://printkiosk-one.vercel.app/api/mp/webhook` com os eventos de assinaturas (`subscription_preapproval` e `subscription_authorized_payment`).
