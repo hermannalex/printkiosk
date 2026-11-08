@@ -100,17 +100,24 @@ async function recordAuthorizedPayment(authorizedPaymentId: string) {
                                  where mp_preapproval_id = ${preapprovalId}`;
   if (!subscription) return;
 
-  const already = await one`select id from payments where mp_payment_id = ${paymentId}`;
-  if (already) return;
-
   const amountCents = Math.round(Number(charge?.transaction_amount ?? 0) * 100);
   const currency = String(charge?.currency_id ?? "BRL");
   const coversPlan = currency === "BRL" && amountCents >= Number(subscription.amount_cents);
 
-  await sql`insert into payments (subscription_id, kiosk_id, owner_id, amount_cents, status, mp_payment_id)
+  // Mercado Pago delivers the same event more than once, sometimes at the same moment. Only the
+  // request whose INSERT actually creates the row goes on to grant the month.
+  const inserted = await one`insert into payments (subscription_id, kiosk_id, owner_id, amount_cents, status, mp_payment_id)
             values (${subscription.id}, ${subscription.kiosk_id}, ${subscription.owner_id}, ${amountCents},
                     ${paymentStatus === "approved" ? "approved" : paymentStatus || "unknown"}, ${paymentId})
-            on conflict (mp_payment_id) do nothing`;
+            on conflict (mp_payment_id) do nothing
+            returning id`;
+  if (!inserted) {
+    // Seen before. A charge first reported as pending and approved later is promoted once.
+    if (paymentStatus !== "approved") return;
+    const promoted = await one`update payments set status = 'approved', amount_cents = ${amountCents}
+                               where mp_payment_id = ${paymentId} and status <> 'approved' returning id`;
+    if (!promoted) return;
+  }
 
   if (paymentStatus !== "approved") return;
   if (!coversPlan) {

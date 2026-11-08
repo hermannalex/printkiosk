@@ -1,5 +1,5 @@
 import { one, sql } from "./db";
-import { addMonthsIso, isoOf, todayIso } from "./format";
+import { isoOf, todayIso } from "./format";
 import { makeActivationCode } from "./license";
 
 export type KioskStatus = "active" | "expired" | "demo" | "never";
@@ -26,21 +26,24 @@ export async function extendKiosk(
   kioskId: number,
   options: { months?: number; untilIso?: string; source: "manual" | "payment"; byUserId?: number | null },
 ): Promise<{ code: string; validUntil: string }> {
-  const kiosk = await one`select id, store_code, paid_until from kiosks where id = ${kioskId}`;
+  // One UPDATE computes and stores the new date, so two extensions at the same time (a payment
+  // and a manual one, or a webhook delivered twice) add up instead of overwriting each other.
+  const months = Math.max(1, Math.min(24, options.months ?? 1));
+  const kiosk = options.untilIso
+    ? await one`update kiosks set paid_until = ${options.untilIso}::date where id = ${kioskId}
+                returning store_code, paid_until`
+    : await one`update kiosks set paid_until = (
+                  greatest(coalesce(paid_until, (now() at time zone 'America/Sao_Paulo')::date),
+                           (now() at time zone 'America/Sao_Paulo')::date)
+                  + make_interval(months => ${months}))::date
+                where id = ${kioskId}
+                returning store_code, paid_until`;
   if (!kiosk) throw new Error("Quiosque não encontrado.");
 
-  let validUntil = options.untilIso;
-  if (!validUntil) {
-    const today = todayIso();
-    const current = isoOf(kiosk.paid_until);
-    const base = current && current > today ? current : today;
-    validUntil = addMonthsIso(base, options.months ?? 1);
-  }
-
+  const validUntil = isoOf(kiosk.paid_until)!;
   const code = makeActivationCode(kiosk.store_code, validUntil);
   await sql`insert into activation_codes (kiosk_id, code, valid_until, source, created_by)
             values (${kioskId}, ${code}, ${validUntil}, ${options.source}, ${options.byUserId ?? null})`;
-  await sql`update kiosks set paid_until = ${validUntil} where id = ${kioskId}`;
   return { code, validUntil };
 }
 

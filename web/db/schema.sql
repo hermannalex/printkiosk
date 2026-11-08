@@ -120,3 +120,24 @@ create table if not exists audit_log (
   created_at timestamptz not null default now()
 );
 create index if not exists audit_log_created_idx on audit_log(created_at desc);
+
+-- ---------------------------------------------------------------- two-factor authentication (2026-11)
+
+-- TOTP (authenticator app), required for every account. Secrets are AES-GCM sealed with a key
+-- derived from SESSION_SECRET; recovery codes are stored as SHA-256 hashes, used once each.
+alter table users
+  add column if not exists totp_secret    text,
+  add column if not exists totp_pending   text,             -- set up but not yet confirmed
+  add column if not exists totp_enabled   boolean not null default false,
+  add column if not exists totp_last_step bigint,           -- last accepted 30 s step: a code works once
+  add column if not exists recovery_codes text[] not null default '{}';
+
+-- Password accepted, second factor still owed. The cookie holds a random token; only its hash is here.
+create table if not exists login_challenges (
+  id_hash    text primary key,
+  user_id    bigint not null references users(id) on delete cascade,
+  expires_at timestamptz not null,
+  attempts   int not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists login_challenges_user_idx on login_challenges(user_id);

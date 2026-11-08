@@ -77,21 +77,30 @@ export async function POST(request: Request) {
       last_seen_at = now()
     where id = ${kioskId}`;
 
+  // The whole batch goes in one INSERT (up to 200 rows), as parallel arrays unnested by Postgres.
   const jobs: Job[] = Array.isArray(body?.jobs) ? body.jobs.slice(0, 200) : [];
-  let accepted: string[] = [];
-  for (const job of jobs) {
-    const clientId = String(job.id ?? "").slice(0, 64);
-    const printedAt = new Date(String(job.printedAt ?? ""));
-    if (!clientId || Number.isNaN(printedAt.getTime())) continue;
+  const valid = jobs
+    .map((job) => ({ job, clientId: String(job.id ?? "").slice(0, 64), printedAt: new Date(String(job.printedAt ?? "")) }))
+    .filter((j) => j.clientId && !Number.isNaN(j.printedAt.getTime()));
+  const accepted = valid.map((j) => j.clientId);
+  if (valid.length > 0) {
+    const col = <T,>(pick: (j: (typeof valid)[number]) => T) => valid.map(pick);
     await sql`insert into print_jobs
         (kiosk_id, client_id, printed_at, items, pages, copies, total_pages, amount_cents,
          paid_with_pix, pix_payment_id, success, demo)
-      values (${kioskId}, ${clientId}, ${printedAt.toISOString()}, ${int(job.items, 1000)}, ${int(job.pages, 100000)},
-              ${int(job.copies, 1000)}, ${int(job.totalPages)}, ${int(job.amountCents, 100_000_00)},
-              ${!!job.paidWithPix}, ${job.pixPaymentId ? String(job.pixPaymentId).slice(0, 40) : null},
-              ${job.success !== false}, ${!!job.demo})
+      select ${kioskId}, * from unnest(
+        ${col((j) => j.clientId)}::text[],
+        ${col((j) => j.printedAt.toISOString())}::timestamptz[],
+        ${col((j) => int(j.job.items, 1000))}::int[],
+        ${col((j) => int(j.job.pages, 100000))}::int[],
+        ${col((j) => int(j.job.copies, 1000))}::int[],
+        ${col((j) => int(j.job.totalPages))}::int[],
+        ${col((j) => int(j.job.amountCents, 100_000_00))}::int[],
+        ${col((j) => !!j.job.paidWithPix)}::boolean[],
+        ${col((j) => (j.job.pixPaymentId ? String(j.job.pixPaymentId).slice(0, 40) : null))}::text[],
+        ${col((j) => j.job.success !== false)}::boolean[],
+        ${col((j) => !!j.job.demo)}::boolean[])
       on conflict (kiosk_id, client_id) do nothing`;
-    accepted.push(clientId);
   }
 
   const code = await one`select code, valid_until from activation_codes

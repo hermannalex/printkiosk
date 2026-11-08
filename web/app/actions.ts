@@ -12,6 +12,7 @@ import {
   requireMaster,
   requireUser,
   revokeSessions,
+  startChallenge,
   startSession,
   verifyPassword,
 } from "@/lib/auth";
@@ -43,7 +44,7 @@ export async function login(form: FormData) {
     go("/entrar", "erro", TOO_MANY);
   }
 
-  const user = await one`select id, password_hash, role, blocked from users where email = ${email}`;
+  const user = await one`select id, password_hash, role, blocked, totp_enabled from users where email = ${email}`;
   if (!user) burnPasswordCheck(password); // same response time whether or not the e-mail exists
   const valid = !!user && verifyPassword(password, user.password_hash);
   if (!user || !valid || user.blocked) {
@@ -54,9 +55,16 @@ export async function login(form: FormData) {
   if (needsRehash(user!.password_hash)) {
     await sql`update users set password_hash = ${hashPassword(password)} where id = ${user!.id}`;
   }
+  if (user!.totp_enabled) {
+    // Password is right; the session only starts after the code from the authenticator app.
+    await startChallenge(Number(user!.id));
+    await audit(Number(user!.id), "senha_ok", email, "aguardando o segundo fator");
+    redirect("/entrar/codigo");
+  }
+  // No 2FA yet: a session that can only reach the setup page (requireUser enforces it).
   await startSession(Number(user!.id), user!.role);
-  await audit(Number(user!.id), "login", email);
-  redirect(user!.role === "master" ? "/master" : "/painel");
+  await audit(Number(user!.id), "login_sem_2fa", email);
+  redirect("/conta/seguranca");
 }
 
 export async function register(form: FormData) {
@@ -96,7 +104,7 @@ export async function register(form: FormData) {
                          values (${email}, ${name}, ${phone}, ${hashPassword(password)}, ${role}) returning id`;
   await audit(Number(user!.id), role === "master" ? "cadastro_master" : "cadastro", email);
   await startSession(Number(user!.id), role);
-  redirect(role === "master" ? "/master" : "/painel/quiosques?msg=" + encodeURIComponent("Conta criada. Agora adicione o seu quiosque."));
+  redirect("/conta/seguranca?msg=" + encodeURIComponent("Conta criada. Agora ative a verificação em duas etapas."));
 }
 
 export async function logout() {

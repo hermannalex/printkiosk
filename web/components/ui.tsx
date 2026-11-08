@@ -67,6 +67,7 @@ export function Shell({
           </nav>
           <div className="user">
             <span>{user.name}</span>
+            <Link href="/conta/seguranca" className="btn btn-sm">Segurança</Link>
             <form action={logout}>
               <button type="submit" className="btn btn-sm">Sair</button>
             </form>
