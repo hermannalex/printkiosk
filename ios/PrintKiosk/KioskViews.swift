@@ -51,6 +51,8 @@ struct RootView: View {
 
 struct WelcomeView: View {
     @EnvironmentObject private var store: KioskStore
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var compact: Bool { sizeClass == .compact }
 
     init() {}
 
@@ -71,7 +73,7 @@ struct WelcomeView: View {
                     Spacer(minLength: 16)
 
                     Image(systemName: "printer.fill")
-                        .font(.system(size: 64))
+                        .kioskFont(64)
                         .foregroundStyle(.tint)
 
                     // Staff settings (printer, Pix, Wi-Fi, limits). Protected by the staff PIN.
@@ -88,19 +90,19 @@ struct WelcomeView: View {
 
                     VStack(spacing: 0) {
                         Text("XEROX")
-                            .font(.system(size: 132, weight: .black, design: .rounded))
+                            .kioskFont(132, weight: .black, design: .rounded)
                             .tracking(6)
                         Text("AUTO SERVIÇO")
-                            .font(.system(size: 60, weight: .heavy, design: .rounded))
+                            .kioskFont(60, weight: .heavy, design: .rounded)
                             .tracking(2)
                             .foregroundStyle(.tint)
                     }
                     .lineLimit(1)
                     .minimumScaleFactor(0.4)
-                    .padding(.top, 28)
+                    .padding(.top, compact ? 16 : 28)
 
                     Text(priceLine)
-                        .font(.system(size: 44, weight: .bold, design: .rounded))
+                        .kioskFont(44, weight: .bold, design: .rounded)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.5)
                         .padding(.top, 20)
@@ -108,7 +110,7 @@ struct WelcomeView: View {
                     Text(store.requiresPayment
                          ? "por página · fotos e PDFs · pagamento via Pix"
                          : "Fotos e PDFs, do seu celular ou deste aparelho")
-                        .font(.title2)
+                        .font(compact ? .title3 : .title2)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.top, 6)
@@ -178,20 +180,23 @@ struct LicenseBanner: View {
 struct WiFiCard: View {
     let name: String
     let password: String
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var compact: Bool { sizeClass == .compact }
 
     var body: some View {
-        HStack(spacing: 24) {
+        AdaptiveStack(spacing: 20) {
             QRCodeView(payload: WiFiQR.payload(name: name, password: password))
-                .frame(width: 150, height: 150)
+                .frame(width: compact ? 130 : 150, height: compact ? 130 : 150)
                 .padding(12)
                 .background(Color.white, in: RoundedRectangle(cornerRadius: 16))
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: compact ? .center : .leading, spacing: 8) {
                 Label("Wi-Fi grátis da loja", systemImage: "wifi")
                     .font(.title2.weight(.bold))
                 Text("Aponte a câmera do celular para o código e toque para conectar.")
                     .font(.body)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(compact ? .center : .leading)
                 Text("Rede: \(name)")
                     .font(.headline)
                 if !password.isEmpty {
@@ -199,7 +204,7 @@ struct WiFiCard: View {
                         .font(.headline)
                 }
             }
-            .frame(maxWidth: 360, alignment: .leading)
+            .frame(maxWidth: 360, alignment: compact ? .center : .leading)
         }
         .padding(20)
         .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
@@ -215,7 +220,7 @@ struct SelectView: View {
     @State private var photoSelection: [PhotosPickerItem] = []
     @State private var showFileImporter = false
 
-    private let columns = [GridItem(.adaptive(minimum: 150), spacing: 16)]
+    private let columns = [GridItem(.adaptive(minimum: 140), spacing: 14)]
 
     @ViewBuilder
     private var sourceButtons: some View {
@@ -240,7 +245,7 @@ struct SelectView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 20) {
             KioskHeader(
                 title: "Escolha o que imprimir",
                 subtitle: "\(store.items.count) de \(store.settings.maxItems) itens adicionados"
@@ -254,7 +259,7 @@ struct SelectView: View {
             if store.items.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "tray")
-                        .font(.system(size: 48))
+                        .kioskFont(48)
                         .foregroundStyle(.secondary)
                     Text("Nada adicionado ainda. Escolha fotos ou arquivos PDF acima.")
                         .font(.title3)
@@ -322,6 +327,8 @@ struct SelectView: View {
 
 struct ReviewView: View {
     @EnvironmentObject private var store: KioskStore
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var compact: Bool { sizeClass == .compact }
 
     init() {}
 
@@ -331,18 +338,18 @@ struct ReviewView: View {
                 .font(.title2.weight(.semibold))
 
             Button { store.copies -= 1 } label: {
-                Image(systemName: "minus.circle.fill").font(.system(size: 44))
+                Image(systemName: "minus.circle.fill").kioskFont(44)
             }
             .disabled(store.copies <= 1)
             .accessibilityLabel("Menos cópias")
 
             Text("\(store.copies)")
-                .font(.system(size: 44, weight: .bold, design: .rounded))
+                .kioskFont(44, weight: .bold, design: .rounded)
                 .monospacedDigit()
                 .frame(minWidth: 56)
 
             Button { store.copies += 1 } label: {
-                Image(systemName: "plus.circle.fill").font(.system(size: 44))
+                Image(systemName: "plus.circle.fill").kioskFont(44)
             }
             .disabled(store.copies >= store.settings.maxCopies)
             .accessibilityLabel("Mais cópias")
@@ -356,7 +363,7 @@ struct ReviewView: View {
                 .foregroundStyle(.secondary)
             if store.requiresPayment {
                 Text(Money.format(cents: store.amountCents))
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .kioskFont(34, weight: .bold, design: .rounded)
                     .monospacedDigit()
             }
         }
@@ -387,7 +394,7 @@ struct ReviewView: View {
                     totals(alignment: .leading)
                 }
             }
-            .padding(24)
+            .padding(compact ? 16 : 24)
             .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 18))
 
             HStack {
@@ -414,17 +421,20 @@ struct ReviewView: View {
 
 struct PaymentView: View {
     @EnvironmentObject private var store: KioskStore
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var compact: Bool { sizeClass == .compact }
 
     init() {}
 
     var body: some View {
-        Group {
+        CenteredScroll {
             switch store.paymentState {
             case .preparing:
                 VStack(spacing: 24) {
                     ProgressView().scaleEffect(2.2).padding(.bottom, 16)
                     Text("Preparando o pagamento…")
                         .font(.largeTitle.bold())
+                        .multilineTextAlignment(.center)
                 }
 
             case .waiting(let charge):
@@ -433,7 +443,7 @@ struct PaymentView: View {
                         qrPanel(charge)
                         instructions(charge)
                     }
-                    VStack(spacing: 32) {
+                    VStack(spacing: compact ? 20 : 32) {
                         qrPanel(charge)
                         instructions(charge)
                     }
@@ -465,14 +475,13 @@ struct PaymentView: View {
             }
         }
         .kioskPadding(48)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func qrPanel(_ charge: PixCharge) -> some View {
         QRCodeView(payload: charge.qrCode)
-            .frame(maxWidth: 340, maxHeight: 340)
+            .frame(maxWidth: compact ? 260 : 340, maxHeight: compact ? 260 : 340)
             .aspectRatio(1, contentMode: .fit)
-            .padding(20)
+            .padding(compact ? 14 : 20)
             .background(Color.white, in: RoundedRectangle(cornerRadius: 24))
             .shadow(color: .black.opacity(0.08), radius: 16, y: 6)
     }
@@ -481,9 +490,9 @@ struct PaymentView: View {
         VStack(alignment: .leading, spacing: 22) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Pague com Pix")
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .kioskFont(40, weight: .bold, design: .rounded)
                 Text(Money.format(cents: charge.amountCents))
-                    .font(.system(size: 56, weight: .heavy, design: .rounded))
+                    .kioskFont(56, weight: .heavy, design: .rounded)
                     .minimumScaleFactor(0.6)
                     .monospacedDigit()
                     .foregroundStyle(.tint)
@@ -534,7 +543,7 @@ struct PaymentMessage<Actions: View>: View {
     var body: some View {
         VStack(spacing: 24) {
             Image(systemName: systemImage)
-                .font(.system(size: 96))
+                .kioskFont(96)
                 .foregroundStyle(.orange)
             Text(title)
                 .font(.largeTitle.bold())
@@ -544,8 +553,11 @@ struct PaymentMessage<Actions: View>: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 560)
-            HStack(spacing: 20) { actions }
-                .padding(.top, 8)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 20) { actions }
+                VStack(spacing: 12) { actions }
+            }
+            .padding(.top, 8)
         }
     }
 }
@@ -600,12 +612,14 @@ struct PrintingView: View {
             }
             Text("Enviando para a impressora…")
                 .font(.largeTitle.bold())
+                .multilineTextAlignment(.center)
             if let name = store.settings.printerName {
                 Text(name)
                     .font(.title3)
                     .foregroundStyle(.secondary)
             }
         }
+        .kioskPadding(48)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -615,14 +629,29 @@ struct FinishedView: View {
     let success: Bool
     let message: String?
 
+    @ViewBuilder
+    private var finishButtons: some View {
+        if success {
+            Button("Concluir") { store.reset() }
+                .buttonStyle(PrimaryButtonStyle())
+        } else {
+            Button("Recomeçar") { store.reset() }
+                .buttonStyle(SecondaryButtonStyle())
+            Button("Tentar de novo") { store.sendToPrinter() }
+                .buttonStyle(PrimaryButtonStyle())
+        }
+    }
+
     var body: some View {
+        CenteredScroll {
         VStack(spacing: 28) {
             Image(systemName: success ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .font(.system(size: 110))
+                .kioskFont(110)
                 .foregroundStyle(success ? Color.green : Color.orange)
 
             Text(success ? "Enviado para a impressora" : "Não foi possível imprimir")
                 .font(.largeTitle.bold())
+                .multilineTextAlignment(.center)
 
             Text(success
                  ? "Retire suas páginas na impressora. Esta tela volta ao início em alguns segundos."
@@ -641,21 +670,14 @@ struct FinishedView: View {
                     .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 16))
             }
 
-            HStack(spacing: 20) {
-                if success {
-                    Button("Concluir") { store.reset() }
-                        .buttonStyle(PrimaryButtonStyle())
-                } else {
-                    Button("Recomeçar") { store.reset() }
-                        .buttonStyle(SecondaryButtonStyle())
-                    Button("Tentar de novo") { store.sendToPrinter() }
-                        .buttonStyle(PrimaryButtonStyle())
-                }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 20) { finishButtons }
+                VStack(spacing: 12) { finishButtons }
             }
             .padding(.top, 8)
         }
         .kioskPadding(48)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
         .task {
             guard success else { return }
             try? await Task.sleep(nanoseconds: 12_000_000_000)
@@ -760,7 +782,7 @@ struct PhoneUploadView: View {
                     .font(.title3)
                     .foregroundStyle(.secondary)
             }
-            Spacer()
+            Spacer(minLength: 12)
             Button("Concluir") { store.closePhoneUpload() }
                 .buttonStyle(PrimaryButtonStyle())
         }
@@ -772,6 +794,7 @@ struct QRStep: View {
     let title: String
     let caption: String
     let payload: String
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
         VStack(spacing: 12) {
@@ -779,8 +802,8 @@ struct QRStep: View {
                 .font(.title2.weight(.semibold))
                 .multilineTextAlignment(.center)
             QRCodeView(payload: payload)
-                .frame(width: 280, height: 280)
-                .padding(16)
+                .frame(width: sizeClass == .compact ? 220 : 280, height: sizeClass == .compact ? 220 : 280)
+                .padding(sizeClass == .compact ? 12 : 16)
                 .background(Color.white, in: RoundedRectangle(cornerRadius: 20))
             Text(caption)
                 .font(.callout)
@@ -818,7 +841,9 @@ struct KioskHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 40, weight: .bold, design: .rounded))
+                .kioskFont(40, weight: .bold, design: .rounded)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
             Text(subtitle)
                 .font(.title3)
                 .foregroundStyle(.secondary)
@@ -829,17 +854,18 @@ struct KioskHeader: View {
 struct SourceTile: View {
     let title: String
     let systemImage: String
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
         VStack(spacing: 10) {
             Image(systemName: systemImage)
-                .font(.system(size: 34))
+                .kioskFont(34)
             Text(title)
                 .font(.title3.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
-        .padding(.vertical, 22)
+        .padding(.vertical, sizeClass == .compact ? 14 : 22)
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)
         .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 18))
@@ -850,13 +876,14 @@ struct SourceTile: View {
 struct ItemTile: View {
     let item: PrintItem
     var onRemove: (() -> Void)? = nil
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
         VStack(spacing: 8) {
             Image(uiImage: item.thumbnail)
                 .resizable()
                 .scaledToFit()
-                .frame(height: 160)
+                .frame(height: sizeClass == .compact ? 120 : 160)
                 .frame(maxWidth: .infinity)
                 .background(Color(uiColor: .secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -873,7 +900,7 @@ struct ItemTile: View {
             if let onRemove {
                 Button(action: onRemove) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 30))
+                        .kioskFont(30)
                         .symbolRenderingMode(.palette)
                         .foregroundStyle(.white, .red)
                 }
@@ -890,9 +917,9 @@ struct PrimaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.title2.weight(.semibold))
+            .font(sizeClass == .compact ? .title3.weight(.semibold) : .title2.weight(.semibold))
             .lineLimit(1)
-            .minimumScaleFactor(0.8)
+            .minimumScaleFactor(0.7)
             .foregroundStyle(.white)
             .padding(.horizontal, sizeClass == .compact ? 24 : 44)
             .padding(.vertical, sizeClass == .compact ? 16 : 20)
@@ -908,9 +935,9 @@ struct SecondaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.title3.weight(.semibold))
+            .font(sizeClass == .compact ? .headline : .title3.weight(.semibold))
             .lineLimit(1)
-            .minimumScaleFactor(0.8)
+            .minimumScaleFactor(0.7)
             .foregroundStyle(.tint)
             .padding(.horizontal, sizeClass == .compact ? 20 : 32)
             .padding(.vertical, sizeClass == .compact ? 14 : 18)
@@ -937,5 +964,54 @@ private struct KioskPadding: ViewModifier {
 extension View {
     func kioskPadding(_ regular: CGFloat) -> some View {
         modifier(KioskPadding(regular: regular))
+    }
+}
+
+/// Fixed-size type for the kiosk. iPad keeps the size given; iPhone gets about 60% of it,
+/// so headlines like "XEROX" and the Pix amount fit a phone screen.
+private struct KioskFont: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    let size: CGFloat
+    let weight: Font.Weight
+    let design: Font.Design
+
+    func body(content: Content) -> some View {
+        let scaled = sizeClass == .compact ? max(17, (size * 0.6).rounded()) : size
+        return content.font(.system(size: scaled, weight: weight, design: design))
+    }
+}
+
+extension View {
+    func kioskFont(_ size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) -> some View {
+        modifier(KioskFont(size: size, weight: weight, design: design))
+    }
+}
+
+/// Side by side on iPad, one above the other on iPhone.
+struct AdaptiveStack<Content: View>: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    var spacing: CGFloat = 20
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        if sizeClass == .compact {
+            VStack(spacing: spacing) { content }
+        } else {
+            HStack(spacing: spacing) { content }
+        }
+    }
+}
+
+/// Centers short content on big screens and lets it scroll on small ones.
+struct CenteredScroll<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        GeometryReader { geometry in
+            ScrollView {
+                content
+                    .frame(maxWidth: .infinity, minHeight: geometry.size.height)
+            }
+        }
     }
 }

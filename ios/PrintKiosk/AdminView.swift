@@ -11,6 +11,10 @@ struct AdminView: View {
     @State private var newPIN = ""
     @State private var confirmPIN = ""
     @State private var pinIsSet = AdminLock.isSet
+    @FocusState private var focusedField: PINField?
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private enum PINField { case entry, new, confirm, changeNew, changeConfirm }
     @State private var pinChanged = false
 
     @State private var tokenEntry = ""
@@ -28,10 +32,26 @@ struct AdminView: View {
             Group {
                 if unlocked { settingsForm } else { pinGate }
             }
-            .navigationTitle("Configurações do atendente")
+            .navigationTitle("Configurações")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Fechar") { dismiss() }
+                }
+                // The number pad has no Return key on iPhone: this bar sits on top of it.
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    if unlocked {
+                        Button("OK") {
+                            focusedField = nil
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }
+                    } else {
+                        Button(pinIsSet ? "Desbloquear" : "Criar PIN") {
+                            if pinIsSet { checkPIN() } else { createPIN() }
+                        }
+                        .fontWeight(.semibold)
+                    }
                 }
             }
         }
@@ -40,6 +60,7 @@ struct AdminView: View {
     // MARK: PIN gate
 
     private var pinGate: some View {
+        ScrollView {
         VStack(spacing: 20) {
             Image(systemName: "lock.fill")
                 .font(.system(size: 48))
@@ -48,7 +69,7 @@ struct AdminView: View {
                 Text("Digite o PIN do atendente")
                     .font(.title2)
                 pinField("PIN", text: $pinEntry)
-                    .onSubmit(checkPIN)
+                    .focused($focusedField, equals: .entry)
             } else {
                 Text("Crie o PIN do atendente")
                     .font(.title2)
@@ -57,8 +78,9 @@ struct AdminView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: 420)
                 pinField("Novo PIN", text: $newPIN)
+                    .focused($focusedField, equals: .new)
                 pinField("Repita o PIN", text: $confirmPIN)
-                    .onSubmit(createPIN)
+                    .focused($focusedField, equals: .confirm)
             }
             if let pinMessage {
                 Text(pinMessage)
@@ -68,11 +90,15 @@ struct AdminView: View {
             Button(pinIsSet ? "Desbloquear" : "Criar PIN", action: pinIsSet ? checkPIN : createPIN)
                 .buttonStyle(PrimaryButtonStyle())
         }
-        .padding(40)
+        .padding(sizeClass == .compact ? 24 : 40)
+        .frame(maxWidth: .infinity)
+        }
+        .scrollDismissesKeyboard(.interactively)
         .onAppear {
             AdminLock.migrate(legacyPIN: store.settings.adminPIN)
             if !store.settings.adminPIN.isEmpty { store.settings.adminPIN = "" }
             pinIsSet = AdminLock.isSet
+            focusedField = pinIsSet ? .entry : .new
         }
     }
 
@@ -83,12 +109,13 @@ struct AdminView: View {
             .font(.title)
             .multilineTextAlignment(.center)
             .textFieldStyle(.roundedBorder)
-            .frame(width: 260)
+            .frame(maxWidth: 260)
     }
 
     private func checkPIN() {
         switch AdminLock.check(pinEntry) {
         case .ok:
+            focusedField = nil
             unlocked = true
             pinMessage = nil
         case .wrong(let left):
@@ -109,6 +136,7 @@ struct AdminView: View {
         confirmPIN = ""
         pinMessage = nil
         pinIsSet = true
+        focusedField = nil
         unlocked = true
     }
 
@@ -273,9 +301,14 @@ struct AdminView: View {
             Section("PIN do atendente") {
                 SecureField("Novo PIN (\(AdminLock.minimumLength) a 12 números)", text: $newPIN)
                     .keyboardType(.numberPad)
+                    .textContentType(.oneTimeCode)
+                    .focused($focusedField, equals: .changeNew)
                 SecureField("Repita o novo PIN", text: $confirmPIN)
                     .keyboardType(.numberPad)
+                    .textContentType(.oneTimeCode)
+                    .focused($focusedField, equals: .changeConfirm)
                 Button("Alterar PIN") {
+                    focusedField = nil
                     if let message = Self.problem(newPIN: newPIN, confirm: confirmPIN) {
                         pinMessage = message
                         pinChanged = false
@@ -303,6 +336,7 @@ struct AdminView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     @ViewBuilder
