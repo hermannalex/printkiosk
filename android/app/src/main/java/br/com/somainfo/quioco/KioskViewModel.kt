@@ -1,4 +1,4 @@
-package br.com.somainfo.printkiosk
+package br.com.somainfo.quioco
 
 import android.app.Application
 import android.net.Uri

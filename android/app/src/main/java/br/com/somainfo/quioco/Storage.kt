@@ -1,4 +1,4 @@
-package br.com.somainfo.printkiosk
+package br.com.somainfo.quioco
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
@@ -53,7 +53,7 @@ class SettingsStore(context: Context) {
  * The key never leaves this tablet, and the app opts out of backups.
  */
 object SecureStore {
-    private const val KEY_ALIAS = "printkiosk_token_key"
+    private const val KEY_ALIAS = "quioco_token_key"
     private const val PREFS = "kiosk_secure"
     private const val TOKEN = "mercadopago_token"
 

@@ -1,4 +1,4 @@
-package br.com.somainfo.printkiosk
+package br.com.somainfo.quioco
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement

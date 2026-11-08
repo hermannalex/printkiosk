@@ -31,7 +31,7 @@ struct SyncResponse: Decodable {
 /// Prints are queued on the device and sent whenever there is internet.
 @MainActor
 final class CloudSync {
-    static let serverURL = URL(string: "https://printkiosk-one.vercel.app")!
+    static let serverURL = URL(string: "https://quioco.vercel.app")!
 
     private static let secretKey = "sync.secret"
     private static let queueKey = "sync.queue"

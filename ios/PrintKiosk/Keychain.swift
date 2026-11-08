@@ -4,7 +4,7 @@ import Security
 /// Minimal Keychain wrapper for the Mercado Pago access token.
 /// The token never goes into UserDefaults or backups, and stays on this device only.
 enum Keychain {
-    private static let service = "PrintKiosk"
+    private static let service = "Quioco"
 
     private static func baseQuery(for key: String) -> [String: Any] {
         [

@@ -51,11 +51,11 @@ Preço e contato exibidos no app: `License.swift` (iOS) e `LicenseCodec.kt` (And
 
 ## Painel online
 
-Endereço: https://printkiosk-one.vercel.app (código em `web/`, Next.js na Vercel + Postgres na Neon).
+Endereço: https://quioco.vercel.app (código em `web/`, Next.js na Vercel + Postgres na Neon).
 
 - **Lojas**: criam conta, adicionam o quiosque pelo código da loja (Configurações → Assinatura), assinam pelo Mercado Pago (Básico R$ 19,99/mês por quiosque; Pro R$ 49,99/mês pelo primeiro quiosque + R$ 9,99/mês por quiosque adicional, com painel) e veem impressões, cópias, páginas e faturamento.
 - **Master**: conta com o e-mail `MASTER_EMAIL`, criada em `/cadastro` com o `MASTER_SETUP_CODE`. Vê todas as lojas, gera códigos de ativação, registra pagamentos manuais, muda plano e bloqueia contas.
 - **Apps**: enviam as impressões para `/api/kiosk/sync` ao abrir, a cada 30 minutos e após cada impressão, e aplicam sozinhos o código de ativação que o painel devolver.
 
 Variáveis na Vercel: `DATABASE_URL`, `SESSION_SECRET`, `LICENSE_PRIVATE_KEY`, `MASTER_EMAIL`, `MASTER_SETUP_CODE`, `APP_URL`, `MERCADOPAGO_ACCESS_TOKEN`.
-Webhook do Mercado Pago: `https://printkiosk-one.vercel.app/api/mp/webhook` com os eventos de assinaturas (`subscription_preapproval` e `subscription_authorized_payment`).
+Webhook do Mercado Pago: `https://quioco.vercel.app/api/mp/webhook` com os eventos de assinaturas (`subscription_preapproval` e `subscription_authorized_payment`).

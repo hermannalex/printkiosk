@@ -1,4 +1,4 @@
-package br.com.somainfo.printkiosk
+package br.com.somainfo.quioco
 
 import android.content.Context
 import android.util.Base64
@@ -64,7 +64,7 @@ data class SyncResponse(
  */
 class CloudSync(context: Context) {
     companion object {
-        const val SERVER_URL = "https://printkiosk-one.vercel.app"
+        const val SERVER_URL = "https://quioco.vercel.app"
         fun isoNow(): String = Instant.now().toString()
     }
 

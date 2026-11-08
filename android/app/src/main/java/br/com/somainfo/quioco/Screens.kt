@@ -1,4 +1,4 @@
-package br.com.somainfo.printkiosk
+package br.com.somainfo.quioco
 
 import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler

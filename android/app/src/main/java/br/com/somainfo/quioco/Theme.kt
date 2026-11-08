@@ -1,4 +1,4 @@
-package br.com.somainfo.printkiosk
+package br.com.somainfo.quioco
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme

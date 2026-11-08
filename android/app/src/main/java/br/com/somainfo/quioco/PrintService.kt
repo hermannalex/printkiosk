@@ -1,4 +1,4 @@
-package br.com.somainfo.printkiosk
+package br.com.somainfo.quioco
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -59,7 +59,7 @@ class KioskPrintAdapter(
         } else {
             PrintDocumentInfo.CONTENT_TYPE_DOCUMENT
         }
-        val info = PrintDocumentInfo.Builder("printkiosk.pdf")
+        val info = PrintDocumentInfo.Builder("quioco.pdf")
             .setContentType(contentType)
             .setPageCount(pages.size)
             .build()
@@ -159,7 +159,7 @@ class TestPageAdapter(private val context: Context, private val kioskName: Strin
             return
         }
         attributes = newAttributes
-        val info = PrintDocumentInfo.Builder("printkiosk-teste.pdf")
+        val info = PrintDocumentInfo.Builder("quioco-teste.pdf")
             .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
             .setPageCount(1)
             .build()

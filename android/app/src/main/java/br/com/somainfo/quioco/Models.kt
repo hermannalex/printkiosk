@@ -1,4 +1,4 @@
-package br.com.somainfo.printkiosk
+package br.com.somainfo.quioco
 
 import androidx.compose.ui.graphics.ImageBitmap
 import java.io.File

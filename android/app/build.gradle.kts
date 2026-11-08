@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "br.com.somainfo.printkiosk"
+    namespace = "br.com.somainfo.quioco"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "br.com.somainfo.printkiosk"
+        applicationId = "br.com.somainfo.quioco"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

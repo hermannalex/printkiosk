@@ -1,4 +1,4 @@
-package br.com.somainfo.printkiosk
+package br.com.somainfo.quioco
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
