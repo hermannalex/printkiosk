@@ -2,12 +2,18 @@ import Link from "next/link";
 import { addKiosk } from "../../actions";
 import { requireUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { ago, dateBR } from "@/lib/format";
+import { ago, brl, dateBR } from "@/lib/format";
 import { kioskStatus } from "@/lib/kiosks";
 import { Flash, PlanPill, Shell, StatusPill, param, type SearchParams } from "@/components/ui";
 
 export const metadata = { title: "Quiosques · Quioco" };
 export const dynamic = "force-dynamic";
+
+/** What the kiosk charges: the dashboard's price once saved, otherwise what the kiosk reported. */
+const pagePrice = (k: Record<string, any>) => {
+  const cents = (k.config_version > 0 ? k.config?.pricePerPageCents : null) ?? k.reported_config?.pricePerPageCents;
+  return cents == null ? "—" : Number(cents) === 0 ? "grátis" : brl(cents);
+};
 
 export default async function OwnerKiosks({ searchParams }: { searchParams: SearchParams }) {
   const user = await requireUser();
@@ -38,6 +44,7 @@ export default async function OwnerKiosks({ searchParams }: { searchParams: Sear
                   <th>Plano</th>
                   <th>Situação</th>
                   <th>Válido até</th>
+                  <th>Preço/página</th>
                   <th>Última conexão</th>
                   <th></th>
                 </tr>
@@ -50,6 +57,7 @@ export default async function OwnerKiosks({ searchParams }: { searchParams: Sear
                     <td><PlanPill plan={k.plan} /></td>
                     <td><StatusPill status={kioskStatus(k)} /></td>
                     <td className="mono">{dateBR(k.paid_until)}</td>
+                    <td className="mono small">{pagePrice(k)}</td>
                     <td className="small muted">{ago(k.last_seen_at)}</td>
                     <td><Link className="btn btn-sm" href={`/painel/quiosques/${k.id}`}>Abrir</Link></td>
                   </tr>

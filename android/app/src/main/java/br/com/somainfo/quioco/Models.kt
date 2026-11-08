@@ -50,7 +50,32 @@ data class KioskSettings(
     /** Optional guest Wi-Fi shown as a QR Code, so customers' phones can join before sending files. */
     val wifiName: String = "",
     val wifiPassword: String = "",
-)
+) {
+    /** What the dashboard sees and can change (printer, PIN and Pix token stay on the device). */
+    fun toRemoteJson(): org.json.JSONObject = org.json.JSONObject()
+        .put("kioskName", kioskName).put("pricePerPageCents", pricePerPageCents)
+        .put("maxCopies", maxCopies).put("maxItems", maxItems)
+        .put("idleTimeoutSeconds", idleTimeoutSeconds).put("paymentTimeoutSeconds", paymentTimeoutSeconds)
+        .put("payerEmail", payerEmail).put("wifiName", wifiName).put("wifiPassword", wifiPassword)
+
+    /** Takes each value from the dashboard (web/lib/kiosk-config.ts) within the settings screen's limits. */
+    fun applyRemote(o: org.json.JSONObject): KioskSettings {
+        fun int(key: String, ok: (Int) -> Boolean): Int? =
+            if (o.has(key) && !o.isNull(key)) o.optInt(key, Int.MIN_VALUE).takeIf { it != Int.MIN_VALUE && ok(it) } else null
+        fun str(key: String): String? = if (o.has(key) && !o.isNull(key)) o.optString(key) else null
+        return copy(
+            kioskName = str("kioskName")?.trim()?.takeIf { it.isNotEmpty() }?.take(40) ?: kioskName,
+            pricePerPageCents = int("pricePerPageCents") { it in 0..5_000 } ?: pricePerPageCents,
+            maxCopies = int("maxCopies") { it in 1..50 } ?: maxCopies,
+            maxItems = int("maxItems") { it in 1..50 } ?: maxItems,
+            idleTimeoutSeconds = int("idleTimeoutSeconds") { it in listOf(30, 60, 90, 120, 300) } ?: idleTimeoutSeconds,
+            paymentTimeoutSeconds = int("paymentTimeoutSeconds") { it in listOf(120, 180, 300, 600) } ?: paymentTimeoutSeconds,
+            payerEmail = str("payerEmail")?.takeIf { it.isEmpty() || it.contains("@") }?.take(254) ?: payerEmail,
+            wifiName = str("wifiName")?.take(32) ?: wifiName,
+            wifiPassword = str("wifiPassword")?.take(63) ?: wifiPassword,
+        )
+    }
+}
 
 /** Whether this kiosk may print: monthly subscription or the free demo. */
 sealed interface LicenseState {

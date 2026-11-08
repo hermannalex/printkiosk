@@ -5,6 +5,7 @@ import { one, sql } from "@/lib/db";
 import { ago, brl, dateBR, dateTimeBR } from "@/lib/format";
 import { kioskStatus } from "@/lib/kiosks";
 import { PLANS, monthlyPrice, type PlanId } from "@/lib/plans";
+import { KioskConfigForm } from "@/components/kiosk-config-form";
 import { CopyButton } from "@/components/copy-button";
 import { Flash, PlanPill, Shell, StatusPill, param, type SearchParams } from "@/components/ui";
 import { PERIODS, PeriodPicker, StatsView } from "@/components/stats-view";
@@ -142,7 +143,7 @@ export default async function OwnerKiosk({
             </div>
             <button className="btn" type="submit">Salvar</button>
           </form>
-          {codes.length > 1 && (
+                    {codes.length > 1 && (
             <details>
               <summary className="small muted">Códigos anteriores</summary>
               <ul className="small">
@@ -154,6 +155,8 @@ export default async function OwnerKiosk({
           )}
         </div>
       </section>
+
+      <KioskConfigForm kiosk={kiosk} from="painel" />
 
       {proActive ? (
         <StatsView scope={[Number(kiosk.id)]} days={days} kioskLink={(kid) => `/painel/quiosques/${kid}`} showKioskTable={false} />

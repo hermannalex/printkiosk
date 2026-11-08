@@ -97,6 +97,27 @@ struct KioskSettings: Codable, Equatable {
         wifiPassword = try container.decodeIfPresent(String.self, forKey: .wifiPassword) ?? defaults.wifiPassword
     }
 
+    /// What the dashboard sees and can change (printer, PIN and Pix token stay on the device).
+    var remoteConfig: RemoteConfig {
+        RemoteConfig(kioskName: kioskName, pricePerPageCents: pricePerPageCents, maxCopies: maxCopies,
+                     maxItems: maxItems, idleTimeoutSeconds: idleTimeoutSeconds,
+                     paymentTimeoutSeconds: paymentTimeoutSeconds, payerEmail: payerEmail,
+                     wifiName: wifiName, wifiPassword: wifiPassword)
+    }
+
+    /// Takes each value from the dashboard that is within the same limits as the settings screen.
+    mutating func apply(_ remote: RemoteConfig) {
+        if let v = remote.kioskName?.trimmingCharacters(in: .whitespaces), !v.isEmpty { kioskName = String(v.prefix(40)) }
+        if let v = remote.pricePerPageCents, (0...5000).contains(v) { pricePerPageCents = v }
+        if let v = remote.maxCopies, (1...50).contains(v) { maxCopies = v }
+        if let v = remote.maxItems, (1...50).contains(v) { maxItems = v }
+        if let v = remote.idleTimeoutSeconds, [30, 60, 90, 120, 300].contains(v) { idleTimeoutSeconds = v }
+        if let v = remote.paymentTimeoutSeconds, [120, 180, 300, 600].contains(v) { paymentTimeoutSeconds = v }
+        if let v = remote.payerEmail, v.isEmpty || v.contains("@") { payerEmail = String(v.prefix(254)) }
+        if let v = remote.wifiName { wifiName = String(v.prefix(32)) }
+        if let v = remote.wifiPassword { wifiPassword = String(v.prefix(63)) }
+    }
+
     private static let storageKey = "kiosk.settings"
 
     static func load() -> KioskSettings {
@@ -175,13 +196,22 @@ final class KioskStore: ObservableObject {
     /// Sends the print history and applies a newer activation code from the dashboard.
     func syncWithDashboard() async {
         refreshLicense()
-        guard let response = await cloud.sync(storeCode: storeCode, license: license) else { return }
+        guard let response = await cloud.sync(
+            storeCode: storeCode, license: license,
+            config: settings.remoteConfig, configVersion: appliedConfigVersion
+        ) else { return }
         if let error = response.error {
             syncError = error
             return
         }
         syncError = nil
         lastSync = cloud.lastSync
+        var configChanged = false
+        if let version = response.configVersion, let remote = response.config, version > appliedConfigVersion {
+            settings.apply(remote)
+            appliedConfigVersion = version
+            configChanged = true
+        }
         if let code = response.activationCode, let until = License.verify(code: code, storeID: License.storeID) {
             let current: Int? = {
                 if case .active(let date) = license { return License.dayNumber(date) }
@@ -192,6 +222,14 @@ final class KioskStore: ObservableObject {
                 refreshLicense()
             }
         }
+        // Tell the dashboard right away that the new settings are in use.
+        if configChanged { await syncWithDashboard() }
+    }
+
+    /// Last dashboard settings version applied on this device (0 = none yet).
+    private var appliedConfigVersion: Int {
+        get { UserDefaults.standard.integer(forKey: "sync.configVersion") }
+        set { UserDefaults.standard.set(newValue, forKey: "sync.configVersion") }
     }
 
     private func recordPrint(success: Bool, demo: Bool) {

@@ -230,3 +230,11 @@ input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible
 .btn-google { width: 100%; justify-content: center; font-weight: 600; }
 .or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
 .or::before, .or::after { content: ""; flex: 1; border-top: 1px solid var(--line, var(--border)); }
+
+/* Configurações do app no painel */
+.config-form { display: grid; gap: 16px; }
+.config-form fieldset { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px 14px; margin: 0; min-width: 0;
+  display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.config-form legend { padding: 0 6px; font-weight: 600; font-size: 14px; }
+.config-form .field { display: grid; gap: 4px; align-content: start; }
+.config-form .field input, .config-form .field select { width: 100%; }

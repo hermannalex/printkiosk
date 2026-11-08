@@ -17,12 +17,28 @@ struct PrintJobRecord: Codable, Equatable {
     var demo: Bool
 }
 
+/// The settings the dashboard can change (web/lib/kiosk-config.ts); every key is optional.
+struct RemoteConfig: Codable {
+    var kioskName: String?
+    var pricePerPageCents: Int?
+    var maxCopies: Int?
+    var maxItems: Int?
+    var idleTimeoutSeconds: Int?
+    var paymentTimeoutSeconds: Int?
+    var payerEmail: String?
+    var wifiName: String?
+    var wifiPassword: String?
+}
+
 struct SyncResponse: Decodable {
     var accepted: [String]?
     var activationCode: String?
     var validUntil: String?
     var plan: String?
     var dashboardUrl: String?
+    /// Settings saved in the dashboard, applied when `configVersion` is newer than the last one applied.
+    var config: RemoteConfig?
+    var configVersion: Int?
     var error: String?
 }
 
@@ -89,7 +105,7 @@ final class CloudSync {
     }
 
     /// Sends queued prints and returns the server's answer, or nil when offline.
-    func sync(storeCode: String, license: LicenseState) async -> SyncResponse? {
+    func sync(storeCode: String, license: LicenseState, config: RemoteConfig, configVersion: Int) async -> SyncResponse? {
         guard !isSyncing else { return nil }
         isSyncing = true
         defer { isSyncing = false }
@@ -111,6 +127,8 @@ final class CloudSync {
             "appVersion": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
             "licenseState": licenseState,
             "demoRemaining": demoRemaining,
+            "config": (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(config))) as Any?,
+            "configVersion": configVersion,
             "jobs": pending.map { job -> [String: Any?] in
                 [
                     "id": job.id, "printedAt": job.printedAt, "items": job.items, "pages": job.pages,

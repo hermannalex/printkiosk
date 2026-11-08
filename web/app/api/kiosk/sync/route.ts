@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { one, sql } from "@/lib/db";
 import { isoOf, todayIso } from "@/lib/format";
+import { sanitizeConfig } from "@/lib/kiosk-config";
 import { hashSecret, normalizeStoreCode } from "@/lib/license";
 import { ipFromHeaders, rateLimit, safeEqual } from "@/lib/security";
 
@@ -54,11 +55,11 @@ export async function POST(request: Request) {
   }
 
   const secretHash = hashSecret(secret);
-  let kiosk = await one`select id, secret_hash, plan from kiosks where store_code = ${storeCode}`;
+  let kiosk = await one`select id, secret_hash, plan, config, config_version from kiosks where store_code = ${storeCode}`;
   if (!kiosk) {
     kiosk = await one`insert into kiosks (store_code, secret_hash) values (${storeCode}, ${secretHash})
                       on conflict (store_code) do update set store_code = excluded.store_code
-                      returning id, secret_hash, plan`;
+                      returning id, secret_hash, plan, config, config_version`;
   } else if (!kiosk.secret_hash) {
     // Registered from the dashboard before the kiosk ever connected: bind this device now.
     await sql`update kiosks set secret_hash = ${secretHash} where id = ${kiosk.id}`;
@@ -74,6 +75,8 @@ export async function POST(request: Request) {
       app_version = ${String(body?.appVersion ?? "").slice(0, 20) || null},
       license_state = ${String(body?.licenseState ?? "").slice(0, 20) || null},
       demo_remaining = ${body?.demoRemaining == null ? null : int(body.demoRemaining, 100)},
+      reported_config = ${body?.config && typeof body.config === "object" ? JSON.stringify(sanitizeConfig(body.config)) : null}::jsonb,
+      applied_config_version = ${body?.configVersion == null ? null : int(body.configVersion)},
       last_seen_at = now()
     where id = ${kioskId}`;
 
@@ -112,6 +115,9 @@ export async function POST(request: Request) {
     activationCode: code?.code ?? null,
     validUntil: code ? isoOf(code.valid_until) : null,
     plan: kiosk.plan,
+    // Settings saved in the dashboard: the kiosk applies them when configVersion is newer than its own.
+    config: Number(kiosk.config_version) > 0 ? sanitizeConfig(kiosk.config) : null,
+    configVersion: Number(kiosk.config_version ?? 0),
     dashboardUrl: process.env.APP_URL ?? null,
   });
 }

@@ -33,6 +33,7 @@ const LABEL: Record<string, string> = {
   mfa_redefinido: "Redefiniu 2 etapas de uma conta",
   google_vinculado: "Conectou conta Google",
   google_falhou: "Entrada com Google falhou",
+  config_alterada: "Mudou configurações do quiosque",
   backup_ok: "Backup diário feito",
   backup_manual: "Fez backup manual",
   backup_baixado: "Baixou um backup",

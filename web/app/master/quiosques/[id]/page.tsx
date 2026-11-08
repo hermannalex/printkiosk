@@ -5,6 +5,7 @@ import { one, sql } from "@/lib/db";
 import { addMonthsIso, ago, brl, dateBR, dateTimeBR, todayIso } from "@/lib/format";
 import { kioskStatus } from "@/lib/kiosks";
 import { CopyButton } from "@/components/copy-button";
+import { KioskConfigForm } from "@/components/kiosk-config-form";
 import { Flash, PlanPill, Shell, StatusPill, param, type SearchParams } from "@/components/ui";
 import { StatsView } from "@/components/stats-view";
 
@@ -106,6 +107,8 @@ export default async function MasterKiosk({
           )}
         </div>
       </section>
+
+      <KioskConfigForm kiosk={kiosk} from="master" />
 
       <section className="card">
         <div className="card-head"><h2>Códigos de ativação</h2></div>

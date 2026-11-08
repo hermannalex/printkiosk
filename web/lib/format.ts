@@ -52,3 +52,11 @@ export function isoOf(value: string | Date | null | undefined): string | null {
   if (typeof value === "string") return value.slice(0, 10);
   return value.toISOString().slice(0, 10);
 }
+
+/** "0,50", "R$ 1,20", "1.5" or "2" → cents; null when it isn't a money amount. */
+export function parseBRL(input: string): number | null {
+  let clean = input.replace(/R\$|\s/gi, "");
+  if (!/^\d{1,6}([.,]\d{1,2})?$/.test(clean)) return null;
+  clean = clean.replace(",", ".");
+  return Math.round(Number(clean) * 100);
+}

@@ -271,7 +271,7 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
                 plusEnabled = settings.pricePerPageCents < 5_000,
             )
             Text(
-                "Deixe em R$ 0,00 para impressão gratuita.",
+                "Deixe em R$ 0,00 para impressão gratuita. Estas configurações também podem ser mudadas pelo painel online (quioco.vercel.app); o que for salvo lá chega em até 30 minutos.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -144,3 +144,11 @@ create index if not exists login_challenges_user_idx on login_challenges(user_id
 
 -- Entrar com Google: o "sub" da conta Google vinculada (o e-mail pode mudar, o sub não).
 alter table users add column if not exists google_sub text unique;
+
+-- Configurações do app definidas no painel (lib/kiosk-config.ts). config_version sobe a cada mudança;
+-- o quiosque aplica quando a versão é maior que a última que ele já aplicou (applied_config_version).
+-- reported_config é o que o app está usando agora, enviado a cada sincronização.
+alter table kiosks add column if not exists config jsonb;
+alter table kiosks add column if not exists config_version int not null default 0;
+alter table kiosks add column if not exists reported_config jsonb;
+alter table kiosks add column if not exists applied_config_version int;

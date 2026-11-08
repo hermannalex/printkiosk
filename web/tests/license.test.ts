@@ -29,3 +29,15 @@ test("activation code = payload + ECDSA signature the apps can verify", () => {
 test("pairing code matches the apps' derivation (same value as the Kotlin test)", () => {
   assert.equal(pairingCode(hashSecret("teste-claude-0123456789")), "MBD-4D6");
 });
+
+import { parseBRL } from "../lib/format.ts";
+test("parseBRL reads Brazilian amounts", () => {
+  assert.equal(parseBRL("0,50"), 50);
+  assert.equal(parseBRL("R$ 1,2"), 120);
+  assert.equal(parseBRL("2"), 200);
+  assert.equal(parseBRL("1.25"), 125);
+  assert.equal(parseBRL("0"), 0);
+  assert.equal(parseBRL("-1"), null);
+  assert.equal(parseBRL("abc"), null);
+  assert.equal(parseBRL("1,234"), null);
+});

@@ -55,6 +55,9 @@ data class SyncResponse(
     val activationCode: String?,
     val dashboardUrl: String?,
     val error: String?,
+    /** Settings saved in the dashboard, applied when [configVersion] is newer than the last one applied. */
+    val config: JSONObject? = null,
+    val configVersion: Int = 0,
 )
 
 /**
@@ -111,13 +114,18 @@ class CloudSync(context: Context) {
     val lastSync: Long? get() = prefs.getLong("lastSync", 0L).takeIf { it > 0 }
     val dashboardUrl: String get() = prefs.getString("dashboardUrl", null) ?: SERVER_URL
 
+    /** Last dashboard settings version applied on this device (0 = none yet). */
+    var appliedConfigVersion: Int
+        get() = prefs.getInt("configVersion", 0)
+        set(value) { prefs.edit().putInt("configVersion", value).apply() }
+
     @Synchronized
     fun record(job: PrintJobRecord) {
         queue = queue + job
     }
 
     /** Sends queued prints and returns the server's answer, or null when offline. */
-    suspend fun sync(storeCode: String, license: LicenseState, appVersion: String): SyncResponse? =
+    suspend fun sync(storeCode: String, license: LicenseState, appVersion: String, config: JSONObject): SyncResponse? =
         mutex.withLock {
             withContext(Dispatchers.IO) {
                 val pending = queue.take(200)
@@ -134,6 +142,8 @@ class CloudSync(context: Context) {
                     .put("appVersion", appVersion)
                     .put("licenseState", state)
                     .put("demoRemaining", demoRemaining ?: JSONObject.NULL)
+                    .put("config", config)
+                    .put("configVersion", appliedConfigVersion)
                     .put("jobs", JSONArray().also { array -> pending.forEach { array.put(it.toJson()) } })
 
                 try {
@@ -166,6 +176,8 @@ class CloudSync(context: Context) {
                         activationCode = if (json.isNull("activationCode")) null else json.optString("activationCode"),
                         dashboardUrl = dashboard,
                         error = null,
+                        config = json.optJSONObject("config"),
+                        configVersion = json.optInt("configVersion", 0),
                     )
                 } catch (e: Exception) {
                     null

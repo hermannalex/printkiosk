@@ -111,13 +111,20 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
         val version = runCatching {
             app.packageManager.getPackageInfo(app.packageName, 0).versionName
         }.getOrNull() ?: ""
-        val response = cloud.sync(storeCode, license, version) ?: return
+        val response = cloud.sync(storeCode, license, version, settings.toRemoteJson()) ?: return
         if (!response.ok) {
             syncError = response.error
             return
         }
         syncError = null
         lastSync = cloud.lastSync
+        val remote = response.config
+        if (remote != null && response.configVersion > cloud.appliedConfigVersion) {
+            updateSettings { it.applyRemote(remote) }
+            cloud.appliedConfigVersion = response.configVersion
+            // Tell the dashboard right away that the new settings are in use.
+            viewModelScope.launch { syncWithDashboard() }
+        }
         val code = response.activationCode ?: return
         val until = LicenseCodec.verify(code, licenseStore.storeId) ?: return
         val current = (license as? LicenseState.Active)?.let { LicenseCodec.dayNumber(it.until) }

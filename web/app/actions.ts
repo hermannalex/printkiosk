@@ -17,10 +17,11 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { one, sql } from "@/lib/db";
-import { todayIso } from "@/lib/format";
+import { brl, parseBRL, todayIso } from "@/lib/format";
 import { extendKiosk } from "@/lib/kiosks";
 import { normalizePairingCode, normalizeStoreCode, pairingCode } from "@/lib/license";
 import { cancelPreapproval, createPreapproval, mercadoPagoConfigured } from "@/lib/mercadopago";
+import { DEFAULT_CONFIG, sanitizeConfig } from "@/lib/kiosk-config";
 import { PLANS, monthlyPrice, type PlanId } from "@/lib/plans";
 import { audit, clientIp, rateLimit, safeEqual } from "@/lib/security";
 
@@ -148,6 +149,39 @@ export async function renameKiosk(form: FormData) {
   await sql`update kiosks set name = ${name} where id = ${id} and (owner_id = ${user.id} or ${user.role === "master"})`;
   revalidatePath(`/painel/quiosques/${id}`);
   go(`/painel/quiosques/${id}`, "msg", "Nome atualizado.");
+}
+
+/** The app's settings, sent to the kiosk on its next sync (launch, every 30 min, after each print). */
+export async function saveKioskConfig(form: FormData) {
+  const user = await requireUser();
+  const id = Number(text(form, "id", 20));
+  const back = user.role === "master" && text(form, "de", 10) === "master" ? `/master/quiosques/${id}` : `/painel/quiosques/${id}`;
+  const cents = parseBRL(text(form, "preco", 20));
+  if (cents === null || cents > 5000) go(back, "erro", "Informe o preço por página, de R$ 0,00 a R$ 50,00 (ex.: 0,50).");
+  const email = text(form, "email_pagador", 254);
+  if (email && !EMAIL_RE.test(email)) go(back, "erro", "E-mail do pagador Pix inválido.");
+  const input = {
+    kioskName: text(form, "nome_tela", 40),
+    pricePerPageCents: cents,
+    maxCopies: Number(text(form, "copias", 3)),
+    maxItems: Number(text(form, "itens", 3)),
+    idleTimeoutSeconds: Number(text(form, "inatividade", 4)),
+    paymentTimeoutSeconds: Number(text(form, "tempo_pix", 4)),
+    payerEmail: email,
+    wifiName: text(form, "wifi", 32),
+    wifiPassword: String(form.get("wifi_senha") ?? "").slice(0, 63),
+  };
+  const config = sanitizeConfig(input);
+  const missing = Object.keys(DEFAULT_CONFIG).filter((k) => !(k in config));
+  if (missing.length) go(back, "erro", "Confira os campos: algum valor está fora do permitido.");
+
+  const row = await one`update kiosks set config = ${JSON.stringify(config)}::jsonb, config_version = config_version + 1
+                        where id = ${id} and (owner_id = ${user.id} or ${user.role === "master"})
+                        returning store_code`;
+  if (!row) go(back, "erro", "Quiosque não encontrado.");
+  await audit(user.id, "config_alterada", row!.store_code, `${brl(config.pricePerPageCents!)} por página, até ${config.maxCopies} cópias`);
+  revalidatePath(back);
+  go(back, "msg", "Configurações salvas. O quiosque aplica na próxima conexão (em até 30 minutos, ou ao abrir o app).");
 }
 
 export async function subscribe(form: FormData) {
