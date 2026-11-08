@@ -31,7 +31,8 @@ async function call(path: string, init: RequestInit = {}): Promise<any> {
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new MercadoPagoError(`Mercado Pago recusou: ${body?.message ?? response.status}`, response.status);
+    const code = body?.code ?? body?.error;
+    throw new MercadoPagoError(`Mercado Pago recusou (${response.status}${code ? `, ${code}` : ""}): ${body?.message ?? "sem detalhe"}`, response.status);
   }
   return body;
 }
@@ -94,4 +95,26 @@ export async function describeToken(): Promise<{
   } catch (error) {
     return { configured: true, shape, ok: false, error: error instanceof Error ? error.message : String(error) };
   }
+}
+
+export type TokenCheck = { label: string; ok: boolean; detail: string };
+
+/** One call per permission the panel uses, so a refusal shows which part is blocked. */
+export async function checkPermissions(): Promise<TokenCheck[]> {
+  const probes: [string, string][] = [
+    ["Conta (users/me)", "/users/me"],
+    ["Pagamentos (consulta, usada pelo webhook)", "/v1/payments/search?limit=1"],
+    ["Assinaturas (planos mensais)", "/preapproval/search?limit=1"],
+    ["Meios de pagamento", "/v1/payment_methods"],
+  ];
+  return Promise.all(
+    probes.map(async ([label, path]) => {
+      try {
+        await call(path);
+        return { label, ok: true, detail: "aceito" };
+      } catch (error) {
+        return { label, ok: false, detail: error instanceof Error ? error.message : String(error) };
+      }
+    }),
+  );
 }

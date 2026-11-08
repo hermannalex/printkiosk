@@ -1,5 +1,5 @@
 import { requireMaster } from "@/lib/auth";
-import { describeToken } from "@/lib/mercadopago";
+import { checkPermissions, describeToken } from "@/lib/mercadopago";
 import { Shell } from "@/components/ui";
 
 export const metadata = { title: "Mercado Pago · Master · Quioco" };
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MasterMercadoPago() {
   const user = await requireMaster();
-  const info = await describeToken();
+  const [info, checks] = await Promise.all([describeToken(), checkPermissions()]);
 
   return (
     <Shell user={user} area="master" current="/master/mercadopago">
@@ -40,6 +40,28 @@ export default async function MasterMercadoPago() {
           </div>
         )}
       </section>
+      {info.configured && (
+        <section className="card">
+          <h2>Permissões do token</h2>
+          <div className="table-wrap">
+            <table>
+              <tbody>
+                {checks.map((c) => (
+                  <tr key={c.label}>
+                    <td>{c.label}</td>
+                    <td><span className={`pill ${c.ok ? "pill-active" : "pill-expired"}`}>{c.ok ? "ok" : "recusado"}</span></td>
+                    <td className="small muted">{c.ok ? "" : c.detail}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="small muted">
+            "At least one policy returned UNAUTHORIZED" (403) quer dizer que o token é reconhecido, mas o Mercado Pago bloqueou
+            aquela operação para esta conta ou aplicação. O que importa para o Quioco são <b>Pagamentos</b> e <b>Assinaturas</b>.
+          </p>
+        </section>
+      )}
     </Shell>
   );
 }
