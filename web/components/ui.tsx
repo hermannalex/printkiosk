@@ -31,6 +31,7 @@ export function Shell({
           ["/master/lojas", "Lojas"],
           ["/master/pagamentos", "Pagamentos"],
           ["/master/auditoria", "Auditoria"],
+          ["/master/mercadopago", "Mercado Pago"],
         ]
       : [
           ["/painel", "Visão geral"],

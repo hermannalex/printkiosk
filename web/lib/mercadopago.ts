@@ -75,3 +75,23 @@ export async function cancelPreapproval(id: string): Promise<any> {
 export async function getAuthorizedPayment(id: string): Promise<any> {
   return call(`/authorized_payments/${encodeURIComponent(id)}`);
 }
+
+/** For the master's check page: which kind of token is configured (never the token itself) and who it belongs to. */
+export async function describeToken(): Promise<{
+  configured: boolean;
+  shape: string;
+  ok: boolean;
+  account?: string;
+  error?: string;
+}> {
+  const token = accessToken();
+  if (!token) return { configured: false, shape: "", ok: false, error: "Variável MERCADOPAGO_ACCESS_TOKEN vazia." };
+  const kind = token.startsWith("APP_USR-") ? "APP_USR (produção)" : token.startsWith("TEST-") ? "TEST (teste)" : "formato desconhecido";
+  const shape = `${kind}, começa com "${token.slice(0, 8)}…", ${token.length} caracteres`;
+  try {
+    const me = await call("/users/me");
+    return { configured: true, shape, ok: true, account: `${me.nickname ?? ""} (id ${me.id}, ${me.site_id ?? ""})` };
+  } catch (error) {
+    return { configured: true, shape, ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
