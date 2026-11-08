@@ -63,16 +63,21 @@ export default async function OwnerKiosks({ searchParams }: { searchParams: Sear
       <section className="card stack">
         <h2>Adicionar quiosque</h2>
         <p className="muted small">
-          No aparelho, abra <b>Configurações › Assinatura</b> e copie o código da loja.
+          No aparelho, abra <b>Configurações › Assinatura</b> (pede o PIN do atendente) e copie o
+          código da loja e o código de vinculação. O app precisa estar aberto e com internet.
         </p>
         <form action={addKiosk} className="inline">
           <div className="field">
             <label htmlFor="codigo">Código da loja</label>
-            <input id="codigo" name="codigo" placeholder="ABCD-EFGH" required className="mono" autoComplete="off" />
+            <input id="codigo" name="codigo" placeholder="ABCD-EFGH" required maxLength={12} className="mono" autoComplete="off" />
+          </div>
+          <div className="field">
+            <label htmlFor="vinculo">Código de vinculação</label>
+            <input id="vinculo" name="vinculo" placeholder="ABC-DEF" required maxLength={8} className="mono" autoComplete="off" />
           </div>
           <div className="field">
             <label htmlFor="nome">Nome</label>
-            <input id="nome" name="nome" placeholder="Balcão da entrada" />
+            <input id="nome" name="nome" placeholder="Balcão da entrada" maxLength={60} />
           </div>
           <button className="btn btn-primary" type="submit">Adicionar</button>
         </form>

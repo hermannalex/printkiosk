@@ -64,6 +64,9 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     val storeCode: String = LicenseCodec.storeCode(licenseStore.storeId)
     val canPrint: Boolean get() = license is LicenseState.Active || license is LicenseState.Demo
 
+    // Staff PIN (hash only, see AdminLock)
+    val adminLock = AdminLock(application)
+
     // Online dashboard
     val cloud = CloudSync(application)
     var lastSync by mutableStateOf(cloud.lastSync)
@@ -92,6 +95,12 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                 delay(30 * 60_000L)
             }
         }
+    }
+
+    /** Moves a PIN saved in plain text by an older version into the hash, then clears it. */
+    fun migrateLegacyPin() {
+        adminLock.migrate(settings.adminPin)
+        if (settings.adminPin.isNotEmpty()) updateSettings { it.copy(adminPin = "") }
     }
 
     // region Online dashboard

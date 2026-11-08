@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { one, sql } from "@/lib/db";
 import { isoOf, todayIso } from "@/lib/format";
 import { hashSecret, normalizeStoreCode } from "@/lib/license";
+import { ipFromHeaders, rateLimit, safeEqual } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -30,11 +31,26 @@ const int = (value: unknown, max = 1_000_000) => {
  * activation code so a paid month reaches the kiosk without anyone typing it.
  */
 export async function POST(request: Request) {
+  // A kiosk calls every 30 minutes and after each print; anything far above that is abuse.
+  const ip = ipFromHeaders(request.headers);
+  if (!(await rateLimit(`sync:ip:${ip}`, 600, 60 * 60))) {
+    return NextResponse.json({ error: "Muitas requisições." }, { status: 429 });
+  }
+  if (Number(request.headers.get("content-length") ?? 0) > 512 * 1024) {
+    return NextResponse.json({ error: "Envio grande demais." }, { status: 413 });
+  }
   const body = await request.json().catch(() => null);
   const storeCode = normalizeStoreCode(String(body?.storeCode ?? ""));
   const secret = String(body?.secret ?? "");
   if (!storeCode || secret.length < 16) {
     return NextResponse.json({ error: "Dados do quiosque inválidos." }, { status: 400 });
+  }
+
+  if (secret.length > 200) {
+    return NextResponse.json({ error: "Dados do quiosque inválidos." }, { status: 400 });
+  }
+  if (!(await rateLimit(`sync:kiosk:${storeCode}`, 120, 60 * 60))) {
+    return NextResponse.json({ error: "Muitas requisições." }, { status: 429 });
   }
 
   const secretHash = hashSecret(secret);
@@ -48,7 +64,7 @@ export async function POST(request: Request) {
     await sql`update kiosks set secret_hash = ${secretHash} where id = ${kiosk.id}`;
     kiosk.secret_hash = secretHash;
   }
-  if (!kiosk || kiosk.secret_hash !== secretHash) {
+  if (!kiosk || !safeEqual(String(kiosk.secret_hash), secretHash)) {
     return NextResponse.json({ error: "Este código de loja pertence a outro aparelho." }, { status: 403 });
   }
 

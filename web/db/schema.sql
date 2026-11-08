@@ -86,3 +86,37 @@ create table if not exists print_jobs (
   unique (kiosk_id, client_id)
 );
 create index if not exists print_jobs_kiosk_time_idx on print_jobs(kiosk_id, printed_at desc);
+
+-- ---------------------------------------------------------------- security (2026-11)
+
+-- Login sessions. The cookie holds a random token; only its SHA-256 is stored, so a
+-- database leak can't be replayed, and logout / blocking a user ends the session for real.
+create table if not exists sessions (
+  id_hash      text primary key,
+  user_id      bigint not null references users(id) on delete cascade,
+  created_at   timestamptz not null default now(),
+  expires_at   timestamptz not null,
+  ip           text,
+  user_agent   text
+);
+create index if not exists sessions_user_idx on sessions(user_id);
+create index if not exists sessions_expires_idx on sessions(expires_at);
+
+-- Fixed-window counters for login, sign-up, kiosk sync, pairing and webhook calls.
+create table if not exists rate_limits (
+  key          text primary key,
+  window_start timestamptz not null,
+  hits         int not null
+);
+
+-- Who did what: logins, master actions, kiosk pairing.
+create table if not exists audit_log (
+  id         bigserial primary key,
+  user_id    bigint references users(id) on delete set null,
+  action     text not null,
+  target     text,
+  detail     text,
+  ip         text,
+  created_at timestamptz not null default now()
+);
+create index if not exists audit_log_created_idx on audit_log(created_at desc);

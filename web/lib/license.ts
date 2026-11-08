@@ -51,3 +51,22 @@ export function makeActivationCode(storeCode: string, untilIso: string): string 
 export function hashSecret(secret: string): string {
   return createHash("sha256").update(secret).digest("hex");
 }
+
+/**
+ * Six-character code the kiosk shows in its (PIN-protected) settings. Adding a kiosk to an
+ * account requires it, so knowing a store code is not enough to take over someone's kiosk.
+ * Same derivation in the apps: base32(sha256("pair:" + sha256hex(secret))), first 6 chars.
+ */
+export function pairingCode(secretHash: string): string {
+  const digest = createHash("sha256").update(`pair:${secretHash}`).digest();
+  let bits = 0n;
+  for (let i = 0; i < 5; i++) bits = (bits << 8n) | BigInt(digest[i]);
+  let text = "";
+  for (let i = 7; i >= 0; i--) text += BASE32[Number((bits >> BigInt(i * 5)) & 31n)];
+  return `${text.slice(0, 3)}-${text.slice(3, 6)}`;
+}
+
+export function normalizePairingCode(input: string): string {
+  const cleaned = input.replace(/[\s-]/g, "").toUpperCase().slice(0, 6);
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+}

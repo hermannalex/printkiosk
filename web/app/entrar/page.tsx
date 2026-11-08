@@ -21,7 +21,7 @@ export default async function SignIn({ searchParams }: { searchParams: SearchPar
           </div>
           <div className="field">
             <label htmlFor="senha">Senha</label>
-            <input id="senha" name="senha" type="password" autoComplete="current-password" required />
+            <input id="senha" name="senha" type="password" autoComplete="current-password" maxLength={128} required />
           </div>
           <button className="btn btn-primary" type="submit">Entrar</button>
         </form>

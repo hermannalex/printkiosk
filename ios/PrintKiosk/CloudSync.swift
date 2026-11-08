@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import CryptoKit
 
 /// One finished print, as reported to the online dashboard.
 struct PrintJobRecord: Codable, Equatable {
@@ -49,6 +50,19 @@ final class CloudSync {
             .replacingOccurrences(of: "=", with: "")
         Keychain.set(value, for: Self.secretKey)
         return value
+    }
+
+    /// Proves to the dashboard that whoever adds this kiosk has its Configurações open.
+    /// Same derivation as web/lib/license.ts `pairingCode`: base32(sha256("pair:" + sha256hex(secret))), 6 chars.
+    var pairingCode: String {
+        let secretHash = SHA256.hash(data: Data(secret.utf8)).map { String(format: "%02x", $0) }.joined()
+        let digest = Array(SHA256.hash(data: Data("pair:\(secretHash)".utf8)))
+        let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567")
+        var bits: UInt64 = 0
+        for byte in digest.prefix(5) { bits = (bits << 8) | UInt64(byte) }
+        let chars = (0..<8).reversed().map { alphabet[Int((bits >> UInt64($0 * 5)) & 31)] }.prefix(6)
+        let text = String(chars)
+        return String(text.prefix(3)) + "-" + String(text.suffix(3))
     }
 
     private(set) var queue: [PrintJobRecord] {

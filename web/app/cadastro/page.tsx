@@ -31,8 +31,8 @@ export default async function SignUp({ searchParams }: { searchParams: SearchPar
             <input id="telefone" name="telefone" type="tel" autoComplete="tel" />
           </div>
           <div className="field">
-            <label htmlFor="senha">Senha (8 ou mais caracteres)</label>
-            <input id="senha" name="senha" type="password" minLength={8} required autoComplete="new-password" />
+            <label htmlFor="senha">Senha (10 ou mais caracteres)</label>
+            <input id="senha" name="senha" type="password" minLength={10} maxLength={128} required autoComplete="new-password" />
           </div>
           <details>
             <summary className="small muted">Sou o administrador do PrintKiosk</summary>

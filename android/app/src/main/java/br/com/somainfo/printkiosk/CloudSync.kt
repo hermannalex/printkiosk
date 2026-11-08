@@ -78,6 +78,22 @@ class CloudSync(context: Context) {
                 .let { Base64.encodeToString(it, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING) }
                 .also { prefs.edit().putString("secret", it).apply() }
 
+    /**
+     * Proves to the dashboard that whoever adds this kiosk has its Configurações open.
+     * Same derivation as web/lib/license.ts `pairingCode`: base32(sha256("pair:" + sha256hex(secret))), 6 chars.
+     */
+    val pairingCode: String
+        get() {
+            val sha = { bytes: ByteArray -> java.security.MessageDigest.getInstance("SHA-256").digest(bytes) }
+            val secretHash = sha(secret.toByteArray()).joinToString("") { "%02x".format(it) }
+            val digest = sha("pair:$secretHash".toByteArray())
+            val alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+            var bits = 0L
+            for (i in 0 until 5) bits = (bits shl 8) or (digest[i].toLong() and 0xff)
+            val text = (7 downTo 0).map { alphabet[((bits shr (it * 5)) and 31).toInt()] }.take(6).joinToString("")
+            return text.take(3) + "-" + text.takeLast(3)
+        }
+
     private var queue: List<PrintJobRecord>
         get() {
             val text = prefs.getString("queue", null) ?: return emptyList()

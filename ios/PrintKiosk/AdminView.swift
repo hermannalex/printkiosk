@@ -1,14 +1,16 @@
 import SwiftUI
 
-/// Staff-only settings, opened by long-pressing the top-right corner of the welcome screen.
+/// Staff-only settings, behind a PIN that only exists as a hash in the Keychain (see AdminLock).
 struct AdminView: View {
     @EnvironmentObject private var store: KioskStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var unlocked = false
     @State private var pinEntry = ""
-    @State private var pinError = false
+    @State private var pinMessage: String?
     @State private var newPIN = ""
+    @State private var confirmPIN = ""
+    @State private var pinIsSet = AdminLock.isSet
     @State private var pinChanged = false
 
     @State private var tokenEntry = ""
@@ -42,33 +44,84 @@ struct AdminView: View {
             Image(systemName: "lock.fill")
                 .font(.system(size: 48))
                 .foregroundStyle(.secondary)
-            Text("Digite o PIN do atendente")
-                .font(.title2)
-            SecureField("PIN", text: $pinEntry)
-                .keyboardType(.numberPad)
-                .font(.title)
-                .multilineTextAlignment(.center)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 220)
-                .onSubmit(checkPIN)
-            if pinError {
-                Text("PIN incorreto.")
-                    .foregroundStyle(.red)
+            if pinIsSet {
+                Text("Digite o PIN do atendente")
+                    .font(.title2)
+                pinField("PIN", text: $pinEntry)
+                    .onSubmit(checkPIN)
+            } else {
+                Text("Crie o PIN do atendente")
+                    .font(.title2)
+                Text("Ele protege a impressora, o recebimento Pix e a assinatura. Use \(AdminLock.minimumLength) a 12 números, sem sequências como 123456.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: 420)
+                pinField("Novo PIN", text: $newPIN)
+                pinField("Repita o PIN", text: $confirmPIN)
+                    .onSubmit(createPIN)
             }
-            Button("Desbloquear", action: checkPIN)
+            if let pinMessage {
+                Text(pinMessage)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+            }
+            Button(pinIsSet ? "Desbloquear" : "Criar PIN", action: pinIsSet ? checkPIN : createPIN)
                 .buttonStyle(PrimaryButtonStyle())
         }
         .padding(40)
+        .onAppear {
+            AdminLock.migrate(legacyPIN: store.settings.adminPIN)
+            if !store.settings.adminPIN.isEmpty { store.settings.adminPIN = "" }
+            pinIsSet = AdminLock.isSet
+        }
+    }
+
+    private func pinField(_ title: String, text: Binding<String>) -> some View {
+        SecureField(title, text: text)
+            .keyboardType(.numberPad)
+            .textContentType(.oneTimeCode)
+            .font(.title)
+            .multilineTextAlignment(.center)
+            .textFieldStyle(.roundedBorder)
+            .frame(width: 260)
     }
 
     private func checkPIN() {
-        if pinEntry == store.settings.adminPIN {
+        switch AdminLock.check(pinEntry) {
+        case .ok:
             unlocked = true
-            pinError = false
-        } else {
-            pinError = true
+            pinMessage = nil
+        case .wrong(let left):
+            pinMessage = left > 0 ? "PIN incorreto. \(left) tentativa(s) antes do bloqueio." : "PIN incorreto."
+        case .locked(let seconds):
+            pinMessage = "Muitas tentativas erradas. Tente de novo em \(Self.duration(seconds))."
         }
         pinEntry = ""
+    }
+
+    private func createPIN() {
+        if let message = Self.problem(newPIN: newPIN, confirm: confirmPIN) {
+            pinMessage = message
+            return
+        }
+        AdminLock.save(newPIN)
+        newPIN = ""
+        confirmPIN = ""
+        pinMessage = nil
+        pinIsSet = true
+        unlocked = true
+    }
+
+    static func problem(newPIN: String, confirm: String) -> String? {
+        if !AdminLock.isAcceptable(newPIN) {
+            return "Use de \(AdminLock.minimumLength) a 12 números, sem repetir o mesmo número nem fazer sequências."
+        }
+        if newPIN != confirm { return "Os dois PINs não são iguais." }
+        return nil
+    }
+
+    static func duration(_ seconds: Int) -> String {
+        seconds < 60 ? "\(seconds) segundos" : "\((seconds + 59) / 60) minuto(s)"
     }
 
     // MARK: Settings
@@ -84,6 +137,11 @@ struct AdminView: View {
                             .textSelection(.enabled)
                         Button("Copiar") { UIPasteboard.general.string = store.storeCode }
                     }
+                }
+                LabeledContent("Código de vinculação") {
+                    Text(store.cloud.pairingCode)
+                        .font(.body.monospaced().weight(.semibold))
+                        .textSelection(.enabled)
                 }
                 TextField("Cole aqui o código de ativação (começa com PK1-)", text: $activationCode, axis: .vertical)
                     .lineLimit(2...4)
@@ -116,7 +174,7 @@ struct AdminView: View {
             } header: {
                 Text("Assinatura")
             } footer: {
-                Text("Crie sua conta no painel online e adicione este quiosque com o código da loja. Ao pagar a assinatura por lá, o quiosque é liberado sozinho na próxima conexão. O painel mostra impressões, cópias e faturamento. Sem assinatura, o app faz \(License.demoPrints) impressões de demonstração.")
+                Text("Crie sua conta no painel online e adicione este quiosque com o código da loja e o código de vinculação (não mostre esse código a clientes). Ao pagar a assinatura por lá, o quiosque é liberado sozinho na próxima conexão. O painel mostra impressões, cópias e faturamento. Sem assinatura, o app faz \(License.demoPrints) impressões de demonstração.")
             }
 
             Section("Impressora") {
@@ -213,17 +271,29 @@ struct AdminView: View {
             }
 
             Section("PIN do atendente") {
-                SecureField("Novo PIN (4 ou mais dígitos)", text: $newPIN)
+                SecureField("Novo PIN (\(AdminLock.minimumLength) a 12 números)", text: $newPIN)
+                    .keyboardType(.numberPad)
+                SecureField("Repita o novo PIN", text: $confirmPIN)
                     .keyboardType(.numberPad)
                 Button("Alterar PIN") {
-                    store.settings.adminPIN = newPIN
+                    if let message = Self.problem(newPIN: newPIN, confirm: confirmPIN) {
+                        pinMessage = message
+                        pinChanged = false
+                    } else {
+                        AdminLock.save(newPIN)
+                        pinMessage = nil
+                        pinChanged = true
+                    }
                     newPIN = ""
-                    pinChanged = true
+                    confirmPIN = ""
                 }
-                .disabled(newPIN.count < 4 || !newPIN.allSatisfy(\.isNumber))
+                .disabled(newPIN.isEmpty)
                 if pinChanged {
                     Text("PIN alterado.")
                         .foregroundStyle(.green)
+                } else if unlocked, let pinMessage {
+                    Text(pinMessage)
+                        .foregroundStyle(.red)
                 }
             }
 

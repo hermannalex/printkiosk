@@ -61,7 +61,8 @@ enum PaymentState: Equatable {
 
 struct KioskSettings: Codable, Equatable {
     var kioskName = "Estação de Impressão"
-    var adminPIN = "1234"
+    /// Legacy plain-text PIN from older versions; moved to AdminLock (Keychain hash) and then cleared.
+    var adminPIN = ""
     var idleTimeoutSeconds = 90
     var maxCopies = 10
     var maxItems = 20

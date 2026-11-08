@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { logout } from "@/app/actions";
 import type { User } from "@/lib/auth";
 import type { KioskStatus } from "@/lib/kiosks";
 import { STATUS_LABEL } from "@/lib/kiosks";
@@ -29,6 +30,7 @@ export function Shell({
           ["/master/quiosques", "Quiosques"],
           ["/master/lojas", "Lojas"],
           ["/master/pagamentos", "Pagamentos"],
+          ["/master/auditoria", "Auditoria"],
         ]
       : [
           ["/painel", "Visão geral"],
@@ -55,7 +57,9 @@ export function Shell({
           </nav>
           <div className="user">
             <span>{user.name}</span>
-            <a href="/sair" className="btn btn-sm">Sair</a>
+            <form action={logout}>
+              <button type="submit" className="btn btn-sm">Sair</button>
+            </form>
           </div>
         </div>
       </header>

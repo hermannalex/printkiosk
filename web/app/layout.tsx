@@ -5,6 +5,9 @@ import "./globals.css";
 const sans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-plex-sans" });
 const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-plex-mono" });
 
+// Every page is rendered per request, so each one carries the CSP nonce from middleware.ts.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "PrintKiosk Painel",
   description: "Assinaturas, códigos de ativação, cópias e faturamento dos quiosques PrintKiosk.",

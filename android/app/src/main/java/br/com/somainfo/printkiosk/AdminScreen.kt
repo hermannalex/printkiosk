@@ -77,7 +77,7 @@ fun AdminScreen(
                 if (unlocked) {
                     SettingsForm(vm, onPinScreen, onUnpinScreen)
                 } else {
-                    PinGate(expectedPin = vm.settings.adminPin, onUnlock = { unlocked = true })
+                    PinGate(vm, onUnlock = { unlocked = true })
                 }
             }
         }
@@ -85,13 +85,34 @@ fun AdminScreen(
 }
 
 @Composable
-private fun PinGate(expectedPin: String, onUnlock: () -> Unit) {
+private fun PinGate(vm: KioskViewModel, onUnlock: () -> Unit) {
     var pin by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf(false) }
+    var confirm by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf<String?>(null) }
+    var isSet by remember {
+        vm.migrateLegacyPin()
+        mutableStateOf(vm.adminLock.isSet)
+    }
 
-    fun check() {
-        if (pin == expectedPin) onUnlock() else error = true
+    fun submit() {
+        if (isSet) {
+            message = when (val result = vm.adminLock.check(pin)) {
+                AdminLock.Result.Ok -> { onUnlock(); null }
+                is AdminLock.Result.Wrong ->
+                    if (result.triesLeft > 0) "PIN incorreto. ${result.triesLeft} tentativa(s) antes do bloqueio." else "PIN incorreto."
+                is AdminLock.Result.Locked ->
+                    "Muitas tentativas erradas. Tente de novo em ${AdminLock.duration(result.seconds)}."
+            }
+        } else {
+            message = AdminLock.problem(pin, confirm)
+            if (message == null) {
+                vm.adminLock.save(pin)
+                isSet = true
+                onUnlock()
+            }
+        }
         pin = ""
+        confirm = ""
     }
 
     Column(
@@ -100,18 +121,39 @@ private fun PinGate(expectedPin: String, onUnlock: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
     ) {
         Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(56.dp))
-        Text("Digite o PIN do atendente", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            if (isSet) "Digite o PIN do atendente" else "Crie o PIN do atendente",
+            style = MaterialTheme.typography.headlineSmall,
+        )
+        if (!isSet) {
+            Text(
+                "Ele protege a impressora, o recebimento Pix e a assinatura. Use ${AdminLock.MIN_LENGTH} a 12 números, sem sequências como 123456.",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.widthIn(max = 480.dp),
+            )
+        }
         OutlinedTextField(
             value = pin,
             onValueChange = { value -> pin = value.filter { it.isDigit() }.take(12) },
-            label = { Text("PIN") },
+            label = { Text(if (isSet) "PIN" else "Novo PIN") },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             modifier = Modifier.widthIn(max = 260.dp),
         )
-        if (error) Text("PIN incorreto.", color = MaterialTheme.colorScheme.error)
-        PrimaryButton(text = "Desbloquear", onClick = { check() })
+        if (!isSet) {
+            OutlinedTextField(
+                value = confirm,
+                onValueChange = { value -> confirm = value.filter { it.isDigit() }.take(12) },
+                label = { Text("Repita o PIN") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                modifier = Modifier.widthIn(max = 260.dp),
+            )
+        }
+        message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        PrimaryButton(text = if (isSet) "Desbloquear" else "Criar PIN", onClick = { submit() })
     }
 }
 
@@ -123,6 +165,8 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
     var connectionStatus by remember { mutableStateOf<String?>(null) }
     var testing by remember { mutableStateOf(false) }
     var newPin by remember { mutableStateOf("") }
+    var confirmPin by remember { mutableStateOf("") }
+    var pinProblem by remember { mutableStateOf<String?>(null) }
     var pinChanged by remember { mutableStateOf(false) }
     var activationCode by remember { mutableStateOf("") }
     var activationMessage by remember { mutableStateOf<String?>(null) }
@@ -148,8 +192,10 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
                 Text("Código da loja: ${vm.storeCode}", style = MaterialTheme.typography.titleMedium)
                 TextButton(onClick = { clipboard.setText(AnnotatedString(vm.storeCode)) }) { Text("Copiar") }
             }
+            Text("Código de vinculação: ${vm.cloud.pairingCode}", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Crie sua conta no painel online e adicione este quiosque com o código da loja. Ao pagar a " +
+                "Crie sua conta no painel online e adicione este quiosque com o código da loja e o código de " +
+                    "vinculação (não mostre esse código a clientes). Ao pagar a " +
                     "assinatura por lá, o quiosque é liberado sozinho na próxima conexão. Se recebeu um código " +
                     "de ativação, também pode colá-lo abaixo.",
                 style = MaterialTheme.typography.bodyLarge,
@@ -332,7 +378,19 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
                     newPin = value.filter { it.isDigit() }.take(12)
                     pinChanged = false
                 },
-                label = { Text("Novo PIN (4 ou mais dígitos)") },
+                label = { Text("Novo PIN (${AdminLock.MIN_LENGTH} a 12 números)") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                modifier = Modifier.widthIn(max = 320.dp),
+            )
+            OutlinedTextField(
+                value = confirmPin,
+                onValueChange = { value ->
+                    confirmPin = value.filter { it.isDigit() }.take(12)
+                    pinChanged = false
+                },
+                label = { Text("Repita o novo PIN") },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
@@ -340,13 +398,18 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
             )
             Button(
                 onClick = {
-                    vm.updateSettings { it.copy(adminPin = newPin) }
+                    pinProblem = AdminLock.problem(newPin, confirmPin)
+                    if (pinProblem == null) {
+                        vm.adminLock.save(newPin)
+                        pinChanged = true
+                    }
                     newPin = ""
-                    pinChanged = true
+                    confirmPin = ""
                 },
-                enabled = newPin.length >= 4,
+                enabled = newPin.isNotEmpty(),
             ) { Text("Alterar PIN") }
             if (pinChanged) Text("PIN alterado.", color = KioskGreen)
+            pinProblem?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         }
 
         Section("Travar o tablet no app") {

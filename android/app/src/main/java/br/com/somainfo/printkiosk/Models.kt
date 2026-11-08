@@ -37,7 +37,8 @@ sealed interface PaymentState {
 
 data class KioskSettings(
     val kioskName: String = "Estação de Impressão",
-    val adminPin: String = "1234",
+    /** Legacy plain-text PIN from older versions; moved to AdminLock (hash) and then cleared. */
+    val adminPin: String = "",
     val idleTimeoutSeconds: Int = 90,
     val maxCopies: Int = 10,
     val maxItems: Int = 20,
