@@ -4,7 +4,7 @@ import { makeActivationCode } from "./license";
 
 export type KioskStatus = "active" | "expired" | "demo" | "never";
 
-export function kioskStatus(kiosk: { paid_until: string | Date | null; last_seen_at: string | Date | null }): KioskStatus {
+export function kioskStatus(kiosk: { paid_until?: string | Date | null; last_seen_at?: string | Date | null }): KioskStatus {
   const until = isoOf(kiosk.paid_until);
   if (until) return until >= todayIso() ? "active" : "expired";
   return kiosk.last_seen_at ? "demo" : "never";
