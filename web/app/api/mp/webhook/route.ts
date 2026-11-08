@@ -45,7 +45,11 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     // Unknown id (Mercado Pago's "Simular notificação" uses made-up ids): nothing to do.
-    if (error instanceof MercadoPagoError && (error.status === 404 || error.status === 400)) {
+    // A 401 that is not about our token means the id belongs to another account (also made-up ids).
+    if (
+      error instanceof MercadoPagoError &&
+      (error.status === 404 || error.status === 400 || (error.status === 401 && !/invalid.*token/i.test(error.message)))
+    ) {
       return NextResponse.json({ ok: true, ignored: true });
     }
     console.error("mp webhook", type, id, error);
