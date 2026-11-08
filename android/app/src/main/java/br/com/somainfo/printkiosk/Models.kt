@@ -51,6 +51,14 @@ data class KioskSettings(
     val wifiPassword: String = "",
 )
 
+/** Whether this kiosk may print: monthly subscription or the free demo. */
+sealed interface LicenseState {
+    data class Active(val until: java.time.LocalDate) : LicenseState
+    data class Demo(val remaining: Int) : LicenseState
+    data class Expired(val on: java.time.LocalDate) : LicenseState
+    data object DemoOver : LicenseState
+}
+
 /** The "Do celular" panel: customers send files from their phone over the store's Wi-Fi. */
 sealed interface PhoneUploadState {
     data object Starting : PhoneUploadState

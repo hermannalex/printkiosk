@@ -104,6 +104,56 @@ object SecureStore {
     }
 }
 
+/**
+ * The subscription and the free demo, kept in private preferences: the store ID shown to the
+ * owner, the activation code they pasted, and how many demo prints were used.
+ */
+class LicenseStore(context: Context) {
+    private val prefs = context.getSharedPreferences("kiosk_license", Context.MODE_PRIVATE)
+
+    val storeId: ByteArray = prefs.getString("storeId", null)
+        ?.let { runCatching { Base64.decode(it, Base64.NO_WRAP) }.getOrNull() }
+        ?.takeIf { it.size == 5 }
+        ?: ByteArray(5).also {
+            java.security.SecureRandom().nextBytes(it)
+            prefs.edit().putString("storeId", Base64.encodeToString(it, Base64.NO_WRAP)).apply()
+        }
+
+    private val demoUsed: Int get() = prefs.getInt("demoUsed", 0)
+
+    /** Today as a day number, never earlier than a day already seen (so turning the clock back doesn't help). */
+    private fun today(): Int {
+        val real = LicenseCodec.dayNumber(java.time.LocalDate.now())
+        val effective = maxOf(real, prefs.getInt("maxDay", real))
+        prefs.edit().putInt("maxDay", effective).apply()
+        return effective
+    }
+
+    fun state(): LicenseState {
+        val until = prefs.getString("code", null)?.let { LicenseCodec.verify(it, storeId) }
+        if (until != null) {
+            return if (today() <= until) {
+                LicenseState.Active(LicenseCodec.date(until))
+            } else {
+                LicenseState.Expired(LicenseCodec.date(until))
+            }
+        }
+        val remaining = LicenseCodec.DEMO_PRINTS - demoUsed
+        return if (remaining > 0) LicenseState.Demo(remaining) else LicenseState.DemoOver
+    }
+
+    /** Saves the code if it is valid for this store and returns its last valid day, or null. */
+    fun activate(code: String): Int? {
+        val until = LicenseCodec.verify(code, storeId) ?: return null
+        prefs.edit().putString("code", code.filterNot { it.isWhitespace() }).apply()
+        return until
+    }
+
+    fun recordDemoPrint() {
+        prefs.edit().putInt("demoUsed", demoUsed + 1).apply()
+    }
+}
+
 /** Text for a Wi-Fi QR Code; phone cameras offer to join the network when they read it. */
 fun wifiQrPayload(name: String, password: String): String {
     fun escape(value: String) = value

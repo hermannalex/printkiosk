@@ -192,10 +192,34 @@ private fun WelcomeScreen(vm: KioskViewModel) {
             WarningText("Pagamento Pix não configurado. Atendente: toque em Configurações.")
         }
 
+        LicenseBanner(vm.license)
+
         if (wifiName.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             WifiCard(name = wifiName, password = vm.settings.wifiPassword)
         }
+    }
+}
+
+/** Demo counter or "subscription needed"; nothing while the subscription is active. */
+@Composable
+private fun LicenseBanner(license: LicenseState) {
+    val (text, color) = when (license) {
+        is LicenseState.Active -> return
+        is LicenseState.Demo -> (if (license.remaining == 1) "Modo demonstração · 1 impressão restante"
+            else "Modo demonstração · ${license.remaining} impressões restantes") to KioskOrange
+        is LicenseState.Expired -> "Assinatura vencida. Atendente: toque em Configurações." to MaterialTheme.colorScheme.error
+        LicenseState.DemoOver -> "Demonstração encerrada. Atendente: toque em Configurações para assinar." to MaterialTheme.colorScheme.error
+    }
+    Surface(shape = RoundedCornerShape(999.dp), color = color.copy(alpha = 0.12f)) {
+        Text(
+            text,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+        )
     }
 }
 

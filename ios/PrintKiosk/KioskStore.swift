@@ -133,6 +133,10 @@ final class KioskStore: ObservableObject {
     @Published private(set) var paymentDeadline: Date?
     /// Set once the customer has paid, so a retry after a printer error never charges twice.
     @Published private(set) var paidPaymentID: Int64?
+    // Subscription / demo
+    @Published private(set) var license = License.state()
+    let storeCode = License.storeCode(License.storeID)
+
     // Files sent from the customer's phone
     @Published private(set) var phoneUpload: PhoneUploadState?
     @Published private(set) var phoneReceivedCount = 0
@@ -173,6 +177,11 @@ final class KioskStore: ObservableObject {
 
     func start() {
         registerInteraction()
+        refreshLicense()
+        guard license.canPrint else {
+            notice = blockedMessage
+            return
+        }
         step = .select
     }
 
@@ -277,6 +286,35 @@ final class KioskStore: ObservableObject {
         } catch {
             notice = "Não foi possível abrir \(url.lastPathComponent)."
         }
+    }
+
+    // MARK: Subscription
+
+    func refreshLicense() {
+        license = License.state()
+    }
+
+    var isSubscribed: Bool {
+        if case .active = license { return true }
+        return false
+    }
+
+    /// Checks and saves a monthly activation code; returns a message for the staff screen.
+    func activateLicense(code: String) -> String {
+        guard let until = License.activate(code: code) else {
+            return "Código inválido para esta loja. Confira se copiou o código inteiro, começando por PK1-."
+        }
+        refreshLicense()
+        let date = License.date(dayNumber: until).formatted(date: .numeric, time: .omitted)
+        if case .active = license { return "Assinatura ativa até \(date)." }
+        return "Este código venceu em \(date)."
+    }
+
+    private var blockedMessage: String {
+        if case .expired = license {
+            return "A assinatura deste quiosque venceu. Peça ajuda a um atendente."
+        }
+        return "A demonstração terminou (\(License.demoPrints) impressões). Peça ajuda a um atendente."
     }
 
     // MARK: Files from the customer's phone
@@ -401,6 +439,11 @@ final class KioskStore: ObservableObject {
 
     /// Called by the Print / Pay button on the review screen.
     func checkout() {
+        refreshLicense()
+        guard license.canPrint || paidPaymentID != nil else {
+            step = .finished(success: false, message: blockedMessage)
+            return
+        }
         guard let printerURL = settings.printerURL else {
             step = .finished(success: false, message: "Nenhuma impressora está configurada. Peça ajuda a um atendente.")
             return
@@ -533,7 +576,12 @@ final class KioskStore: ObservableObject {
             printerURL: printerURL
         ) { [weak self] success, message in
             Task { @MainActor in
-                self?.step = .finished(success: success, message: message)
+                guard let self else { return }
+                if success && !self.isSubscribed {
+                    License.recordDemoPrint()
+                    self.refreshLicense()
+                }
+                self.step = .finished(success: success, message: message)
             }
         }
     }

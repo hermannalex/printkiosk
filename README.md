@@ -16,6 +16,7 @@ Estação de impressão self-service para a loja. O cliente escolhe fotos ou PDF
 - Volta ao início por inatividade
 - Configurações protegidas por PIN (padrão 1234): impressora, preço por página, token do Mercado Pago, Wi-Fi da loja (SSID e senha), limites e tempos
 - Token do Mercado Pago guardado criptografado no aparelho (Keychain / Android Keystore), nunca no código
+- **Assinatura mensal (R$ 29,90/mês)** por código de ativação, com **5 impressões de demonstração** por aparelho
 
 ## Compilar
 
@@ -28,3 +29,22 @@ Estação de impressão self-service para a loja. O cliente escolhe fotos ou PDF
 2. Escolha a impressora (iOS) ou imprima uma página de teste (Android).
 3. Preencha o **Wi-Fi da loja**, o **preço por página** e, para cobrar, o e-mail da loja e o **Access Token de produção** do Mercado Pago.
 4. Para o envio pelo celular, o quiosque e os celulares dos clientes precisam estar no mesmo Wi-Fi, sem isolamento de clientes no roteador.
+
+## Assinatura e demonstração
+
+Sem assinatura, cada aparelho faz **5 impressões de demonstração** (cada envio para a impressora conta 1). Depois, o app só imprime com um **código de ativação** válido.
+
+1. Em **Configurações › Assinatura**, o aparelho mostra o **código da loja** (por exemplo `ABCD-EFGH`).
+2. O dono da loja envia esse código e paga a mensalidade.
+3. No Mac, gere o código de ativação:
+
+   ```sh
+   python3 tools/gerar-codigo.py ABCD-EFGH              # vale 31 dias a partir de hoje
+   python3 tools/gerar-codigo.py ABCD-EFGH --ate 2026-12-31
+   ```
+
+4. Envie o código (começa com `PK1-`) para a loja. Ela cola em **Configurações › Assinatura › Ativar**.
+
+Os códigos são assinados com ECDSA P-256. Os apps têm só a chave pública; a **chave privada** fica em `~/Documents/PrintKiosk-Licencas/printkiosk-chave-privada.pem` e **nunca** vai para o repositório. Faça backup dela: sem ela não é possível gerar novos códigos para os apps já instalados.
+
+Preço e contato exibidos no app: `License.swift` (iOS) e `LicenseCodec.kt` (Android).

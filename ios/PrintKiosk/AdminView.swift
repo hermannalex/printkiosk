@@ -16,6 +16,9 @@ struct AdminView: View {
     @State private var connectionStatus: String?
     @State private var isTesting = false
 
+    @State private var activationCode = ""
+    @State private var activationMessage: String?
+
     init() {}
 
     var body: some View {
@@ -72,6 +75,35 @@ struct AdminView: View {
 
     private var settingsForm: some View {
         Form {
+            Section {
+                licenseStatus
+                LabeledContent("Código da loja") {
+                    HStack(spacing: 12) {
+                        Text(store.storeCode)
+                            .font(.body.monospaced().weight(.semibold))
+                            .textSelection(.enabled)
+                        Button("Copiar") { UIPasteboard.general.string = store.storeCode }
+                    }
+                }
+                TextField("Cole aqui o código de ativação (começa com PK1-)", text: $activationCode, axis: .vertical)
+                    .lineLimit(2...4)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                Button("Ativar") {
+                    activationMessage = store.activateLicense(code: activationCode)
+                    if store.isSubscribed { activationCode = "" }
+                }
+                .disabled(activationCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                if let activationMessage {
+                    Text(activationMessage)
+                        .font(.callout)
+                }
+            } header: {
+                Text("Assinatura")
+            } footer: {
+                Text("Assinatura \(License.priceLabel). Envie o código da loja para \(License.vendorContact) para receber o código de ativação do mês e cole-o acima. Sem assinatura, o app faz \(License.demoPrints) impressões de demonstração.")
+            }
+
             Section("Impressora") {
                 LabeledContent("Impressora atual", value: store.settings.printerName ?? "Nenhuma")
                 Button("Escolher impressora…") { store.choosePrinter() }
@@ -185,6 +217,24 @@ struct AdminView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var licenseStatus: some View {
+        switch store.license {
+        case .active(let until):
+            Label("Ativa até \(until.formatted(date: .numeric, time: .omitted))", systemImage: "checkmark.seal.fill")
+                .foregroundStyle(.green)
+        case .demo(let remaining):
+            Label("Demonstração: \(remaining) de \(License.demoPrints) impressões restantes", systemImage: "sparkles")
+                .foregroundStyle(.orange)
+        case .expired(let on):
+            Label("Vencida em \(on.formatted(date: .numeric, time: .omitted))", systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+        case .demoOver:
+            Label("Demonstração encerrada", systemImage: "lock.fill")
+                .foregroundStyle(.red)
         }
     }
 

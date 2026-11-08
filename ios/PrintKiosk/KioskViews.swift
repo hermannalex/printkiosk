@@ -126,6 +126,9 @@ struct WelcomeView: View {
                             .padding(.top, 20)
                     }
 
+                    LicenseBanner(license: store.license)
+                        .padding(.top, 20)
+
                     Spacer(minLength: 32)
 
                     if !wifiName.isEmpty {
@@ -138,6 +141,36 @@ struct WelcomeView: View {
                 .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
         }
+    }
+}
+
+/// Demo counter or "subscription needed"; nothing while the subscription is active.
+struct LicenseBanner: View {
+    let license: LicenseState
+
+    var body: some View {
+        switch license {
+        case .active:
+            EmptyView()
+        case .demo(let remaining):
+            banner(remaining == 1 ? "Modo demonstração · 1 impressão restante"
+                                  : "Modo demonstração · \(remaining) impressões restantes",
+                   color: .orange, icon: "sparkles")
+        case .expired:
+            banner("Assinatura vencida. Atendente: toque em Configurações.", color: .red, icon: "lock.fill")
+        case .demoOver:
+            banner("Demonstração encerrada. Atendente: toque em Configurações para assinar.", color: .red, icon: "lock.fill")
+        }
+    }
+
+    private func banner(_ text: String, color: Color, icon: String) -> some View {
+        Label(text, systemImage: icon)
+            .font(.headline)
+            .foregroundStyle(color)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .background(color.opacity(0.12), in: Capsule())
     }
 }
 

@@ -39,6 +39,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -122,6 +124,9 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
     var testing by remember { mutableStateOf(false) }
     var newPin by remember { mutableStateOf("") }
     var pinChanged by remember { mutableStateOf(false) }
+    var activationCode by remember { mutableStateOf("") }
+    var activationMessage by remember { mutableStateOf<String?>(null) }
+    val clipboard = LocalClipboardManager.current
 
     Column(
         modifier = Modifier
@@ -130,6 +135,44 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
             .padding(horizontal = 24.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
+        Section("Assinatura") {
+            val dateFormat = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+            val (status, color) = when (val license = vm.license) {
+                is LicenseState.Active -> "Ativa até ${license.until.format(dateFormat)}" to KioskGreen
+                is LicenseState.Demo -> "Demonstração: ${license.remaining} de ${LicenseCodec.DEMO_PRINTS} impressões restantes" to KioskOrange
+                is LicenseState.Expired -> "Vencida em ${license.on.format(dateFormat)}" to MaterialTheme.colorScheme.error
+                LicenseState.DemoOver -> "Demonstração encerrada" to MaterialTheme.colorScheme.error
+            }
+            Text(status, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = color)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Código da loja: ${vm.storeCode}", style = MaterialTheme.typography.titleMedium)
+                TextButton(onClick = { clipboard.setText(AnnotatedString(vm.storeCode)) }) { Text("Copiar") }
+            }
+            Text(
+                "Assinatura ${LicenseCodec.PRICE_LABEL}. Envie o código da loja para ${LicenseCodec.VENDOR_CONTACT} " +
+                    "para receber o código de ativação do mês e cole-o abaixo.",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            OutlinedTextField(
+                value = activationCode,
+                onValueChange = {
+                    activationCode = it
+                    activationMessage = null
+                },
+                label = { Text("Código de ativação (começa com PK1-)") },
+                minLines = 2,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(
+                onClick = {
+                    activationMessage = vm.activateLicense(activationCode)
+                    if (vm.license is LicenseState.Active) activationCode = ""
+                },
+                enabled = activationCode.isNotBlank(),
+            ) { Text("Ativar") }
+            activationMessage?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
+        }
+
         Section("Impressora") {
             Text(
                 "No Android, a impressora é escolhida na janela de impressão, que lembra a última usada. " +

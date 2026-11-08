@@ -25,6 +25,7 @@ import java.security.SecureRandom
 class KioskViewModel(application: Application) : AndroidViewModel(application) {
     private val app get() = getApplication<Application>()
     private val settingsStore = SettingsStore(application)
+    private val licenseStore = LicenseStore(application)
 
     var settings by mutableStateOf(settingsStore.load())
         private set
@@ -56,6 +57,12 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     var phoneReceivedCount by mutableIntStateOf(0)
         private set
     private var uploadServer: UploadServer? = null
+
+    // Subscription / demo
+    var license by mutableStateOf(licenseStore.state())
+        private set
+    val storeCode: String = LicenseCodec.storeCode(licenseStore.storeId)
+    val canPrint: Boolean get() = license is LicenseState.Active || license is LicenseState.Demo
 
     private var activeCharge: PixCharge? = null
     private var paymentJob: Job? = null
@@ -93,6 +100,11 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
 
     fun start() {
         registerInteraction()
+        refreshLicense()
+        if (!canPrint) {
+            notice = blockedMessage()
+            return
+        }
         step = KioskStep.Select
     }
 
@@ -296,6 +308,11 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Called by the Print / Pay button on the review screen. */
     fun checkout() {
+        refreshLicense()
+        if (!canPrint && paidPaymentId == null) {
+            step = KioskStep.Finished(false, blockedMessage())
+            return
+        }
         if (!requiresPayment || paidPaymentId != null) {
             sendToPrinter()
             return
@@ -417,6 +434,10 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                 delay(1_000)
                 when {
                     job.isQueued || job.isStarted || job.isCompleted -> {
+                        if (license !is LicenseState.Active) {
+                            licenseStore.recordDemoPrint()
+                            refreshLicense()
+                        }
                         step = KioskStep.Finished(true, null)
                         return@launch
                     }
@@ -439,6 +460,28 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
 
     fun printTestPage() {
         printLauncher?.invoke(TestPageAdapter(app, settings.kioskName), "${settings.kioskName} – teste")
+    }
+
+    // endregion
+
+    // region Subscription
+
+    fun refreshLicense() {
+        license = licenseStore.state()
+    }
+
+    /** Checks and saves a monthly activation code; returns a message for the staff screen. */
+    fun activateLicense(code: String): String {
+        val until = licenseStore.activate(code)
+            ?: return "Código inválido para esta loja. Confira se copiou o código inteiro, começando por PK1-."
+        refreshLicense()
+        val date = LicenseCodec.date(until).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        return if (license is LicenseState.Active) "Assinatura ativa até $date." else "Este código venceu em $date."
+    }
+
+    private fun blockedMessage(): String = when (license) {
+        is LicenseState.Expired -> "A assinatura deste quiosque venceu. Peça ajuda a um atendente."
+        else -> "A demonstração terminou (${LicenseCodec.DEMO_PRINTS} impressões). Peça ajuda a um atendente."
     }
 
     // endregion
