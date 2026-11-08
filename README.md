@@ -16,7 +16,7 @@ Estação de impressão self-service para a loja. O cliente escolhe fotos ou PDF
 - Volta ao início por inatividade
 - Configurações protegidas por PIN (padrão 1234): impressora, preço por página, token do Mercado Pago, Wi-Fi da loja (SSID e senha), limites e tempos
 - Token do Mercado Pago guardado criptografado no aparelho (Keychain / Android Keystore), nunca no código
-- **Assinatura mensal (R$ 29,90/mês)** por código de ativação, com **5 impressões de demonstração** por aparelho
+- **Assinatura mensal** (Básico R$ 19,99 por quiosque; Pro R$ 49,99 + R$ 9,99 por quiosque adicional), liberada por código de ativação, com **5 impressões de demonstração** por aparelho
 
 ## Compilar
 
@@ -53,7 +53,7 @@ Preço e contato exibidos no app: `License.swift` (iOS) e `LicenseCodec.kt` (And
 
 Endereço: https://printkiosk-one.vercel.app (código em `web/`, Next.js na Vercel + Postgres na Neon).
 
-- **Lojas**: criam conta, adicionam o quiosque pelo código da loja (Configurações → Assinatura), assinam pelo Mercado Pago (Básico R$ 29,90 ou Pro R$ 49,90 com painel) e veem impressões, cópias, páginas e faturamento.
+- **Lojas**: criam conta, adicionam o quiosque pelo código da loja (Configurações → Assinatura), assinam pelo Mercado Pago (Básico R$ 19,99/mês por quiosque; Pro R$ 49,99/mês pelo primeiro quiosque + R$ 9,99/mês por quiosque adicional, com painel) e veem impressões, cópias, páginas e faturamento.
 - **Master**: conta com o e-mail `MASTER_EMAIL`, criada em `/cadastro` com o `MASTER_SETUP_CODE`. Vê todas as lojas, gera códigos de ativação, registra pagamentos manuais, muda plano e bloqueia contas.
 - **Apps**: enviam as impressões para `/api/kiosk/sync` ao abrir, a cada 30 minutos e após cada impressão, e aplicam sozinhos o código de ativação que o painel devolver.
 

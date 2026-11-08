@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { one, sql } from "@/lib/db";
 import { ago, brl, dateBR, dateTimeBR } from "@/lib/format";
 import { kioskStatus } from "@/lib/kiosks";
-import { PLANS, type PlanId } from "@/lib/plans";
+import { PLANS, monthlyPrice, type PlanId } from "@/lib/plans";
 import { CopyButton } from "@/components/copy-button";
 import { Flash, PlanPill, Shell, StatusPill, param, type SearchParams } from "@/components/ui";
 import { PERIODS, PeriodPicker, StatsView } from "@/components/stats-view";
@@ -43,6 +43,8 @@ export default async function OwnerKiosk({
   const proActive = kiosk.plan === "pro" && (isoOf(kiosk.paid_until) ?? "") >= todayIso();
   const activeSub = subscriptions.find((s) => s.status === "authorized" || s.status === "pending");
   const latest = codes[0];
+  const proPrice = await monthlyPrice("pro", user.id, Number(kiosk.id));
+  const price = (plan: PlanId) => (plan === "pro" ? proPrice.cents : PLANS.basic.cents);
 
   return (
     <Shell user={user} area="owner" current="/painel/quiosques">
@@ -91,7 +93,14 @@ export default async function OwnerKiosk({
                 {(Object.keys(PLANS) as PlanId[]).map((plan) => (
                   <div key={plan} className={`plan ${plan === "pro" ? "featured" : ""}`}>
                     <h3>{PLANS[plan].name}</h3>
-                    <div className="plan-price">{brl(PLANS[plan].cents)}<span className="small muted">/mês</span></div>
+                    <div className="plan-price">{brl(price(plan))}<span className="small muted">/mês</span></div>
+                    {plan === "pro" && (
+                      <p className="small muted">
+                        {proPrice.extra
+                          ? `Preço de quiosque adicional: você já tem um quiosque no Pro (${brl(PLANS.pro.cents)}/mês).`
+                          : `${brl(PLANS.pro.cents)} pelo primeiro quiosque e ${brl(PLANS.pro.extraCents)} por quiosque adicional.`}
+                      </p>
+                    )}
                     <p className="small muted">{PLANS[plan].summary}</p>
                     <ul className="small">{PLANS[plan].features.map((f) => <li key={f}>{f}</li>)}</ul>
                     <form action={subscribe}>

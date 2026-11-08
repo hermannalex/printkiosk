@@ -20,7 +20,7 @@ import { todayIso } from "@/lib/format";
 import { extendKiosk } from "@/lib/kiosks";
 import { normalizePairingCode, normalizeStoreCode, pairingCode } from "@/lib/license";
 import { cancelPreapproval, createPreapproval, mercadoPagoConfigured } from "@/lib/mercadopago";
-import { PLANS, type PlanId } from "@/lib/plans";
+import { PLANS, monthlyPrice, type PlanId } from "@/lib/plans";
 import { audit, clientIp, rateLimit, safeEqual } from "@/lib/security";
 
 /** Trimmed form value, cut to `max` characters so oversized input never reaches the database. */
@@ -155,14 +155,14 @@ export async function subscribe(form: FormData) {
   }
   if (!(await rateLimit(`subscribe:user:${user.id}`, 10, 60 * 60))) go(back, "erro", TOO_MANY);
 
-  const amount = PLANS[plan].cents;
+  const { cents: amount, extra } = await monthlyPrice(plan, user.id, kioskId);
   const subscription = await one`insert into subscriptions (kiosk_id, owner_id, plan, amount_cents)
                                  values (${kioskId}, ${user.id}, ${plan}, ${amount}) returning id`;
   const appUrl = process.env.APP_URL ?? "";
   let initPoint = "";
   try {
     const preapproval = await createPreapproval({
-      reason: `PrintKiosk ${PLANS[plan].name} – ${kiosk!.name} (${kiosk!.store_code})`,
+      reason: `PrintKiosk ${PLANS[plan].name}${extra ? " (quiosque adicional)" : ""} – ${kiosk!.name} (${kiosk!.store_code})`,
       externalReference: String(subscription!.id),
       payerEmail: user.email,
       amountCents: amount,
@@ -229,7 +229,8 @@ export async function masterManualPayment(form: FormData) {
   const back = `/master/quiosques/${kioskId}`;
   const kiosk = await one`select id, owner_id, plan from kiosks where id = ${kioskId}`;
   if (!kiosk) go("/master/quiosques", "erro", "Quiosque não encontrado.");
-  const amount = PLANS[(kiosk!.plan as PlanId) ?? "basic"].cents * months;
+  const plan = (kiosk!.plan === "pro" ? "pro" : "basic") as PlanId;
+  const amount = (await monthlyPrice(plan, kiosk!.owner_id ? Number(kiosk!.owner_id) : null, kioskId)).cents * months;
   const result = await extendKiosk(kioskId, { months, source: "manual", byUserId: master.id });
   await sql`insert into payments (kiosk_id, owner_id, amount_cents, status, note)
             values (${kioskId}, ${kiosk!.owner_id}, ${amount}, 'manual', ${`Pagamento manual de ${months} mês(es)`})`;

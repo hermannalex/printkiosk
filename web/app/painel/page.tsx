@@ -43,8 +43,9 @@ export default async function OwnerOverview({ searchParams }: { searchParams: Se
         <section className="card stack">
           <h2>O dashboard faz parte do plano Pro</h2>
           <p className="muted">
-            Com o Pro ({brl(PLANS.pro.cents)}/mês por quiosque) você vê faturamento, cópias por dia, horários de pico e o
-            histórico de impressões. O plano Básico ({brl(PLANS.basic.cents)}/mês) libera o app no quiosque.
+            Com o Pro ({brl(PLANS.pro.cents)}/mês, mais {brl(PLANS.pro.extraCents)}/mês por quiosque adicional) você vê
+            faturamento, cópias por dia, horários de pico e o histórico de impressões. O plano Básico
+            ({brl(PLANS.basic.cents)}/mês por quiosque) libera o app no quiosque.
           </p>
           <div><Link className="btn btn-primary" href="/painel/quiosques">Ver quiosques e assinar</Link></div>
         </section>

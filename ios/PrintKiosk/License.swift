@@ -21,7 +21,7 @@ enum LicenseState: Equatable {
 /// Codes are made with tools/gerar-codigo.py and the private key, which never ships in the app.
 enum License {
     static let demoPrints = 5
-    static let priceLabel = "R$ 29,90/mês"
+    static let priceLabel = "a partir de R$ 19,99/mês"
     static let vendorContact = "alex@somainfo.com.br"
 
     /// Public half of the signing key (X.509 SubjectPublicKeyInfo, P-256).

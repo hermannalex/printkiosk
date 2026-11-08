@@ -14,7 +14,7 @@ import java.util.Base64
  */
 object LicenseCodec {
     const val DEMO_PRINTS = 5
-    const val PRICE_LABEL = "R\$ 29,90/mês"
+    const val PRICE_LABEL = "a partir de R\$ 19,99/mês"
     const val VENDOR_CONTACT = "alex@somainfo.com.br"
 
     private const val VERSION: Byte = 1
