@@ -10,7 +10,7 @@ import { Flash, PlanPill, Shell, StatusPill, param, type SearchParams } from "@/
 import { PERIODS, PeriodPicker, StatsView } from "@/components/stats-view";
 import { todayIso, isoOf } from "@/lib/format";
 
-export const metadata = { title: "Quiosque · PrintKiosk" };
+export const metadata = { title: "Quiosque · Quioco" };
 export const dynamic = "force-dynamic";
 
 const SUB_STATUS: Record<string, string> = {

@@ -2,7 +2,7 @@ import { requireMaster } from "@/lib/auth";
 import { describeToken } from "@/lib/mercadopago";
 import { Shell } from "@/components/ui";
 
-export const metadata = { title: "Mercado Pago · Master · PrintKiosk" };
+export const metadata = { title: "Mercado Pago · Master · Quioco" };
 export const dynamic = "force-dynamic";
 
 export default async function MasterMercadoPago() {

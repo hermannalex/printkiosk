@@ -4,7 +4,7 @@ import { sql } from "@/lib/db";
 import { brl, dateBR, num, todayIso } from "@/lib/format";
 import { Flash, Shell, param, type SearchParams } from "@/components/ui";
 
-export const metadata = { title: "Lojas · Master · PrintKiosk" };
+export const metadata = { title: "Lojas · Master · Quioco" };
 export const dynamic = "force-dynamic";
 
 export default async function MasterStores({ searchParams }: { searchParams: SearchParams }) {

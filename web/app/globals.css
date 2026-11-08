@@ -1,4 +1,4 @@
-/* PrintKiosk dashboard – a quiet operations console: cool neutrals, the kiosk's blue as the only accent,
+/* Quioco dashboard – a quiet operations console: cool neutrals, the kiosk's blue as the only accent,
    tabular numbers everywhere a figure is compared. */
 :root {
   --bg: #f3f5f8;
@@ -215,3 +215,4 @@ input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible
   form.inline .field, form.inline input, form.inline select, form.inline .btn { width: 100%; }
   .auth { align-items: start; padding-top: 40px; }
 }
+.brand-title { display: flex; align-items: center; gap: 10px; }

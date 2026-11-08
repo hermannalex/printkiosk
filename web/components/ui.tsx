@@ -4,10 +4,19 @@ import type { User } from "@/lib/auth";
 import type { KioskStatus } from "@/lib/kiosks";
 import { STATUS_LABEL } from "@/lib/kiosks";
 
-function PrinterMark() {
+/** The Quioco symbol: a sheet of paper whose bottom corner becomes the tail of the "q". */
+export function QuiocoMark({ size = 30 }: { size?: number }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z" />
+    <svg width={size} height={size} viewBox="0 0 88 88" aria-hidden="true">
+      <rect width="88" height="88" rx="22" fill="var(--accent)" />
+      <g transform="translate(1,-3)">
+        <path d="M26 14H52L66 28V62Q66 68 60 68H26Q20 68 20 62V20Q20 14 26 14Z" fill="#fff" />
+        <path d="M52 14V24Q52 28 56 28H66Z" fill="#fff" fillOpacity="0.7" />
+        <rect x="56" y="58" width="10" height="22" rx="5" fill="#fff" />
+        <rect x="29" y="34" width="28" height="5" rx="2.5" fill="var(--accent)" />
+        <rect x="29" y="44" width="28" height="5" rx="2.5" fill="var(--accent)" />
+        <rect x="29" y="54" width="18" height="5" rx="2.5" fill="var(--accent)" />
+      </g>
     </svg>
   );
 }
@@ -42,9 +51,9 @@ export function Shell({
       <header className="topbar">
         <div className="topbar-inner">
           <Link href={area === "master" ? "/master" : "/painel"} className="brand">
-            <span className="brand-mark"><PrinterMark /></span>
+            <QuiocoMark />
             <span>
-              PrintKiosk <small>{area === "master" ? "Master" : "Painel"}</small>
+              Quioco <small>{area === "master" ? "Master" : "Painel"}</small>
             </span>
           </Link>
           <nav className="nav" aria-label="Principal">

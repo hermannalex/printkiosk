@@ -4,7 +4,7 @@ import { sql } from "@/lib/db";
 import { brl, dateTimeBR } from "@/lib/format";
 import { Shell } from "@/components/ui";
 
-export const metadata = { title: "Pagamentos · Master · PrintKiosk" };
+export const metadata = { title: "Pagamentos · Master · Quioco" };
 export const dynamic = "force-dynamic";
 
 export default async function MasterPayments() {

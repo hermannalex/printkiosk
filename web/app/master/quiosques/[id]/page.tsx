@@ -8,7 +8,7 @@ import { CopyButton } from "@/components/copy-button";
 import { Flash, PlanPill, Shell, StatusPill, param, type SearchParams } from "@/components/ui";
 import { StatsView } from "@/components/stats-view";
 
-export const metadata = { title: "Quiosque · Master · PrintKiosk" };
+export const metadata = { title: "Quiosque · Master · Quioco" };
 export const dynamic = "force-dynamic";
 
 export default async function MasterKiosk({
