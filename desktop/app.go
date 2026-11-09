@@ -172,7 +172,7 @@ func (app *App) routes() http.Handler {
 
 	api := func(path string, admin bool, h func(w http.ResponseWriter, r *http.Request)) {
 		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-			if r.Header.Get("X-Quioco-Key") != app.key {
+			if r.Header.Get("X-Kiosk-Key") != app.key {
 				http.Error(w, "forbidden", 403)
 				return
 			}
@@ -492,7 +492,7 @@ func (app *App) runBrowser(url string) {
 		if err := cmd.Run(); err != nil {
 			log.Print("navegador: ", err)
 		}
-		// Closed (Alt+F4, crash): open again, unless staff chose to close Quioco.
+		// Closed (Alt+F4, crash): open again, unless staff chose to close imprime.ai.
 		if time.Since(started) < 5*time.Second {
 			time.Sleep(5 * time.Second)
 		}

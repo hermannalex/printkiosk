@@ -2,9 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { verifyLoginCode } from "../../mfa-actions";
 import { hasChallenge } from "@/lib/auth";
-import { Flash, QuiocoMark, param, type SearchParams } from "@/components/ui";
+import { Flash, BrandMark, param, type SearchParams } from "@/components/ui";
 
-export const metadata = { title: "Código de verificação · Quioco" };
+export const metadata = { title: "Código de verificação · imprime.ai" };
 
 export default async function SecondFactor({ searchParams }: { searchParams: SearchParams }) {
   if (!(await hasChallenge())) redirect("/entrar");
@@ -13,8 +13,8 @@ export default async function SecondFactor({ searchParams }: { searchParams: Sea
     <main className="auth">
       <div className="card auth-card">
         <div>
-          <h1 className="brand-title"><QuiocoMark size={36} /> Verificação</h1>
-          <p className="muted">Abra o aplicativo autenticador no celular e digite o código de 6 números do Quioco.</p>
+          <h1 className="brand-title"><BrandMark size={36} /> Verificação</h1>
+          <p className="muted">Abra o aplicativo autenticador no celular e digite o código de 6 números do imprime.ai.</p>
         </div>
         <Flash erro={param(params, "erro")} />
         <form action={verifyLoginCode}>

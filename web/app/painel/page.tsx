@@ -7,7 +7,7 @@ import { brl } from "@/lib/format";
 import { Flash, Shell, param, type SearchParams } from "@/components/ui";
 import { PERIODS, PeriodPicker, StatsView } from "@/components/stats-view";
 
-export const metadata = { title: "Visão geral · Quioco" };
+export const metadata = { title: "Visão geral · imprime.ai" };
 export const dynamic = "force-dynamic";
 
 export default async function OwnerOverview({ searchParams }: { searchParams: SearchParams }) {

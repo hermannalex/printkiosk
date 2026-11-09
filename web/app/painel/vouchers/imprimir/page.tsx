@@ -3,9 +3,9 @@ import { requireUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { brl, dateBR } from "@/lib/format";
 import { PrintButton } from "@/components/print-button";
-import { QuiocoMark, param, type SearchParams } from "@/components/ui";
+import { BrandMark, param, type SearchParams } from "@/components/ui";
 
-export const metadata = { title: "Imprimir vouchers · Quioco" };
+export const metadata = { title: "Imprimir vouchers · imprime.ai" };
 export const dynamic = "force-dynamic";
 
 /** One card per voucher, sized to cut out (8 per A4 page). */
@@ -24,7 +24,7 @@ export default async function PrintVouchers({ searchParams }: { searchParams: Se
       <div className="voucher-grid">
         {vouchers.map((v) => (
           <div className="voucher-card" key={v.code}>
-            <div className="voucher-brand"><QuiocoMark size={22} /> <span>Voucher de impressão</span></div>
+            <div className="voucher-brand"><BrandMark size={22} /> <span>Voucher de impressão</span></div>
             <div className="voucher-value">{brl(v.balance_cents)}</div>
             <div className="voucher-code mono">{v.code}</div>
             <div className="voucher-help">

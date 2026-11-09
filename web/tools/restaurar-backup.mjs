@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Abre um backup do Quioco (.qbk) com a chave privada e gera:
+// Abre um backup do imprime.ai (.qbk) com a chave privada e gera:
 //   <arquivo>.json  — todas as tabelas, legível
 //   <arquivo>.sql   — (com --sql) INSERTs para recarregar num banco vazio criado com db/schema.sql
 //
@@ -14,7 +14,7 @@ import { gunzipSync } from "node:zlib";
 const MAGIC = Buffer.from("QBK1");
 
 export function openBackup(file, privateKeyPem) {
-  if (!file.subarray(0, 4).equals(MAGIC)) throw new Error("Não é um backup do Quioco.");
+  if (!file.subarray(0, 4).equals(MAGIC)) throw new Error("Não é um backup do imprime.ai.");
   const keyLength = file.readUInt16BE(4);
   let at = 6;
   const wrapped = file.subarray(at, (at += keyLength));
@@ -44,7 +44,7 @@ function literal(value) {
 
 /** INSERTs in the export's order (parents first), then sequences moved past the restored ids. */
 export function toSql(data) {
-  const out = [`-- Backup do Quioco de ${data.created_at}`, "begin;"];
+  const out = [`-- Backup do imprime.ai de ${data.created_at}`, "begin;"];
   for (const [table, { columns, rows }] of Object.entries(data.tables)) {
     if (!rows.length) continue;
     out.push(`\n-- ${table}: ${rows.length} linha(s)`);

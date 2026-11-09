@@ -1,4 +1,4 @@
-# Segurança do Quioco
+# Segurança do imprime.ai
 
 ## Como relatar um problema
 Envie para alex@somainfo.com.br. Não abra issue pública com detalhes de uma falha.
@@ -51,7 +51,7 @@ O arquivo `.gitignore` bloqueia `*.pem` e `.env*`.
   que exporta todas as tabelas, criptografa (AES-256-GCM com chave embrulhada por RSA-4096) e grava no
   armazenamento privado `quioco-backups` do Vercel Blob. Guarda 35 dias, nunca menos que os 7 últimos.
 - O servidor só tem a chave **pública** (`web/lib/backup-public-key.ts`). A chave **privada** fica fora da internet,
-  com o dono do Quioco; sem ela nenhum backup abre. Nunca coloque a chave privada no repositório.
+  com o dono do imprime.ai; sem ela nenhum backup abre. Nunca coloque a chave privada no repositório.
 - Master › Backups mostra os arquivos, faz backup na hora e baixa cópias para guardar offline (ex.: pendrive, uma vez por mês).
 - Restaurar: `node tools/restaurar-backup.mjs arquivo.qbk chave-privada.pem --sql` (na pasta `web`) gera um `.json`
   e um `.sql`; crie um banco vazio com `db/schema.sql` e rode o `.sql` nele.

@@ -204,7 +204,7 @@ export async function subscribe(form: FormData) {
   let initPoint = "";
   try {
     const preapproval = await createPreapproval({
-      reason: `Quioco ${PLANS[plan].name}${extra ? " (quiosque adicional)" : ""} – ${kiosk!.name} (${kiosk!.store_code})`,
+      reason: `imprime.ai ${PLANS[plan].name}${extra ? " (quiosque adicional)" : ""} – ${kiosk!.name} (${kiosk!.store_code})`,
       externalReference: String(subscription!.id),
       payerEmail: user.email,
       amountCents: amount,

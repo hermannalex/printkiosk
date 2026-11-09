@@ -1,6 +1,6 @@
 /**
  * Public half of the backup key (RSA-4096). Backups are encrypted with it; only the private half,
- * kept offline by the owner of Quioco, can open them. Being public, it is safe in the repository.
+ * kept offline by the owner of imprime.ai, can open them. Being public, it is safe in the repository.
  * To rotate: make a new pair, replace this text, publish, and keep the old private key for old backups.
  */
 export const BACKUP_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----

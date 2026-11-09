@@ -80,7 +80,7 @@ export function verifyCode(secret: string, code: string, lastUsedStep: number | 
 }
 
 /** otpauth:// link the authenticator app reads from the QR Code. */
-export function otpauthUrl(secret: string, account: string, issuer = "Quioco"): string {
+export function otpauthUrl(secret: string, account: string, issuer = "imprime.ai"): string {
   const label = encodeURIComponent(`${issuer}:${account}`);
   const params = new URLSearchParams({ secret, issuer, algorithm: "SHA1", digits: String(DIGITS), period: String(STEP_SECONDS) });
   return `otpauth://totp/${label}?${params.toString()}`;

@@ -3,7 +3,7 @@ import { sql } from "@/lib/db";
 import { dateTimeBR } from "@/lib/format";
 import { Shell } from "@/components/ui";
 
-export const metadata = { title: "Auditoria · Master · Quioco" };
+export const metadata = { title: "Auditoria · Master · imprime.ai" };
 export const dynamic = "force-dynamic";
 
 const LABEL: Record<string, string> = {

@@ -49,6 +49,6 @@ test("recovery codes are unique and hash the same with or without the dash", () 
 
 test("otpauth URL carries issuer and account", () => {
   const url = otpauthUrl("JBSWY3DPEHPK3PXP", "ana@loja.com");
-  assert.ok(url.startsWith("otpauth://totp/Quioco%3Aana%40loja.com?"));
-  assert.ok(url.includes("secret=JBSWY3DPEHPK3PXP") && url.includes("issuer=Quioco"));
+  assert.ok(url.startsWith("otpauth://totp/imprime.ai%3Aana%40loja.com?"));
+  assert.ok(url.includes("secret=JBSWY3DPEHPK3PXP") && url.includes("issuer=imprime.ai"));
 });

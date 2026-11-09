@@ -3,7 +3,7 @@ import { register } from "../actions";
 import { GoogleButton } from "@/components/google-button";
 import { Flash, param, type SearchParams } from "@/components/ui";
 
-export const metadata = { title: "Criar conta · Quioco" };
+export const metadata = { title: "Criar conta · imprime.ai" };
 
 export default async function SignUp({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
@@ -13,7 +13,7 @@ export default async function SignUp({ searchParams }: { searchParams: SearchPar
         <div>
           <h1>Criar conta da loja</h1>
           <p className="muted">
-            Com a conta você assina o Quioco, recebe o código do quiosque automaticamente e, no plano Pro,
+            Com a conta você assina o imprime.ai, recebe o código do quiosque automaticamente e, no plano Pro,
             acompanha cópias e faturamento.
           </p>
         </div>
@@ -37,7 +37,7 @@ export default async function SignUp({ searchParams }: { searchParams: SearchPar
             <input id="senha" name="senha" type="password" minLength={10} maxLength={128} required autoComplete="new-password" />
           </div>
           <details>
-            <summary className="small muted">Sou o administrador do Quioco</summary>
+            <summary className="small muted">Sou o administrador do imprime.ai</summary>
             <div className="field" style={{ marginTop: 10 }}>
               <label htmlFor="codigo_master">Código de configuração do master</label>
               <input id="codigo_master" name="codigo_master" autoComplete="off" />

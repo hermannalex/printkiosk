@@ -5,7 +5,7 @@ import { brl, dateBR, num, todayIso } from "@/lib/format";
 import { Flash, Kpi, PlanPill, Shell, param, type SearchParams } from "@/components/ui";
 import { PERIODS, PeriodPicker, StatsView } from "@/components/stats-view";
 
-export const metadata = { title: "Master · Quioco" };
+export const metadata = { title: "Master · imprime.ai" };
 export const dynamic = "force-dynamic";
 
 export default async function MasterOverview({ searchParams }: { searchParams: SearchParams }) {

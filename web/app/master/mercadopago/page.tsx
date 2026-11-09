@@ -2,7 +2,7 @@ import { requireMaster } from "@/lib/auth";
 import { checkPermissions, describeToken } from "@/lib/mercadopago";
 import { Shell } from "@/components/ui";
 
-export const metadata = { title: "Mercado Pago · Master · Quioco" };
+export const metadata = { title: "Mercado Pago · Master · imprime.ai" };
 export const dynamic = "force-dynamic";
 
 export default async function MasterMercadoPago() {
@@ -58,7 +58,7 @@ export default async function MasterMercadoPago() {
           </div>
           <p className="small muted">
             "At least one policy returned UNAUTHORIZED" (403) quer dizer que o token é reconhecido, mas o Mercado Pago bloqueou
-            aquela operação para esta conta ou aplicação. O que importa para o Quioco são <b>Pagamentos</b> e <b>Assinaturas</b>.
+            aquela operação para esta conta ou aplicação. O que importa para o imprime.ai são <b>Pagamentos</b> e <b>Assinaturas</b>.
           </p>
         </section>
       )}

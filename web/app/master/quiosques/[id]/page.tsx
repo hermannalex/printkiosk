@@ -9,7 +9,7 @@ import { KioskConfigForm } from "@/components/kiosk-config-form";
 import { Flash, PlanPill, Shell, StatusPill, param, type SearchParams } from "@/components/ui";
 import { StatsView } from "@/components/stats-view";
 
-export const metadata = { title: "Quiosque · Master · Quioco" };
+export const metadata = { title: "Quiosque · Master · imprime.ai" };
 export const dynamic = "force-dynamic";
 
 export default async function MasterKiosk({

@@ -24,7 +24,7 @@ Estação de impressão self-service para a loja. O cliente escolhe fotos ou PDF
 
 - **iOS:** abra `ios/PrintKiosk.xcodeproj` no Xcode 27, escolha seu Team em *Signing & Capabilities* e rode (⌘R). Detalhes em [`ios/README.md`](ios/README.md).
 - **Android:** abra a pasta `android/` no Android Studio, espere o Gradle Sync e rode, ou gere o APK em *Build › Generate App Bundles or APKs › Generate APKs*. Detalhes em [`android/README.md`](android/README.md).
-- **Windows e Mac:** baixe o `Quioco.exe` ou o `Quioco-mac.zip` dos artefatos da ação *desktop* no GitHub (ou compile com Go 1.24). Detalhes em [`desktop/LEIA-ME.md`](desktop/LEIA-ME.md).
+- **Windows e Mac:** baixe o `imprime.ai.exe` ou o `imprime.ai-mac.zip` dos artefatos da ação *desktop* no GitHub (ou compile com Go 1.24). Detalhes em [`desktop/LEIA-ME.md`](desktop/LEIA-ME.md).
 
 ## Configuração na loja
 

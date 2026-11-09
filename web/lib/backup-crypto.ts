@@ -22,7 +22,7 @@ export function sealBackup(plain: Buffer, publicKeyPem: string): Buffer {
 }
 
 export function openBackup(file: Buffer, privateKeyPem: string): Buffer {
-  if (!file.subarray(0, 4).equals(MAGIC)) throw new Error("Não é um backup do Quioco.");
+  if (!file.subarray(0, 4).equals(MAGIC)) throw new Error("Não é um backup do imprime.ai.");
   const keyLength = file.readUInt16BE(4);
   let at = 6;
   const wrapped = file.subarray(at, (at += keyLength));

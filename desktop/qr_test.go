@@ -20,7 +20,7 @@ func TestWriteQRSamples(t *testing.T) {
 		"WIFI:T:WPA;S:Loja;P:segredo123;;",
 		"http://192.168.0.15:50123/u/abcd2345ef",
 		"00020126580014br.gov.bcb.pix0136123e4567-e12b-12d1-a456-4266554400005204000053039865802BR5913Fulano de Tal6008BRASILIA62070503***6304" + strings.Repeat("A", 4),
-		strings.Repeat("Quioco 0123456789 ", 12),
+		strings.Repeat("imprime.ai 0123456789 ", 12),
 		strings.Repeat("x", 600),
 	}
 	var list []string

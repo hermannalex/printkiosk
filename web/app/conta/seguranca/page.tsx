@@ -4,10 +4,10 @@ import { one } from "@/lib/db";
 import { ensurePendingSecret } from "@/lib/mfa";
 import { otpauthUrl } from "@/lib/totp";
 import { MfaConfirmForm, RegenerateCodesForm } from "@/components/mfa-forms";
-import { Flash, QuiocoMark, Shell, param, type SearchParams } from "@/components/ui";
+import { Flash, BrandMark, Shell, param, type SearchParams } from "@/components/ui";
 import { logout } from "../../actions";
 
-export const metadata = { title: "Segurança · Quioco" };
+export const metadata = { title: "Segurança · imprime.ai" };
 export const dynamic = "force-dynamic";
 
 export default async function Security({ searchParams }: { searchParams: SearchParams }) {
@@ -53,7 +53,7 @@ export default async function Security({ searchParams }: { searchParams: SearchP
     <main className="auth">
       <div className="card auth-card wide">
         <div>
-          <h1 className="brand-title"><QuiocoMark size={36} /> Verificação em duas etapas</h1>
+          <h1 className="brand-title"><BrandMark size={36} /> Verificação em duas etapas</h1>
           <p className="muted">
             Obrigatória para usar o painel. Além da senha, cada login vai pedir um código que muda a cada 30 segundos no
             seu celular.

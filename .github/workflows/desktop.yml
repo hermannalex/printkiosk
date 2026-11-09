@@ -1,4 +1,4 @@
-# Testa e compila o Quioco para Windows e macOS a cada push; os apps ficam nos artefatos da execução.
+# Testa e compila o imprime.ai para Windows e macOS a cada push; os apps ficam nos artefatos da execução.
 name: desktop
 on:
   push:
@@ -20,13 +20,13 @@ jobs:
           go-version: "1.24"
       - run: go vet ./... && GOOS=windows go vet ./... && GOOS=darwin go vet ./...
       - run: go test ./...
-      - run: GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -s -w" -o dist/Quioco.exe .
-      - run: tools/build-mac.sh dist && cd dist && zip -qry Quioco-mac.zip Quioco.app
+      - run: GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -s -w" -o dist/imprime.ai.exe .
+      - run: tools/build-mac.sh dist && cd dist && zip -qry imprime.ai-mac.zip imprime.ai.app
       - uses: actions/upload-artifact@v4
         with:
-          name: Quioco-Windows
-          path: desktop/dist/Quioco.exe
+          name: imprime.ai-Windows
+          path: desktop/dist/imprime.ai.exe
       - uses: actions/upload-artifact@v4
         with:
-          name: Quioco-Mac
-          path: desktop/dist/Quioco-mac.zip
+          name: imprime.ai-Mac
+          path: desktop/dist/imprime.ai-mac.zip

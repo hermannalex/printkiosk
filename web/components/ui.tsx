@@ -4,21 +4,25 @@ import type { User } from "@/lib/auth";
 import type { KioskStatus } from "@/lib/kiosks";
 import { STATUS_LABEL } from "@/lib/kiosks";
 
-/** The Quioco symbol: a sheet of paper whose bottom corner becomes the tail of the "q". */
-export function QuiocoMark({ size = 30 }: { size?: number }) {
+/** The imprime.ai symbol: a friendly printer that winks; the yellow dot is the ".ai". */
+export function BrandMark({ size = 30 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 88 88" aria-hidden="true">
-      <rect width="88" height="88" rx="22" fill="var(--accent)" />
-      <g transform="translate(1,-3)">
-        <path d="M26 14H52L66 28V62Q66 68 60 68H26Q20 68 20 62V20Q20 14 26 14Z" fill="#fff" />
-        <path d="M52 14V24Q52 28 56 28H66Z" fill="#fff" fillOpacity="0.7" />
-        <rect x="56" y="58" width="10" height="22" rx="5" fill="#fff" />
-        <rect x="29" y="34" width="28" height="5" rx="2.5" fill="var(--accent)" />
-        <rect x="29" y="44" width="28" height="5" rx="2.5" fill="var(--accent)" />
-        <rect x="29" y="54" width="18" height="5" rx="2.5" fill="var(--accent)" />
-      </g>
+    <svg width={size} height={size} viewBox="0 0 120 120" aria-hidden="true">
+      <rect width="120" height="120" rx="28" fill="#4F46E5" />
+      <rect x="38" y="18" width="44" height="22" rx="4" fill="#C7D2FE" />
+      <rect x="20" y="36" width="80" height="52" rx="16" fill="#fff" />
+      <circle cx="46" cy="56" r="5" fill="#4F46E5" />
+      <path d="M68 56h12" stroke="#4F46E5" strokeWidth="5" strokeLinecap="round" />
+      <path d="M45 69q15 11 30 0" fill="none" stroke="#4F46E5" strokeWidth="5.5" strokeLinecap="round" />
+      <rect x="34" y="86" width="52" height="14" rx="3" fill="#C7D2FE" />
+      <circle cx="92" cy="94" r="7" fill="#FACC15" />
     </svg>
   );
+}
+
+/** "imprime" with the ".ai" in the brand color. */
+export function Wordmark() {
+  return <span className="wordmark">imprime<span>.ai</span></span>;
 }
 
 export function Shell({
@@ -53,9 +57,9 @@ export function Shell({
       <header className="topbar">
         <div className="topbar-inner">
           <Link href={area === "master" ? "/master" : "/painel"} className="brand">
-            <QuiocoMark />
+            <BrandMark />
             <span>
-              Quioco <small>{area === "master" ? "Master" : "Painel"}</small>
+              <Wordmark /> <small>{area === "master" ? "Master" : "Painel"}</small>
             </span>
           </Link>
           <nav className="nav" aria-label="Principal">

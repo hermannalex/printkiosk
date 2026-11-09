@@ -6,7 +6,7 @@ import { ago, brl, dateBR } from "@/lib/format";
 import { kioskStatus } from "@/lib/kiosks";
 import { Flash, PlanPill, Shell, StatusPill, param, type SearchParams } from "@/components/ui";
 
-export const metadata = { title: "Quiosques · Quioco" };
+export const metadata = { title: "Quiosques · imprime.ai" };
 export const dynamic = "force-dynamic";
 
 /** What the kiosk charges: the dashboard's price once saved, otherwise what the kiosk reported. */

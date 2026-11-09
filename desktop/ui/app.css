@@ -1,5 +1,5 @@
 :root {
-  --accent: #2563EB; --accent-ink: #1d4ed8; --bg: #f2f4f7; --card: #fff; --ink: #18212b; --muted: #5b6878;
+  --accent: #4F46E5; --accent-ink: #4338CA; --bg: #f2f4f7; --card: #fff; --ink: #18212b; --muted: #5b6878;
   --line: #dde3ea; --ok: #15803d; --bad: #b91c1c; --warn-bg: #fff7e6; --warn: #8a5a00;
   font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
 }
@@ -120,7 +120,7 @@ h2 { font-size: 26px; margin: 0 0 12px; }
 .method:active { border-color: var(--accent); transform: scale(.99); }
 .method b { display: block; font-size: 26px; }
 .method small { display: block; color: var(--muted); font-size: 17px; margin-top: 2px; }
-.method-icon { flex: none; width: 64px; height: 64px; border-radius: 16px; background: #e7f0ff; color: var(--accent); display: grid; place-items: center; font-weight: 800; font-size: 18px; }
+.method-icon { flex: none; width: 64px; height: 64px; border-radius: 16px; background: #EEF0FF; color: var(--accent); display: grid; place-items: center; font-weight: 800; font-size: 18px; }
 .method-icon svg { width: 40px; height: 40px; }
 .terminal-art { width: min(30vh, 260px); height: min(30vh, 260px); color: var(--accent); }
 .voucher { max-width: 980px; width: 100%; margin: 0 auto; }
@@ -130,3 +130,5 @@ h2 { font-size: 26px; margin: 0 0 12px; }
 .letters .wide { grid-column: span 2; }
 @media (max-width: 1000px) { .letters { grid-template-columns: repeat(8, 56px); } }
 .field-select { font: inherit; font-size: 16px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; min-height: 52px; max-width: 100%; }
+
+.brand .dot { color: var(--accent); }

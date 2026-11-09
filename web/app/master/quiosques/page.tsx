@@ -5,7 +5,7 @@ import { ago, dateBR } from "@/lib/format";
 import { kioskStatus } from "@/lib/kiosks";
 import { Flash, PlanPill, Shell, StatusPill, param, type SearchParams } from "@/components/ui";
 
-export const metadata = { title: "Quiosques · Master · Quioco" };
+export const metadata = { title: "Quiosques · Master · imprime.ai" };
 export const dynamic = "force-dynamic";
 
 export default async function MasterKiosks({ searchParams }: { searchParams: SearchParams }) {

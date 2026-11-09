@@ -1,4 +1,4 @@
-// Quioco for Windows and macOS: the kiosk screen. Talks only to the local Quioco program (127.0.0.1).
+// imprime.ai for Windows and macOS: the kiosk screen. Talks only to the local imprime.ai program (127.0.0.1).
 import * as pdfjs from "./pdfjs/pdf.min.mjs";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "./pdfjs/pdf.worker.min.mjs";
@@ -10,7 +10,7 @@ const money = (cents) => (cents / 100).toLocaleString("pt-BR", { style: "currenc
 async function api(path, body) {
   const res = await fetch(path, {
     method: body === undefined ? "GET" : "POST",
-    headers: { "X-Quioco-Key": KEY, "Content-Type": "application/json" },
+    headers: { "X-Kiosk-Key": KEY, "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
@@ -582,13 +582,13 @@ function fillPanel(info) {
     o.selected = p.Default;
     sel.append(o);
   }
-  $("a-printer-note").textContent = info.printerError || (info.printers?.length ? `O Quioco imprime direto, sem janela, na impressora escolhida (ela vira a padrão do ${info.platform}).` : `Nenhuma impressora instalada no ${info.platform}. Instale a impressora e reabra esta tela.`);
+  $("a-printer-note").textContent = info.printerError || (info.printers?.length ? `O imprime.ai imprime direto, sem janela, na impressora escolhida (ela vira a padrão do ${info.platform}).` : `Nenhuma impressora instalada no ${info.platform}. Instale a impressora e reabra esta tela.`);
   $("a-sync").textContent = (info.lastSync ? `Última sincronização: ${info.lastSync}.` : "Ainda não sincronizou.") +
     (info.pending ? ` ${info.pending} impressão(ões) aguardando envio.` : "") + (info.syncError ? ` Erro: ${info.syncError}` : "");
   $("a-autostart").checked = info.autostart;
   $("a-point").textContent = info.pointTerminal ? `Maquininha em uso: ${info.pointTerminal}` : "Nenhuma maquininha ligada. O cliente paga só com Pix ou voucher.";
   $("a-point-off").hidden = !info.pointTerminal;
-  $("a-version").textContent = `Quioco para ${info.platform} ${info.version} · dados em ${info.dataDir}`;
+  $("a-version").textContent = `imprime.ai para ${info.platform} ${info.version} · dados em ${info.dataDir}`;
   $("a-token-note").textContent = info.platform === "macOS" ? "O token fica criptografado com uma chave guardada nas Chaves (Keychain) deste Mac." : "O token fica criptografado com a conta do Windows deste computador.";
 }
 
@@ -645,13 +645,13 @@ $("a-point-use").onclick = async () => {
   adminMsg("Maquininha ligada ao quiosque e colocada no modo de integração (PDV).");
 };
 $("a-point-off").onclick = async () => { const info = await api("/api/admin/point/set", { id: "" }); fillPanel(info); adminMsg("Maquininha desligada do quiosque."); };
-$("a-quit").onclick = async () => { await api("/api/admin/quit", {}); document.body.innerHTML = '<p style="padding:40px;font-size:24px">Quioco fechado.</p>'; };
+$("a-quit").onclick = async () => { await api("/api/admin/quit", {}); document.body.innerHTML = '<p style="padding:40px;font-size:24px">imprime.ai fechado.</p>'; };
 $("a-test-page").onclick = () => {
   const root = $("print-root");
-  const name = S.state?.settings.kioskName || "Quioco";
+  const name = S.state?.settings.kioskName || "imprime.ai";
   root.innerHTML = `<div class="sheet" style="flex-direction:column;gap:12mm;font:16pt 'Segoe UI',sans-serif;text-align:center">
     <img src="icon.svg" style="width:40mm;height:40mm"><div style="font-size:28pt;font-weight:700"></div>
-    <div>Página de teste do Quioco</div><div>${new Date().toLocaleString("pt-BR")}</div>
+    <div>Página de teste do imprime.ai</div><div>${new Date().toLocaleString("pt-BR")}</div>
     <div style="display:flex;gap:4mm">${["#000", "#00a0e9", "#e4007f", "#fff100"].map((c) => `<span style="width:20mm;height:20mm;background:${c};border:1px solid #000;display:inline-block;-webkit-print-color-adjust:exact;print-color-adjust:exact"></span>`).join("")}</div></div>`;
   root.querySelector(".sheet div").textContent = name;
   setTimeout(() => { window.print(); root.innerHTML = ""; adminMsg("Página de teste enviada para a impressora."); }, 300);

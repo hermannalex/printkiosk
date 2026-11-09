@@ -1,4 +1,4 @@
-/* Quioco dashboard – a quiet operations console: cool neutrals, the kiosk's blue as the only accent,
+/* imprime.ai dashboard – a quiet operations console: cool neutrals, the kiosk's blue as the only accent,
    tabular numbers everywhere a figure is compared. */
 :root {
   --bg: #f3f5f8;
@@ -7,8 +7,8 @@
   --line: #dde2e9;
   --ink: #16202c;
   --muted: #5b6573;
-  --accent: #1d6fe0;
-  --accent-soft: #e3edfc;
+  --accent: #4F46E5;
+  --accent-soft: #ECEBFE;
   --ok: #1f8a4c;
   --ok-soft: #e2f4e9;
   --warn: #b26a00;
@@ -28,8 +28,8 @@
     --line: #2a3441;
     --ink: #e6ebf1;
     --muted: #97a3b2;
-    --accent: #6aa5f5;
-    --accent-soft: #1b2b42;
+    --accent: #8B86FF;
+    --accent-soft: #25234A;
     --ok: #5cc98a;
     --ok-soft: #16301f;
     --warn: #e7a74a;
@@ -254,3 +254,6 @@ input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible
   .voucher-grid { grid-template-columns: 1fr 1fr; gap: 6mm; }
   .voucher-card { border-color: #999; height: 62mm; align-content: center; }
 }
+
+.wordmark { font-weight: 800; letter-spacing: -.02em; }
+.wordmark span { color: var(--accent); }

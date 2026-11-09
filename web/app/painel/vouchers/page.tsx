@@ -6,7 +6,7 @@ import { brl, dateBR, dateTimeBR, todayIso } from "@/lib/format";
 import { voucherStatus } from "@/lib/vouchers";
 import { Flash, Shell, param, type SearchParams } from "@/components/ui";
 
-export const metadata = { title: "Vouchers · Quioco" };
+export const metadata = { title: "Vouchers · imprime.ai" };
 export const dynamic = "force-dynamic";
 
 const PILL = { ativo: "pill-active", esgotado: "pill-demo", vencido: "pill-expired", desativado: "pill-expired" } as const;

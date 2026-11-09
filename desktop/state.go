@@ -43,7 +43,7 @@ type PrintJob struct {
 	Demo          bool    `json:"demo"`
 }
 
-// State is everything the kiosk keeps, in %LOCALAPPDATA%\Quioco\state.json.
+// State is everything the kiosk keeps, in %LOCALAPPDATA%\imprime.ai\state.json.
 type State struct {
 	Settings             Settings   `json:"settings"`
 	StoreID              string     `json:"storeId"`

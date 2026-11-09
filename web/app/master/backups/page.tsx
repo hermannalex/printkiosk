@@ -5,7 +5,7 @@ import { sql } from "@/lib/db";
 import { dateTimeBR, num } from "@/lib/format";
 import { Flash, Shell, param, type SearchParams } from "@/components/ui";
 
-export const metadata = { title: "Backups · Master · Quioco" };
+export const metadata = { title: "Backups · Master · imprime.ai" };
 export const dynamic = "force-dynamic";
 
 const size = (bytes: number) => (bytes < 1024 * 1024 ? `${num(Math.ceil(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1).replace(".", ",")} MB`);

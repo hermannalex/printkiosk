@@ -9,8 +9,8 @@ const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "600"], variabl
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Quioco Painel",
-  description: "Assinaturas, códigos de ativação, cópias e faturamento dos quiosques Quioco.",
+  title: "imprime.ai Painel",
+  description: "Assinaturas, códigos de ativação, cópias e faturamento dos quiosques imprime.ai.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
