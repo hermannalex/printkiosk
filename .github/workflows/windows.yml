@@ -1,0 +1,27 @@
+# Testa e compila o Quioco para Windows a cada push; o Quioco.exe fica nos artefatos da execução.
+name: windows
+on:
+  push:
+    paths: ["windows/**", ".github/workflows/windows.yml"]
+  pull_request:
+    paths: ["windows/**", ".github/workflows/windows.yml"]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - run: go vet ./... && GOOS=windows go vet ./...
+      - run: go test ./...
+      - run: GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -s -w" -o Quioco.exe .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Quioco-Windows
+          path: windows/Quioco.exe

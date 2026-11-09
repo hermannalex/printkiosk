@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="quioco-key" content="{{KEY}}">
+<title>Quioco</title>
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand"><img src="icon.svg" alt="" width="40" height="40"><span id="kiosk-name">Quioco</span></div>
+  <button class="link-btn" id="open-admin" type="button">Configurações</button>
+</header>
+
+<main id="app">
+  <!-- Welcome -->
+  <section class="screen" id="s-welcome">
+    <div class="welcome">
+      <div class="hero">
+        <img src="icon.svg" alt="" width="120" height="120">
+        <h1>Imprima do seu celular</h1>
+        <p class="lead">Fotos e arquivos PDF, direto do seu celular para a impressora.</p>
+        <p class="price" id="welcome-price"></p>
+        <button class="btn btn-primary btn-xl" id="start" type="button">Toque para começar</button>
+        <p class="notice" id="welcome-notice" hidden></p>
+      </div>
+      <aside class="wifi card" id="wifi" hidden>
+        <h2>Wi-Fi grátis da loja</h2>
+        <div class="qr" id="wifi-qr"></div>
+        <p>Aponte a câmera para entrar na rede</p>
+        <p class="mono"><b>Rede:</b> <span id="wifi-name"></span></p>
+        <p class="mono" id="wifi-pass-row"><b>Senha:</b> <span id="wifi-pass"></span></p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Select files -->
+  <section class="screen" id="s-select" hidden>
+    <div class="split">
+      <div class="card phone">
+        <h2>Envie do seu celular</h2>
+        <div class="qr qr-big" id="upload-qr"><p class="muted">Preparando…</p></div>
+        <ol class="steps">
+          <li>Abra a câmera do celular e aponte para o QR Code</li>
+          <li>Toque no link e escolha as fotos ou PDFs</li>
+          <li>Toque em <b>Enviar</b> e aguarde aparecer aqui</li>
+        </ol>
+        <p class="small muted">O celular precisa estar no mesmo Wi-Fi da loja.</p>
+        <p class="notice" id="upload-error" hidden></p>
+      </div>
+      <div class="card items-card">
+        <div class="items-head">
+          <h2>Seus arquivos</h2>
+          <span class="muted" id="items-count"></span>
+        </div>
+        <div class="items" id="items"><p class="empty">Nenhum arquivo ainda. Os arquivos enviados aparecem aqui.</p></div>
+      </div>
+    </div>
+    <footer class="actions">
+      <button class="btn btn-ghost" data-action="reset" type="button">Cancelar</button>
+      <button class="btn btn-primary btn-lg" id="to-review" type="button" disabled>Continuar</button>
+    </footer>
+  </section>
+
+  <!-- Review -->
+  <section class="screen" id="s-review" hidden>
+    <div class="review card">
+      <h2>Confira sua impressão</h2>
+      <div class="review-grid">
+        <div class="stat"><span class="muted">Arquivos</span><b id="r-items">0</b></div>
+        <div class="stat"><span class="muted">Páginas</span><b id="r-pages">0</b></div>
+        <div class="stat copies">
+          <span class="muted">Cópias</span>
+          <div class="stepper">
+            <button class="btn btn-round" id="copy-minus" type="button" aria-label="Menos uma cópia">−</button>
+            <b id="r-copies">1</b>
+            <button class="btn btn-round" id="copy-plus" type="button" aria-label="Mais uma cópia">+</button>
+          </div>
+        </div>
+      </div>
+      <p class="total"><span id="r-total-pages"></span><b id="r-total"></b></p>
+      <p class="small muted">Impressão em folha A4. Fotos deitadas são giradas para ocupar a folha.</p>
+    </div>
+    <footer class="actions">
+      <button class="btn btn-ghost" id="back-select" type="button">Voltar</button>
+      <button class="btn btn-primary btn-lg" id="checkout" type="button">Imprimir</button>
+    </footer>
+  </section>
+
+  <!-- Payment -->
+  <section class="screen" id="s-pay" hidden>
+    <div class="split pay">
+      <div class="card center">
+        <h2>Pague com Pix</h2>
+        <p class="amount" id="pay-amount"></p>
+        <div class="qr qr-big" id="pay-qr"></div>
+        <p class="small muted">Expira em <b id="pay-timer">5:00</b></p>
+      </div>
+      <div class="card">
+        <ol class="steps big">
+          <li>Abra o app do seu banco</li>
+          <li>Escolha <b>Pix › Pagar com QR Code</b></li>
+          <li>Aponte a câmera e confirme</li>
+        </ol>
+        <p class="muted">A impressão começa sozinha assim que o pagamento for confirmado.</p>
+        <p class="notice" id="pay-message" hidden></p>
+      </div>
+    </div>
+    <footer class="actions">
+      <button class="btn btn-ghost" id="pay-cancel" type="button">Cancelar</button>
+      <button class="btn btn-primary btn-lg" id="pay-retry" type="button" hidden>Tentar de novo</button>
+    </footer>
+  </section>
+
+  <!-- Status: preparing, printing, finished -->
+  <section class="screen" id="s-status" hidden>
+    <div class="status card center">
+      <div class="spinner" id="status-spinner"></div>
+      <div class="status-icon" id="status-icon" hidden></div>
+      <h1 id="status-title">Preparando…</h1>
+      <p class="lead" id="status-text"></p>
+      <button class="btn btn-primary btn-lg" data-action="reset" id="status-done" type="button" hidden>Concluir</button>
+    </div>
+  </section>
+
+  <!-- Staff settings -->
+  <section class="screen" id="s-admin" hidden>
+    <div class="admin-gate card center" id="pin-gate">
+      <h2 id="pin-title">Configurações</h2>
+      <p class="muted" id="pin-help">Digite o PIN do atendente.</p>
+      <div class="pin-dots" id="pin-dots"></div>
+      <div class="keypad" id="keypad"></div>
+      <p class="notice" id="pin-error" hidden></p>
+      <button class="btn btn-ghost" id="pin-cancel" type="button">Voltar ao quiosque</button>
+    </div>
+    <div class="admin" id="admin-panel" hidden>
+      <div class="admin-head">
+        <h1>Configurações</h1>
+        <div class="row">
+          <button class="btn btn-primary" id="admin-save" type="button">Salvar</button>
+          <button class="btn btn-ghost" id="admin-close" type="button">Voltar ao quiosque</button>
+        </div>
+      </div>
+      <p class="notice ok" id="admin-msg" hidden></p>
+      <div class="admin-grid">
+        <section class="card">
+          <h2>Assinatura</h2>
+          <p id="a-license"></p>
+          <dl class="kv">
+            <dt>Código da loja</dt><dd class="mono" id="a-store"></dd>
+            <dt>Código de vínculo</dt><dd class="mono" id="a-pair"></dd>
+          </dl>
+          <p class="small muted">Para usar o painel online, cadastre este quiosque em <span class="mono" id="a-dash"></span> com o código da loja e o código de vínculo. A assinatura paga no painel chega aqui sozinha.</p>
+          <label class="field">Código de ativação (se recebeu por e-mail)
+            <input id="a-code" autocomplete="off" spellcheck="false" placeholder="PK1-…">
+          </label>
+          <button class="btn" id="a-activate" type="button">Ativar código</button>
+        </section>
+
+        <section class="card">
+          <h2>Pagamento Pix (Mercado Pago)</h2>
+          <label class="field">Preço por página (R$)
+            <input id="f-price" inputmode="decimal" placeholder="0,50">
+          </label>
+          <p class="small muted">Deixe 0,00 para impressão gratuita.</p>
+          <label class="field">E-mail do pagador (o da loja)
+            <input id="f-email" type="email" autocomplete="off">
+          </label>
+          <label class="field">Tempo para pagar
+            <select id="f-paytime"><option value="120">2 minutos</option><option value="180">3 minutos</option><option value="300">5 minutos</option><option value="600">10 minutos</option></select>
+          </label>
+          <p id="a-token"></p>
+          <label class="field">Access Token de produção
+            <input id="a-token-input" type="password" autocomplete="off" spellcheck="false" placeholder="APP_USR-…">
+          </label>
+          <div class="row">
+            <button class="btn" id="a-token-save" type="button">Salvar token</button>
+            <button class="btn btn-ghost" id="a-token-test" type="button">Testar conexão</button>
+            <button class="btn btn-ghost danger" id="a-token-remove" type="button">Remover</button>
+          </div>
+          <p class="small muted">O token fica criptografado com a conta do Windows deste computador.</p>
+        </section>
+
+        <section class="card">
+          <h2>Quiosque</h2>
+          <label class="field">Nome na tela<input id="f-name" maxlength="40"></label>
+          <label class="field">Máximo de cópias<input id="f-copies" type="number" min="1" max="50"></label>
+          <label class="field">Máximo de itens por impressão<input id="f-items" type="number" min="1" max="50"></label>
+          <label class="field">Voltar ao início após inatividade
+            <select id="f-idle"><option value="30">30 segundos</option><option value="60">1 minuto</option><option value="90">90 segundos</option><option value="120">2 minutos</option><option value="300">5 minutos</option></select>
+          </label>
+          <label class="field">Wi-Fi dos clientes (nome)<input id="f-wifi" maxlength="32" autocomplete="off"></label>
+          <label class="field">Senha do Wi-Fi dos clientes<input id="f-wifipass" maxlength="63" autocomplete="off"></label>
+          <p class="small muted">Estas configurações também podem ser mudadas pelo painel online; o que for salvo lá chega em até 30 minutos.</p>
+        </section>
+
+        <section class="card">
+          <h2>Impressora</h2>
+          <label class="field">Imprimir em
+            <select id="a-printer"></select>
+          </label>
+          <p class="small muted" id="a-printer-note">O Quioco imprime direto, sem janela, na impressora escolhida (ela vira a padrão do Windows).</p>
+          <button class="btn" id="a-test-page" type="button">Imprimir página de teste</button>
+        </section>
+
+        <section class="card">
+          <h2>Painel online</h2>
+          <p id="a-sync"></p>
+          <button class="btn" id="a-sync-now" type="button">Sincronizar agora</button>
+        </section>
+
+        <section class="card">
+          <h2>Sistema</h2>
+          <label class="check"><input type="checkbox" id="a-autostart"> Abrir o Quioco ao ligar o computador</label>
+          <button class="btn" id="a-pin-change" type="button">Trocar PIN</button>
+          <button class="btn btn-ghost danger" id="a-quit" type="button">Fechar o Quioco</button>
+          <p class="small muted" id="a-version"></p>
+        </section>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="print-root" aria-hidden="true"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

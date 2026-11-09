@@ -6,6 +6,7 @@ Estação de impressão self-service para a loja. O cliente escolhe fotos ou PDF
 | --- | --- | --- |
 | [`ios/`](ios) | iPad e iPhone (iOS 17+) | SwiftUI, AirPrint, Network.framework |
 | [`android/`](android) | Tablet Android (8.0+) | Kotlin, Jetpack Compose, Android Print |
+| [`windows/`](windows) | Computador Windows 10/11 | Go (um único .exe), Edge em modo quiosque, impressão direta |
 
 ## Funcionalidades
 
@@ -15,13 +16,14 @@ Estação de impressão self-service para a loja. O cliente escolhe fotos ou PDF
 - Pix pelo Mercado Pago com QR Code dinâmico e confirmação automática, sem cobrar duas vezes em caso de falha na impressão
 - Volta ao início por inatividade
 - Configurações protegidas por PIN (padrão 1234): impressora, preço por página, token do Mercado Pago, Wi-Fi da loja (SSID e senha), limites e tempos
-- Token do Mercado Pago guardado criptografado no aparelho (Keychain / Android Keystore), nunca no código
+- Token do Mercado Pago guardado criptografado no aparelho (Keychain / Android Keystore / DPAPI do Windows), nunca no código
 - **Assinatura mensal** (Básico R$ 19,99 por quiosque; Pro R$ 49,99 + R$ 9,99 por quiosque adicional), liberada por código de ativação, com **5 impressões de demonstração** por aparelho
 
 ## Compilar
 
 - **iOS:** abra `ios/PrintKiosk.xcodeproj` no Xcode 27, escolha seu Team em *Signing & Capabilities* e rode (⌘R). Detalhes em [`ios/README.md`](ios/README.md).
 - **Android:** abra a pasta `android/` no Android Studio, espere o Gradle Sync e rode, ou gere o APK em *Build › Generate App Bundles or APKs › Generate APKs*. Detalhes em [`android/README.md`](android/README.md).
+- **Windows:** baixe o `Quioco.exe` dos artefatos da ação *windows* no GitHub (ou compile com Go 1.24). Detalhes em [`windows/LEIA-ME.md`](windows/LEIA-ME.md).
 
 ## Configuração na loja
 
