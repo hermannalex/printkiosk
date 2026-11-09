@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>imprime.ai · sua impressora vira autoatendimento com Pix</title>
+<meta name="description" content="O imprime.ai transforma uma impressora comum num ponto de impressão que funciona sozinho: o cliente envia o arquivo pelo celular, paga com Pix e retira a cópia.">
+<meta property="og:title" content="imprime.ai · impressão em autoatendimento com Pix">
+<meta property="og:description" content="Sua impressora comum vira um ponto de autoatendimento: o cliente envia pelo celular, paga com Pix e imprime. Sem balcão, sem fila.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://imprime.ai/">
+<meta name="theme-color" content="#4F46E5">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root {
+  --bg: #F7F7FB; --surface: #FFFFFF; --surface-2: #EEEEF8; --line: #E1E1EE;
+  --ink: #15142B; --muted: #5A5A73; --brand: #4F46E5; --brand-ink: #4338CA;
+  --brand-soft: #ECEBFE; --paper: #C7D2FE; --sun: #FACC15; --ok: #15803D;
+  --hero-bg: #4F46E5; --hero-ink: #FFFFFF; --hero-muted: #D9D7FF;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --gutter-l: max(20px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(20px, env(safe-area-inset-right, 0px));
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0E0D1C; --surface: #17162B; --surface-2: #201F3A; --line: #2D2C4A;
+    --ink: #EEEDF9; --muted: #A4A3C2; --brand: #8B86FF; --brand-ink: #A9A5FF;
+    --brand-soft: #25234A; --ok: #4ADE80; --hero-bg: #2B2680; --hero-muted: #C9C6FF;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+img, svg { max-width: 100%; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+h1, h2, h3 { font-family: var(--display); line-height: 1.08; letter-spacing: -0.02em; text-wrap: balance; margin: 0; }
+h2 { font-size: clamp(30px, 4.4vw, 46px); font-weight: 800; }
+h3 { font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
+p { margin: 0; }
+.eyebrow { font: 500 13px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
+.lead { font-size: 19px; color: var(--muted); max-width: 60ch; }
+.wordmark { font-family: var(--display); font-weight: 800; letter-spacing: -0.03em; }
+.wordmark span { color: var(--sun); }
+
+/* buttons */
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 22px; border-radius: 999px; font: 600 16px/1 var(--sans); text-decoration: none; border: 2px solid transparent; transition: transform .15s ease, background .15s ease; }
+.btn:hover { transform: translateY(-1px); }
+.btn-sun { background: var(--sun); color: #1A1600; }
+.btn-sun:hover { background: #FDE047; }
+.btn-ghost { border-color: rgba(255,255,255,.45); color: #fff; }
+.btn-ghost:hover { background: rgba(255,255,255,.1); }
+.btn-brand { background: var(--brand); color: #fff; }
+.btn-brand:hover { background: var(--brand-ink); }
+.btn-line { border-color: var(--line); color: var(--ink); background: var(--surface); }
+
+/* header + hero */
+.hero { background: var(--hero-bg); color: var(--hero-ink); position: relative; overflow: hidden; }
+.hero::after { content: ""; position: absolute; inset: auto -10% -1px -10%; height: 90px; background: var(--bg); border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: max(18px, env(safe-area-inset-top, 0px)); padding-bottom: 18px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-size: 26px; }
+.brand svg { width: 38px; height: 38px; flex: none; }
+.nav-links { display: flex; align-items: center; gap: 22px; font-size: 15px; }
+.nav-links a { text-decoration: none; color: var(--hero-muted); }
+.nav-links a:hover { color: #fff; }
+.nav-links .btn { padding: 10px 18px; font-size: 15px; color: #1A1600; }
+.nav-links .login { color: #fff; font-weight: 600; }
+@media (max-width: 820px) { .nav-links .hide-sm { display: none; } }
+
+.hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; padding-top: 48px; padding-bottom: 140px; position: relative; z-index: 1; }
+.hero-grid > * { min-width: 0; }
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 7px 8px; border-radius: 999px; background: rgba(255,255,255,.12); font: 500 13px/1 var(--mono); letter-spacing: .04em; color: #fff; }
+.pill b { background: var(--sun); color: #1A1600; padding: 4px 8px; border-radius: 999px; font-weight: 500; }
+.hero h1 { font-size: clamp(40px, 6.4vw, 72px); font-weight: 800; margin-top: 22px; }
+.hero h1 em { font-style: normal; color: var(--sun); }
+.hero .lead { color: var(--hero-muted); margin-top: 22px; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.hero-note { margin-top: 18px; font-size: 14px; color: var(--hero-muted); }
+.hero-art { position: relative; }
+.hero-art svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 30px 50px rgba(10, 8, 60, .35)); }
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr; padding-top: 24px; gap: 36px; padding-bottom: 120px; }
+  .hero-art { max-width: 520px; }
+}
+
+section { padding: 88px 0; }
+.section-head { display: grid; gap: 14px; margin-bottom: 44px; }
+
+/* steps */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 28px; display: grid; gap: 12px; align-content: start; }
+.step-num { width: 44px; height: 44px; border-radius: 14px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; font: 800 20px/1 var(--display); }
+.step p { color: var(--muted); }
+.step .tag { font: 500 12px/1 var(--mono); color: var(--muted); letter-spacing: .04em; margin-top: 4px; }
+@media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
+
+/* needs */
+.needs { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.needs-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 56px; align-items: start; }
+.needs-grid > * { min-width: 0; }
+.need-list { display: grid; gap: 14px; }
+.need { display: grid; grid-template-columns: 52px 1fr; gap: 16px; align-items: start; padding: 18px; border-radius: 18px; background: var(--bg); border: 1px solid var(--line); }
+.need .ico { width: 52px; height: 52px; border-radius: 14px; background: var(--brand); display: grid; place-items: center; }
+.need .ico svg { width: 28px; height: 28px; }
+.need p { color: var(--muted); font-size: 15.5px; }
+.platforms { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.platforms span { font: 500 12.5px/1 var(--mono); padding: 7px 10px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); }
+@media (max-width: 860px) { .needs-grid { grid-template-columns: 1fr; gap: 32px; } }
+
+/* privacy */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.col { border-radius: 22px; padding: 28px; display: grid; gap: 16px; align-content: start; }
+.col-old { background: var(--surface-2); }
+.col-new { background: var(--brand); color: #fff; }
+.col h3 { display: flex; align-items: center; gap: 10px; }
+.col ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.col li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; }
+.col-old li { color: var(--muted); }
+.col-new li { color: #ECEBFF; }
+.mark { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: 700 13px/1 var(--sans); margin-top: 2px; }
+.col-old .mark { background: var(--line); color: var(--muted); }
+.col-new .mark { background: var(--sun); color: #1A1600; }
+@media (max-width: 760px) { .compare { grid-template-columns: 1fr; } }
+
+/* dashboard features */
+.features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.feature { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; display: grid; gap: 8px; align-content: start; }
+.feature h3 { font-size: 18px; }
+.feature p { color: var(--muted); font-size: 15.5px; }
+.feature .k { font: 500 12px/1 var(--mono); color: var(--brand); letter-spacing: .06em; text-transform: uppercase; }
+@media (max-width: 900px) { .features { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
+
+/* pricing */
+.plans { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 880px; }
+.plan { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 30px; display: grid; gap: 18px; align-content: start; }
+.plan.pro { border: 2px solid var(--brand); position: relative; }
+.plan.pro::before { content: "Mais completo"; position: absolute; top: -13px; left: 28px; background: var(--brand); color: #fff; font: 500 12px/1 var(--mono); padding: 7px 10px; border-radius: 999px; letter-spacing: .04em; }
+.price { font: 800 44px/1 var(--display); letter-spacing: -0.03em; }
+.price small { font: 500 15px/1 var(--sans); color: var(--muted); letter-spacing: 0; }
+.plan ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.plan li { display: grid; grid-template-columns: 20px 1fr; gap: 10px; color: var(--muted); font-size: 15.5px; }
+.plan li::before { content: "✓"; color: var(--ok); font-weight: 700; }
+.plan .extra { font-size: 14px; color: var(--muted); }
+.plan .btn { justify-content: center; }
+.fine { margin-top: 20px; color: var(--muted); font-size: 14px; max-width: 70ch; }
+@media (max-width: 760px) { .plans { grid-template-columns: 1fr; } }
+
+/* final cta */
+.final { padding: 0 0 96px; }
+.final-box { background: var(--ink); color: var(--bg); border-radius: 28px; padding: 56px 40px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 32px; align-items: center; }
+.final-box > * { min-width: 0; }
+.final-box p { color: color-mix(in srgb, var(--bg) 75%, transparent); margin-top: 14px; }
+.final-actions { display: grid; gap: 12px; justify-items: start; }
+.final-actions .small { font-size: 14.5px; color: color-mix(in srgb, var(--bg) 70%, transparent); }
+.final-actions .small a { color: var(--bg); font-weight: 600; }
+@media (max-width: 820px) { .final-box { grid-template-columns: 1fr; padding: 40px 24px; } }
+
+/* screenshots */
+.shots-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 28px; }
+.device { background: #15142B; border-radius: 26px; padding: 14px; box-shadow: 0 24px 60px rgba(21, 20, 43, .18); }
+.device img { display: block; width: 100%; height: auto; border-radius: 14px; }
+.browser { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(21, 20, 43, .14); }
+.browser-bar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.browser-bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); }
+.browser-bar span { margin-left: 10px; flex: 1; min-width: 0; font: 500 12.5px/1 var(--mono); color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.browser img { display: block; width: 100%; height: auto; }
+.shot-main { display: grid; grid-template-columns: 1.6fr 1fr; gap: 28px; align-items: center; }
+.shot-main > * { min-width: 0; }
+.shot-copy { display: grid; gap: 14px; }
+.shot-copy ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--muted); }
+.shot-copy b { color: var(--ink); }
+.thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 28px; }
+.thumbs figure, .dash-grid figure { margin: 0; display: grid; gap: 10px; min-width: 0; }
+.thumbs .device { padding: 8px; border-radius: 16px; }
+.thumbs .device img { border-radius: 9px; }
+figcaption { font-size: 14.5px; color: var(--muted); }
+figcaption b { color: var(--ink); font-weight: 600; }
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; align-items: start; }
+@media (max-width: 900px) { .shot-main { grid-template-columns: 1fr; } .thumbs { grid-template-columns: 1fr 1fr; } .dash-grid { grid-template-columns: 1fr; } }
+
+footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 14px; }
+.foot { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; justify-content: space-between; }
+.foot nav { display: flex; flex-wrap: wrap; gap: 18px; }
+.foot a { text-decoration: none; }
+.foot a:hover { color: var(--brand); }
+:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; border-radius: 6px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap nav">
+    <a class="brand" href="#" aria-label="imprime.ai, início">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="28" fill="#fff"/><rect x="38" y="18" width="44" height="22" rx="4" fill="#C7D2FE"/><rect x="20" y="36" width="80" height="52" rx="16" fill="#4F46E5"/><circle cx="46" cy="56" r="5" fill="#fff"/><path d="M68 56h12" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M45 69q15 11 30 0" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><rect x="34" y="86" width="52" height="14" rx="3" fill="#C7D2FE"/><circle cx="92" cy="94" r="7" fill="#FACC15"/></svg>
+      <span class="wordmark">imprime<span>.ai</span></span>
+    </a>
+    <nav class="nav-links" aria-label="Principal">
+      <a class="hide-sm" href="#como-funciona">Como funciona</a>
+      <a class="hide-sm" href="#painel">Painel</a>
+      <a class="hide-sm" href="#privacidade">Privacidade</a>
+      <a class="hide-sm" href="#planos">Planos</a>
+      <a class="login" href="https://quioco.vercel.app/entrar">Entrar</a>
+      <a class="btn btn-sun" href="https://quioco.vercel.app/cadastro">Criar conta</a>
+    </nav>
+  </div>
+
+  <div class="wrap hero-grid">
+    <div>
+      <span class="pill"><b>Novo</b> Lançamento · novembro de 2026</span>
+      <h1>Sua impressora comum vira um <em>autoatendimento com Pix.</em></h1>
+      <p class="lead">O imprime.ai transforma a impressora que você já tem num ponto de impressão que funciona sozinho. O cliente envia o arquivo pelo celular, paga com Pix e retira a cópia. Sem balcão, sem fila, sem atendente.</p>
+      <div class="cta-row">
+        <a class="btn btn-sun" href="https://quioco.vercel.app/cadastro">Criar conta da loja →</a>
+        <a class="btn btn-ghost" href="https://quioco.vercel.app/entrar">Já tenho conta · Entrar</a>
+      </div>
+      <p class="hero-note">Funciona com iPad, tablet Android, Windows e Mac. O dinheiro cai direto na sua conta Mercado Pago.</p>
+    </div>
+
+    <div class="hero-art">
+      <svg viewBox="0 0 520 440" role="img" aria-label="Tablet do quiosque mostrando um QR Code Pix de R$ 1,50 ao lado de uma impressora imprimindo">
+        <!-- printer -->
+        <g transform="translate(300 170)">
+          <rect x="40" y="0" width="140" height="70" rx="10" fill="#C7D2FE"/>
+          <rect x="0" y="50" width="220" height="130" rx="30" fill="#fff"/>
+          <circle cx="70" cy="105" r="10" fill="#4F46E5"/>
+          <path d="M130 105h28" stroke="#4F46E5" stroke-width="10" stroke-linecap="round"/>
+          <path d="M70 135q40 26 80 0" fill="none" stroke="#4F46E5" stroke-width="11" stroke-linecap="round"/>
+          <rect x="30" y="172" width="160" height="58" rx="6" fill="#fff" stroke="#C7D2FE" stroke-width="3"/>
+          <rect x="52" y="190" width="96" height="7" rx="3.5" fill="#C7D2FE"/>
+          <rect x="52" y="205" width="70" height="7" rx="3.5" fill="#C7D2FE"/>
+          <circle cx="196" cy="186" r="14" fill="#FACC15"/>
+        </g>
+        <!-- tablet -->
+        <g transform="translate(18 40)">
+          <rect x="0" y="0" width="300" height="380" rx="30" fill="#15142B"/>
+          <rect x="14" y="14" width="272" height="352" rx="18" fill="#fff"/>
+          <text x="150" y="58" text-anchor="middle" font-family="Bricolage Grotesque, system-ui, sans-serif" font-weight="800" font-size="22" fill="#15142B">Pague com Pix</text>
+          <text x="150" y="84" text-anchor="middle" font-family="IBM Plex Sans, system-ui, sans-serif" font-size="13" fill="#5A5A73">3 páginas · preto e branco</text>
+          <rect x="70" y="102" width="160" height="160" rx="14" fill="#F1F0FF"/>
+          <g fill="#15142B">
+            <rect x="84" y="116" width="40" height="40" rx="6"/><rect x="92" y="124" width="24" height="24" rx="3" fill="#F1F0FF"/><rect x="98" y="130" width="12" height="12" rx="2"/>
+            <rect x="176" y="116" width="40" height="40" rx="6"/><rect x="184" y="124" width="24" height="24" rx="3" fill="#F1F0FF"/><rect x="190" y="130" width="12" height="12" rx="2"/>
+            <rect x="84" y="208" width="40" height="40" rx="6"/><rect x="92" y="216" width="24" height="24" rx="3" fill="#F1F0FF"/><rect x="98" y="222" width="12" height="12" rx="2"/>
+            <rect x="134" y="116" width="10" height="10"/><rect x="152" y="116" width="10" height="10"/><rect x="134" y="134" width="10" height="10"/><rect x="152" y="144" width="10" height="10"/>
+            <rect x="134" y="166" width="10" height="10"/><rect x="146" y="176" width="10" height="10"/><rect x="164" y="166" width="10" height="10"/><rect x="184" y="166" width="10" height="10"/>
+            <rect x="204" y="176" width="10" height="10"/><rect x="84" y="166" width="10" height="10"/><rect x="104" y="176" width="10" height="10"/><rect x="114" y="166" width="10" height="10"/>
+            <rect x="134" y="198" width="10" height="10"/><rect x="152" y="208" width="10" height="10"/><rect x="170" y="198" width="10" height="10"/><rect x="190" y="208" width="10" height="10"/>
+            <rect x="206" y="226" width="10" height="10"/><rect x="134" y="226" width="10" height="10"/><rect x="152" y="238" width="10" height="10"/><rect x="176" y="238" width="10" height="10"/>
+          </g>
+          <circle cx="150" cy="182" r="15" fill="#4F46E5"/><circle cx="150" cy="182" r="5" fill="#FACC15"/>
+          <text x="150" y="304" text-anchor="middle" font-family="Bricolage Grotesque, system-ui, sans-serif" font-weight="800" font-size="40" fill="#4F46E5">R$ 1,50</text>
+          <rect x="54" y="322" width="192" height="28" rx="14" fill="#ECEBFE"/>
+          <text x="150" y="341" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#4338CA">aguardando pagamento…</text>
+        </g>
+        <!-- confirmation bubble -->
+        <g transform="translate(236 34)">
+          <rect x="0" y="0" width="252" height="54" rx="27" fill="#FACC15"/>
+          <circle cx="28" cy="27" r="14" fill="#15142B"/>
+          <path d="M21 27l5 5 9-10" fill="none" stroke="#FACC15" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="52" y="33" font-family="IBM Plex Sans, system-ui, sans-serif" font-weight="600" font-size="16" fill="#15142B">Pix recebido. Imprimindo!</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section id="como-funciona">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Como funciona</span>
+        <h2>Três passos, e o atendente pode cuidar de outra coisa.</h2>
+      </div>
+      <div class="steps">
+        <article class="step">
+          <div class="step-num">1</div>
+          <h3>O cliente envia pelo celular</h3>
+          <p>Ele aponta a câmera para o QR Code na tela e manda PDF ou fotos direto do celular. Não precisa instalar app nem criar conta.</p>
+          <span class="tag">PDF · JPG · PNG · HEIC</span>
+        </article>
+        <article class="step">
+          <div class="step-num">2</div>
+          <h3>Escolhe as cópias e paga</h3>
+          <p>A tela mostra o total com o preço por página que você definiu. O cliente paga com Pix ou, se você quiser, no cartão por aproximação na maquininha. Também aceita voucher de crédito.</p>
+          <span class="tag">Pix · cartão · voucher</span>
+        </article>
+        <article class="step">
+          <div class="step-num">3</div>
+          <h3>Imprime na hora</h3>
+          <p>Assim que o pagamento é confirmado, a impressora começa. Depois de impresso, o arquivo é apagado do quiosque.</p>
+          <span class="tag">arquivo apagado após imprimir</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="app" style="padding-top:0">
+    <div class="wrap">
+      <div class="shots-head">
+        <div class="section-head" style="margin:0">
+          <span class="eyebrow">O app do quiosque</span>
+          <h2>É isso que o seu cliente vê.</h2>
+        </div>
+      </div>
+      <div class="shot-main">
+        <div class="device"><img src="img/app-pix.jpg" width="1180" height="820" alt="Tela do quiosque cobrando R$ 3,00 com QR Code Pix e instruções para pagar no app do banco"></div>
+        <div class="shot-copy">
+          <h3>Tela grande, letras grandes, zero dúvida.</h3>
+          <ol>
+            <li><b>Toque para começar</b> e aponte o celular para o QR Code.</li>
+            <li>Os arquivos aparecem na tela com <b>prévia e número de páginas</b>.</li>
+            <li>O cliente escolhe as cópias e vê <b>o total antes de pagar</b>.</li>
+            <li>O <b>QR Code Pix</b> aparece na tela. Pagou, imprimiu.</li>
+          </ol>
+          <p class="hero-note" style="color:var(--muted);margin:0">O nome da loja e o preço por página aparecem do jeito que você configurar no painel.</p>
+        </div>
+      </div>
+      <div class="thumbs">
+        <figure><div class="device"><img src="img/app-inicio.jpg" width="1180" height="820" loading="lazy" alt="Tela inicial: Imprima do seu celular, R$ 0,50 por página"></div><figcaption><b>Início.</b> Preço por página sempre à vista.</figcaption></figure>
+        <figure><div class="device"><img src="img/app-arquivos.jpg" width="1180" height="820" loading="lazy" alt="QR Code para enviar arquivos do celular e lista com uma foto e um contrato em PDF"></div><figcaption><b>Envio.</b> Fotos e PDFs chegam do celular em segundos.</figcaption></figure>
+        <figure><div class="device"><img src="img/app-revisao.jpg" width="1180" height="820" loading="lazy" alt="Resumo com 2 arquivos, 4 páginas, 2 cópias e total de R$ 4,00"></div><figcaption><b>Revisão.</b> Arquivos, páginas, cópias e total.</figcaption></figure>
+        <figure><div class="device"><img src="img/app-pronto.jpg" width="1180" height="820" loading="lazy" alt="Tela de confirmação: Pronto! Retire suas folhas na impressora"></div><figcaption><b>Pronto.</b> Impressão liberada e arquivo apagado.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="needs">
+    <div class="wrap needs-grid">
+      <div class="section-head" style="margin:0">
+        <span class="eyebrow">O que você precisa</span>
+        <h2>Nada de máquina nova. Use o que já tem na loja.</h2>
+        <p class="lead">O imprime.ai é software. Ele roda num tablet ou computador ligado à sua impressora e cuida do resto: tela de atendimento, cobrança, impressão e relatórios.</p>
+      </div>
+      <div class="need-list">
+        <div class="need">
+          <div class="ico"><svg viewBox="0 0 28 28" aria-hidden="true"><rect x="8" y="3" width="12" height="7" rx="1.5" fill="#C7D2FE"/><rect x="3" y="9" width="22" height="12" rx="4" fill="#fff"/><rect x="8" y="19" width="12" height="6" rx="1" fill="#C7D2FE"/><circle cx="21.5" cy="23" r="2" fill="#FACC15"/></svg></div>
+          <div><h3>Uma impressora comum</h3><p>Qualquer impressora que o tablet ou o computador já consegue usar: Wi-Fi, AirPrint, rede ou USB no computador.</p></div>
+        </div>
+        <div class="need">
+          <div class="ico"><svg viewBox="0 0 28 28" aria-hidden="true"><rect x="5" y="2" width="18" height="24" rx="3.5" fill="#fff"/><rect x="8" y="5" width="12" height="15" rx="1.5" fill="#C7D2FE"/><circle cx="14" cy="23" r="1.3" fill="#4F46E5"/></svg></div>
+          <div><h3>Um tablet ou computador</h3><p>Ele vira a tela do quiosque. Instale o app, digite o código de ativação e pronto.</p>
+            <div class="platforms"><span>iPad · iPhone</span><span>Android</span><span>Windows</span><span>Mac</span></div></div>
+        </div>
+        <div class="need">
+          <div class="ico"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3l4.2 4.2-4.2 4.2-4.2-4.2z M3 14l4.2-4.2 4.2 4.2-4.2 4.2z M25 14l-4.2 4.2-4.2-4.2 4.2-4.2z M14 25l-4.2-4.2 4.2-4.2 4.2 4.2z" fill="#fff"/><circle cx="14" cy="14" r="2" fill="#FACC15"/></svg></div>
+          <div><h3>Uma conta Mercado Pago</h3><p>Os pagamentos caem direto na sua conta, sem intermediário. A maquininha Point é opcional, para quem quer aceitar cartão também.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacidade">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Privacidade do cliente</span>
+        <h2>O documento não passa pelo WhatsApp da loja.</h2>
+        <p class="lead">Hoje o cliente manda RG, contrato ou comprovante para o WhatsApp ou o e-mail do atendente, e esse arquivo fica guardado lá. Com o imprime.ai, o documento vai do celular do cliente direto para a impressora.</p>
+      </div>
+      <div class="compare">
+        <div class="col col-old">
+          <h3>Enviar para a loja imprimir</h3>
+          <ul>
+            <li><span class="mark">×</span><span>O arquivo fica no celular e no WhatsApp do atendente</span></li>
+            <li><span class="mark">×</span><span>Fica também na caixa de e-mail da loja, por tempo indeterminado</span></li>
+            <li><span class="mark">×</span><span>O cliente passa a ter o número dele na lista de contatos da loja</span></li>
+            <li><span class="mark">×</span><span>Precisa de alguém no balcão para imprimir e cobrar</span></li>
+          </ul>
+        </div>
+        <div class="col col-new">
+          <h3>Com o imprime.ai</h3>
+          <ul>
+            <li><span class="mark">✓</span><span>O arquivo vai do celular direto para o quiosque, na rede da loja</span></li>
+            <li><span class="mark">✓</span><span>Apagado do quiosque assim que a impressão termina</span></li>
+            <li><span class="mark">✓</span><span>Sem telefone, sem e-mail, sem cadastro do cliente</span></li>
+            <li><span class="mark">✓</span><span>Ninguém da loja precisa ver o documento</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="needs" id="painel">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Painel da loja</span>
+        <h2>Você controla tudo de qualquer lugar.</h2>
+        <p class="lead">Entre no painel pelo navegador e ajuste cada quiosque sem ir até a loja.</p>
+      </div>
+      <div class="features">
+        <div class="feature"><span class="k">Preço</span><h3>Preço por página em cada impressora</h3><p>Defina um valor para cada quiosque. A mudança chega na tela do cliente em instantes.</p></div>
+        <div class="feature"><span class="k">Vouchers</span><h3>Créditos de impressão</h3><p>Gere códigos com saldo para brindes, clientes fiéis ou reembolsos, e imprima os cupons.</p></div>
+        <div class="feature"><span class="k">Relatórios</span><h3>Faturamento e cópias por dia</h3><p>Veja quanto cada quiosque faturou, quantas páginas saíram e como foi pago: Pix, cartão ou voucher.</p></div>
+        <div class="feature"><span class="k">Ajustes</span><h3>Configuração remota</h3><p>Nome do quiosque, limite de cópias, tempo de espera e Wi-Fi da loja, tudo pelo painel.</p></div>
+        <div class="feature"><span class="k">Pagamentos</span><h3>Pix e cartão por aproximação</h3><p>Pix na tela do quiosque e, com a maquininha Point, cartão de crédito, débito e celular por aproximação.</p></div>
+        <div class="feature"><span class="k">Segurança</span><h3>Login com Google e dois fatores</h3><p>Acesso protegido por código de verificação e backups automáticos todos os dias.</p></div>
+      </div>
+      <div class="browser" style="margin-top:40px">
+        <div class="browser-bar"><i></i><i></i><i></i><span>Painel imprime.ai · Visão geral</span></div>
+        <img src="img/painel-visao-geral.jpg" width="1600" height="1262" loading="lazy" alt="Painel com faturamento Pix, impressões, páginas e ticket médio dos últimos 30 dias, gráficos por dia e movimento por horário">
+      </div>
+      <div class="dash-grid">
+        <figure><div class="browser"><div class="browser-bar"><i></i><i></i><i></i><span>Configurações do quiosque</span></div><img src="img/painel-configuracoes.jpg" width="1100" height="1046" loading="lazy" alt="Formulário de configurações do quiosque com preço por página de R$ 0,50, máximo de cópias, e-mail do pagador e Wi-Fi dos clientes"></div><figcaption><b>Configurações.</b> Mude o preço por página e o quiosque atualiza sozinho.</figcaption></figure>
+        <figure><div class="browser"><div class="browser-bar"><i></i><i></i><i></i><span>Vouchers de crédito</span></div><img src="img/painel-vouchers.jpg" width="1600" height="1125" loading="lazy" alt="Página de vouchers com formulário para criar códigos, saldo em aberto e lista de vouchers"></div><figcaption><b>Vouchers.</b> Crie créditos em lote para promoções, troco ou reembolso.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="planos">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Planos</span>
+        <h2>Uma mensalidade fixa. As impressões são suas.</h2>
+        <p class="lead">Não cobramos porcentagem sobre as impressões: o valor de cada página vai inteiro para a sua conta Mercado Pago.</p>
+      </div>
+      <div class="plans">
+        <div class="plan">
+          <div><h3>Básico</h3><p class="extra">O app do quiosque liberado.</p></div>
+          <div class="price">R$ 19,99 <small>/mês por quiosque</small></div>
+          <ul>
+            <li>Impressões ilimitadas no quiosque</li>
+            <li>Pix e envio pelo celular</li>
+            <li>Renovação automática do código</li>
+          </ul>
+          <a class="btn btn-line" href="https://quioco.vercel.app/cadastro">Começar no Básico</a>
+        </div>
+        <div class="plan pro">
+          <div><h3>Pro</h3><p class="extra">O app e o painel completo da loja.</p></div>
+          <div class="price">R$ 49,99 <small>/mês</small></div>
+          <ul>
+            <li>Tudo do Básico</li>
+            <li>Faturamento e cópias por dia</li>
+            <li>Estatísticas por quiosque e horário</li>
+            <li>Histórico de impressões</li>
+          </ul>
+          <p class="extra">Cada quiosque a mais na mesma conta: R$ 9,99/mês.</p>
+          <a class="btn btn-brand" href="https://quioco.vercel.app/cadastro">Começar no Pro</a>
+        </div>
+      </div>
+      <p class="fine">As taxas do Mercado Pago sobre Pix e cartão seguem o seu contrato com eles. A assinatura é feita pelo Mercado Pago e pode ser cancelada a qualquer momento no painel.</p>
+    </div>
+  </section>
+
+  <section class="final">
+    <div class="wrap">
+      <div class="final-box">
+        <div>
+          <h2>Ligue sua impressora ao imprime.ai hoje.</h2>
+          <p>Crie a conta da loja, receba o código de ativação e deixe o quiosque atendendo enquanto você cuida do resto.</p>
+        </div>
+        <div class="final-actions">
+          <a class="btn btn-sun" href="https://quioco.vercel.app/cadastro">Criar conta da loja →</a>
+          <span class="small">Já é cliente? <a href="https://quioco.vercel.app/entrar">Entrar no painel</a></span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span><span class="wordmark" style="color:var(--ink)">imprime<span style="color:var(--brand)">.ai</span></span> &nbsp;© 2026</span>
+    <nav aria-label="Rodapé">
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#privacidade">Privacidade</a>
+      <a href="#planos">Planos</a>
+      <a href="https://quioco.vercel.app/entrar">Entrar</a>
+      <a href="https://quioco.vercel.app/cadastro">Criar conta</a>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
