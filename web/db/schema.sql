@@ -152,3 +152,43 @@ alter table kiosks add column if not exists config jsonb;
 alter table kiosks add column if not exists config_version int not null default 0;
 alter table kiosks add column if not exists reported_config jsonb;
 alter table kiosks add column if not exists applied_config_version int;
+
+-- Forma de pagamento de cada impressão: 'pix', 'card' (maquininha Point: cartão, aproximação,
+-- Apple Pay, Google Pay) ou null (grátis/demonstração). pix_payment_id guarda o id de qualquer um.
+alter table print_jobs add column if not exists payment_method text check (payment_method in ('pix','card'));
+update print_jobs set payment_method = 'pix' where paid_with_pix and payment_method is null;
+
+-- Vouchers de crédito: a loja cria códigos com saldo em reais; o cliente digita o código no
+-- quiosque e o valor da impressão é descontado. Valem em qualquer quiosque da mesma loja (dono).
+create table if not exists vouchers (
+  id             bigserial primary key,
+  owner_id       bigint not null references users(id) on delete cascade,
+  code           text not null unique,                 -- "ABCDE-23456", sem letras ambíguas
+  value_cents    int not null check (value_cents between 1 and 100000),
+  balance_cents  int not null check (balance_cents >= 0),
+  note           text,
+  batch          text not null,                        -- vouchers criados juntos (para imprimir)
+  expires_on     date,
+  disabled       boolean not null default false,
+  created_at     timestamptz not null default now(),
+  last_used_at   timestamptz
+);
+create index if not exists vouchers_owner_idx on vouchers(owner_id, created_at desc);
+
+-- Cada uso, com a referência do quiosque: repetir o mesmo pedido não desconta duas vezes.
+create table if not exists voucher_uses (
+  id             bigserial primary key,
+  voucher_id     bigint not null references vouchers(id) on delete cascade,
+  kiosk_id       bigint not null references kiosks(id) on delete cascade,
+  ref            text not null,
+  amount_cents   int not null,
+  balance_after  int not null,
+  refunded       boolean not null default false,
+  created_at     timestamptz not null default now(),
+  unique (kiosk_id, ref)
+);
+create index if not exists voucher_uses_voucher_idx on voucher_uses(voucher_id, created_at desc);
+alter table print_jobs drop constraint if exists print_jobs_payment_method_check;
+alter table print_jobs add constraint print_jobs_payment_method_check check (payment_method in ('pix','card','voucher'));
+grant select, insert, update, delete on vouchers, voucher_uses to printkiosk_app;
+grant usage, select on sequence vouchers_id_seq, voucher_uses_id_seq to printkiosk_app;

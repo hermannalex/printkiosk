@@ -17,6 +17,10 @@ type Job = {
   amountCents?: number;
   paidWithPix?: boolean;
   pixPaymentId?: string | null;
+  /** "pix", "card" (Point terminal: chip, contactless card, Apple Pay, Google Pay) or "voucher". */
+  paymentMethod?: string;
+  /** Mercado Pago payment or order id, whichever method paid. */
+  paymentId?: string | null;
   success?: boolean;
   demo?: boolean;
 };
@@ -90,7 +94,7 @@ export async function POST(request: Request) {
     const col = <T,>(pick: (j: (typeof valid)[number]) => T) => valid.map(pick);
     await sql`insert into print_jobs
         (kiosk_id, client_id, printed_at, items, pages, copies, total_pages, amount_cents,
-         paid_with_pix, pix_payment_id, success, demo)
+         paid_with_pix, pix_payment_id, success, demo, payment_method)
       select ${kioskId}, * from unnest(
         ${col((j) => j.clientId)}::text[],
         ${col((j) => j.printedAt.toISOString())}::timestamptz[],
@@ -100,9 +104,10 @@ export async function POST(request: Request) {
         ${col((j) => int(j.job.totalPages))}::int[],
         ${col((j) => int(j.job.amountCents, 100_000_00))}::int[],
         ${col((j) => !!j.job.paidWithPix)}::boolean[],
-        ${col((j) => (j.job.pixPaymentId ? String(j.job.pixPaymentId).slice(0, 40) : null))}::text[],
+        ${col((j) => { const id = j.job.paymentId ?? j.job.pixPaymentId; return id ? String(id).slice(0, 40) : null; })}::text[],
         ${col((j) => j.job.success !== false)}::boolean[],
-        ${col((j) => !!j.job.demo)}::boolean[])
+        ${col((j) => !!j.job.demo)}::boolean[],
+        ${col((j) => (j.job.paymentMethod === "card" || j.job.paymentMethod === "voucher" ? j.job.paymentMethod : j.job.paidWithPix ? "pix" : null))}::text[])
       on conflict (kiosk_id, client_id) do nothing`;
   }
 

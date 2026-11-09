@@ -46,6 +46,7 @@ export function Shell({
       : [
           ["/painel", "Visão geral"],
           ["/painel/quiosques", "Quiosques e assinatura"],
+          ["/painel/vouchers", "Vouchers"],
         ];
   return (
     <>

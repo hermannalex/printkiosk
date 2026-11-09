@@ -8,7 +8,7 @@ function scopeParams(scope: Scope): [boolean, number[]] {
   return [scope === null, scope ?? []];
 }
 
-export type Totals = { jobs: number; pages: number; copies: number; revenue: number; pixJobs: number };
+export type Totals = { jobs: number; pages: number; copies: number; revenue: number; pixJobs: number; cardJobs: number; voucherJobs: number };
 
 async function totalsBetween(scope: Scope, fromDaysAgo: number, toDaysAgo: number): Promise<Totals> {
   const [all, ids] = scopeParams(scope);
@@ -17,14 +17,16 @@ async function totalsBetween(scope: Scope, fromDaysAgo: number, toDaysAgo: numbe
            coalesce(sum(total_pages), 0)::int as pages,
            coalesce(sum(copies), 0)::int as copies,
            coalesce(sum(amount_cents), 0)::bigint as revenue,
-           (count(*) filter (where paid_with_pix))::int as pix_jobs
+           (count(*) filter (where payment_method = 'pix' or (payment_method is null and paid_with_pix)))::int as pix_jobs,
+           (count(*) filter (where payment_method = 'card'))::int as card_jobs,
+           (count(*) filter (where payment_method = 'voucher'))::int as voucher_jobs
     from print_jobs
     where success
       and printed_at >= now() - make_interval(days => ${fromDaysAgo})
       and printed_at <  now() - make_interval(days => ${toDaysAgo})
       and (${all}::boolean or kiosk_id = any(${ids}::bigint[]))`;
   const r = rows[0] ?? {};
-  return { jobs: Number(r.jobs ?? 0), pages: Number(r.pages ?? 0), copies: Number(r.copies ?? 0), revenue: Number(r.revenue ?? 0), pixJobs: Number(r.pix_jobs ?? 0) };
+  return { jobs: Number(r.jobs ?? 0), pages: Number(r.pages ?? 0), copies: Number(r.copies ?? 0), revenue: Number(r.revenue ?? 0), pixJobs: Number(r.pix_jobs ?? 0), cardJobs: Number(r.card_jobs ?? 0), voucherJobs: Number(r.voucher_jobs ?? 0) };
 }
 
 export async function periodTotals(scope: Scope, days: number) {

@@ -44,7 +44,7 @@ export async function StatsView({
     <>
       <section className="kpis" aria-label="Resumo do período">
         <Kpi label="Faturamento Pix" value={brl(t.revenue)} delta={totals.delta.revenue} foot={`vs. ${days} dias anteriores`} />
-        <Kpi label="Impressões" value={num(t.jobs)} delta={totals.delta.jobs} foot={`${num(t.pixJobs)} pagas com Pix`} />
+        <Kpi label="Impressões" value={num(t.jobs)} delta={totals.delta.jobs} foot={`${num(t.pixJobs)} Pix · ${num(t.cardJobs)} cartão · ${num(t.voucherJobs)} voucher`} />
         <Kpi label="Páginas impressas" value={num(t.pages)} delta={totals.delta.pages} foot={`${num(t.copies)} cópias`} />
         <Kpi label="Ticket médio" value={brl(ticket)} foot={t.jobs ? `Pico às ${busiest}h` : "Sem impressões no período"} />
       </section>
