@@ -21,4 +21,6 @@ captures/
 
 # Windows
 *.exe
-windows/quioco
+
+desktop/dist/
+desktop/quioco

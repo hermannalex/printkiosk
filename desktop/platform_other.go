@@ -1,4 +1,4 @@
-//go:build !windows
+//go:build !windows && !darwin
 
 package main
 
@@ -45,3 +45,7 @@ func autostartOn() bool                   { return false }
 func browserCommand(url, profile string) (*exec.Cmd, error) {
 	return nil, errors.New("abra " + url + " no navegador")
 }
+
+func openDefaultBrowser(url string) {}
+
+const platformName = "Linux"

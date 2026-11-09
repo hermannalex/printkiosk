@@ -151,3 +151,9 @@ func browserCommand(url, profile string) (*exec.Cmd, error) {
 	}
 	return nil, errors.New("Microsoft Edge ou Google Chrome não encontrado")
 }
+
+func openDefaultBrowser(url string) {
+	hidden(exec.Command("rundll32", "url.dll,FileProtocolHandler", url)).Start()
+}
+
+const platformName = "Windows"

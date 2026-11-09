@@ -37,7 +37,7 @@ func (app *App) syncOnce() *syncResult {
 	body := map[string]any{
 		"storeCode":     storeCode(app.store.storeID()),
 		"secret":        st.SyncSecret,
-		"platform":      "Windows",
+		"platform":      platformName,
 		"appVersion":    appVersion,
 		"licenseState":  lic.State,
 		"demoRemaining": demo,

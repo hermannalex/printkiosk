@@ -1,0 +1,32 @@
+# Testa e compila o Quioco para Windows e macOS a cada push; os apps ficam nos artefatos da execução.
+name: desktop
+on:
+  push:
+    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+  pull_request:
+    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - run: go vet ./... && GOOS=windows go vet ./... && GOOS=darwin go vet ./...
+      - run: go test ./...
+      - run: GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -s -w" -o dist/Quioco.exe .
+      - run: tools/build-mac.sh dist && cd dist && zip -qry Quioco-mac.zip Quioco.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Quioco-Windows
+          path: desktop/dist/Quioco.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Quioco-Mac
+          path: desktop/dist/Quioco-mac.zip

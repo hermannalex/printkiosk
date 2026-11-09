@@ -409,6 +409,7 @@ func (app *App) apiAdminInfo(w http.ResponseWriter, r *http.Request) {
 		"vendor":      vendorEmail,
 		"version":     appVersion,
 		"dataDir":     app.dir,
+		"platform":    platformName,
 	}
 	if perr != nil {
 		resp["printerError"] = perr.Error()
@@ -628,6 +629,4 @@ func (app *App) quit() {
 	os.Exit(0)
 }
 
-func openDefault(url string) {
-	hidden(exec.Command("rundll32", "url.dll,FileProtocolHandler", url)).Start()
-}
+func openDefault(url string) { openDefaultBrowser(url) }

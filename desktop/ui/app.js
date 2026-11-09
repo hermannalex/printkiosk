@@ -1,4 +1,4 @@
-// Quioco for Windows: the kiosk screen. Talks only to the local Quioco program (127.0.0.1).
+// Quioco for Windows and macOS: the kiosk screen. Talks only to the local Quioco program (127.0.0.1).
 import * as pdfjs from "./pdfjs/pdf.min.mjs";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "./pdfjs/pdf.worker.min.mjs";
@@ -496,11 +496,12 @@ function fillPanel(info) {
     o.selected = p.Default;
     sel.append(o);
   }
-  $("a-printer-note").textContent = info.printerError || (info.printers?.length ? "O Quioco imprime direto, sem janela, na impressora escolhida (ela vira a padrão do Windows)." : "Nenhuma impressora instalada no Windows. Instale a impressora e reabra esta tela.");
+  $("a-printer-note").textContent = info.printerError || (info.printers?.length ? `O Quioco imprime direto, sem janela, na impressora escolhida (ela vira a padrão do ${info.platform}).` : `Nenhuma impressora instalada no ${info.platform}. Instale a impressora e reabra esta tela.`);
   $("a-sync").textContent = (info.lastSync ? `Última sincronização: ${info.lastSync}.` : "Ainda não sincronizou.") +
     (info.pending ? ` ${info.pending} impressão(ões) aguardando envio.` : "") + (info.syncError ? ` Erro: ${info.syncError}` : "");
   $("a-autostart").checked = info.autostart;
-  $("a-version").textContent = `Quioco para Windows ${info.version} · dados em ${info.dataDir}`;
+  $("a-version").textContent = `Quioco para ${info.platform} ${info.version} · dados em ${info.dataDir}`;
+  $("a-token-note").textContent = info.platform === "macOS" ? "O token fica criptografado com uma chave guardada nas Chaves (Keychain) deste Mac." : "O token fica criptografado com a conta do Windows deste computador.";
 }
 
 function parseMoney(text) {
