@@ -16,10 +16,12 @@ const (
 	demoPrints     = 5
 	priceLabel     = "a partir de R$ 19,99/mês"
 	vendorEmail    = "alex@somainfo.com.br"
-	serverURL      = "https://quioco.vercel.app"
 	licensePubKey  = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvKAdZ2rVE+ExL+GWj0OJcDS05O4NnOBt8hAXeUANqC/aX1J2RW9cpXoDr78Xag57U0tm1Vo2oO90bSO95fiYYw=="
 	base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 )
+
+// serverURL is the dashboard; QUIOCO_SERVER overrides it only in tests.
+var serverURL = envOr("QUIOCO_SERVER", "https://quioco.vercel.app")
 
 var licenseEpoch = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 

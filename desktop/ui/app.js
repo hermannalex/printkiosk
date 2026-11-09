@@ -89,7 +89,7 @@ $("start").onclick = async () => {
 for (const b of document.querySelectorAll('[data-action="reset"]')) b.onclick = reset;
 
 async function reset() {
-  S.items = []; S.meta.clear(); S.copies = 1; S.payment = null; S.paidId = null;
+  S.items = []; S.meta.clear(); S.copies = 1; S.payment = null; S.paidId = null; S.voucherBalance = null; S.method = null;
   $("print-root").innerHTML = "";
   await api("/api/reset", {}).catch(() => {});
   $("upload-qr").innerHTML = '<p class="muted">Preparando…</p>';
@@ -201,7 +201,7 @@ function renderReview() {
   $("r-total-pages").textContent = `${total} página(s) no total`;
   const cents = total * s.pricePerPageCents;
   $("r-total").textContent = s.pricePerPageCents > 0 ? money(cents) : "Grátis";
-  $("checkout").textContent = s.pricePerPageCents > 0 ? `Pagar ${money(cents)} com Pix` : "Imprimir";
+  $("checkout").textContent = s.pricePerPageCents > 0 ? `Pagar ${money(cents)}` : "Imprimir";
 }
 
 $("to-review").onclick = async () => { await api("/api/upload/close", {}); await refreshState(); show("review"); renderReview(); };
@@ -220,15 +220,92 @@ function status(title, text, kind) {
   $("status-done").hidden = !kind;
 }
 
+const totalCents = () => pageCount() * S.copies * S.state.settings.pricePerPageCents;
+
 $("checkout").onclick = async () => {
   if (S.paidId) return printNow();
+  if (S.state.settings.pricePerPageCents > 0) return chooseMethod();
   status("Preparando…", "");
   const r = await api("/api/checkout", { pages: pageCount(), copies: S.copies }).catch(() => ({ action: "blocked", message: "Erro inesperado. Tente de novo." }));
   if (r.action === "print") return printNow();
-  if (r.action === "pay") return startPayment(r);
-  if (r.action === "payError") { show("review"); renderReview(); return alertBox(r.message); }
   status("Não foi possível imprimir", r.message, "bad");
   finishLater();
+};
+
+async function chooseMethod() {
+  const m = await api("/api/methods").catch(() => ({}));
+  $("m-pix").hidden = !m.pix;
+  $("m-card").hidden = !m.card;
+  $("m-voucher").hidden = !m.voucher;
+  $("m-amount").textContent = money(totalCents());
+  show("method");
+}
+$("m-back").onclick = () => { show("review"); renderReview(); };
+$("m-pix").onclick = () => pay("pix");
+$("m-card").onclick = () => pay("card");
+$("m-voucher").onclick = () => openVoucher();
+
+async function pay(method) {
+  S.method = method;
+  status(method === "card" ? "Enviando para a maquininha…" : "Preparando…", "");
+  const r = await api("/api/checkout", { pages: pageCount(), copies: S.copies, method }).catch(() => ({ action: "blocked", message: "Erro inesperado. Tente de novo." }));
+  if (r.action === "print") return printNow();
+  if (r.action === "pay" || r.action === "card") return startPayment(r, r.action === "card" ? "card" : "pix");
+  if (r.action === "payError") { await chooseMethod(); return methodError(r.message); }
+  status("Não foi possível imprimir", r.message, "bad");
+  finishLater();
+}
+
+function methodError(text) {
+  const n = document.createElement("p");
+  n.className = "notice bad"; n.textContent = text;
+  $("s-method").querySelector(".methods").append(n);
+  setTimeout(() => n.remove(), 8000);
+}
+
+// ---------------------------------------------------------------- voucher
+
+const VOUCHER_KEYS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+let voucherCode = "";
+function renderVoucherCode() {
+  const t = voucherCode.padEnd(10, "·");
+  $("v-code").textContent = t.slice(0, 5) + "-" + t.slice(5);
+  $("v-use").disabled = voucherCode.length !== 10;
+}
+(function buildKeys() {
+  const box = $("v-keys");
+  for (const k of [...VOUCHER_KEYS, "⌫"]) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = k === "⌫" ? "btn wide" : "btn"; b.textContent = k;
+    b.onclick = () => {
+      $("v-error").hidden = true;
+      if (k === "⌫") voucherCode = voucherCode.slice(0, -1);
+      else if (voucherCode.length < 10) voucherCode += k;
+      renderVoucherCode();
+    };
+    box.append(b);
+  }
+})();
+
+function openVoucher() {
+  voucherCode = "";
+  renderVoucherCode();
+  $("v-error").hidden = true;
+  $("v-amount").textContent = money(totalCents());
+  show("voucher");
+}
+$("v-back").onclick = () => chooseMethod();
+$("v-use").onclick = async () => {
+  $("v-use").disabled = true;
+  const r = await api("/api/voucher/redeem", { code: `${voucherCode.slice(0, 5)}-${voucherCode.slice(5)}`, pages: pageCount(), copies: S.copies }).catch(() => ({ error: "Erro inesperado. Tente de novo." }));
+  if (r.status !== "approved") {
+    $("v-error").textContent = r.error || "Não foi possível usar o voucher."; $("v-error").hidden = false;
+    $("v-use").disabled = false;
+    return;
+  }
+  S.paidId = r.id;
+  S.voucherBalance = r.balanceCents;
+  printNow("Voucher aceito");
 };
 
 function alertBox(text) {
@@ -241,10 +318,17 @@ function alertBox(text) {
 // ---------------------------------------------------------------- payment
 
 let payTimer = null;
-function startPayment(r) {
+const TERMINAL_ART = `<svg class="terminal-art" viewBox="0 0 120 120" aria-hidden="true"><rect x="30" y="18" width="52" height="88" rx="10" fill="none" stroke="currentColor" stroke-width="5"/><rect x="40" y="30" width="32" height="22" rx="3" fill="currentColor" opacity=".2"/><g fill="currentColor"><circle cx="45" cy="66" r="3.5"/><circle cx="56" cy="66" r="3.5"/><circle cx="67" cy="66" r="3.5"/><circle cx="45" cy="78" r="3.5"/><circle cx="56" cy="78" r="3.5"/><circle cx="67" cy="78" r="3.5"/><circle cx="45" cy="90" r="3.5"/><circle cx="56" cy="90" r="3.5"/><circle cx="67" cy="90" r="3.5"/></g><g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><path d="M92 46a20 20 0 0 1 0 28"/><path d="M100 38a32 32 0 0 1 0 44"/></g></svg>`;
+
+function startPayment(r, kind) {
   show("pay");
+  const card = kind === "card";
+  $("pay-title").textContent = card ? "Pague na maquininha" : "Pague com Pix";
   $("pay-amount").textContent = money(r.amountCents);
-  $("pay-qr").innerHTML = r.svg;
+  $("pay-qr").innerHTML = card ? TERMINAL_ART : r.svg;
+  $("pay-steps").innerHTML = card
+    ? "<li>Na maquininha ao lado, escolha <b>crédito</b> ou <b>débito</b></li><li><b>Aproxime</b> o cartão, o celular ou o relógio, ou insira o cartão</li><li>Aguarde a aprovação</li>"
+    : "<li>Abra o app do seu banco</li><li>Escolha <b>Pix › Pagar com QR Code</b></li><li>Aponte a câmera e confirme</li>";
   $("pay-message").hidden = true;
   $("pay-retry").hidden = true;
   $("pay-cancel").disabled = false;
@@ -256,14 +340,14 @@ function startPayment(r) {
     $("pay-timer").textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
     if (checking || (left % 3 !== 0 && left > 0)) return;
     checking = true;
-    const st = await api(`/api/pay/status?id=${S.payment.id}`).catch(() => ({ status: "pending" }));
+    const st = await api(`/api/pay/status?id=${encodeURIComponent(S.payment.id)}`).catch(() => ({ status: "pending" }));
     checking = false;
     if (S.screen !== "pay") return;
     if (st.status === "approved") return paid();
     if (st.status === "failed") return payEnded("O pagamento foi recusado ou cancelado. Nenhum valor foi cobrado.");
     if (st.status === "expired" || (left === 0 && st.status !== "pending")) return payEnded("O tempo para pagar acabou. Nenhum valor foi cobrado.");
     if (left === 0) {
-      const last = await api(`/api/pay/status?id=${S.payment.id}`).catch(() => ({}));
+      const last = await api(`/api/pay/status?id=${encodeURIComponent(S.payment.id)}`).catch(() => ({}));
       if (last.status === "approved") return paid();
       return payEnded("O tempo para pagar acabou. Nenhum valor foi cobrado.");
     }
@@ -280,15 +364,15 @@ function payEnded(text) {
 function paid() {
   clearInterval(payTimer);
   S.paidId = S.payment.id;
-  printNow("Pagamento confirmado");
+  printNow(S.method === "card" ? "Pagamento aprovado" : "Pagamento confirmado");
 }
 
-$("pay-retry").onclick = () => $("checkout").onclick();
+$("pay-retry").onclick = () => pay(S.method || "pix");
 $("pay-cancel").onclick = async () => {
   clearInterval(payTimer);
   $("pay-cancel").disabled = true;
   if (S.payment) {
-    const r = await api(`/api/pay/cancel?id=${S.payment.id}`, {}).catch(() => ({}));
+    const r = await api(`/api/pay/cancel?id=${encodeURIComponent(S.payment.id)}`, {}).catch(() => ({}));
     if (r.status === "approved") return paid(); // paid just before tapping Cancel: print anyway
   }
   S.payment = null;
@@ -367,9 +451,11 @@ async function printNow(heading) {
   }
   $("print-root").innerHTML = "";
   await api("/api/print/done", { success: ok, items: printable().length, pages, copies: S.copies, paymentId: S.paidId || "" }).catch(() => {});
-  if (ok) status("Pronto!", "Retire suas folhas na impressora. Obrigado!", "ok");
+  const balance = S.voucherBalance != null && ok ? ` Saldo restante no voucher: ${money(S.voucherBalance)}.` : "";
+  if (ok) status("Pronto!", "Retire suas folhas na impressora. Obrigado!" + balance, "ok");
   else status("Não foi possível imprimir", S.paidId ? "Seu pagamento foi recebido. Chame um atendente para imprimir." : "Tente de novo ou chame um atendente.", "bad");
   S.paidId = ok ? null : S.paidId;
+  S.voucherBalance = null;
   finishLater();
 }
 
@@ -382,7 +468,7 @@ function finishLater() {
 // ---------------------------------------------------------------- idle
 
 setInterval(() => {
-  if (!S.state || !["select", "review"].includes(S.screen)) return;
+  if (!S.state || !["select", "review", "method", "voucher"].includes(S.screen)) return;
   if (S.screen === "select" && S.items.length === 0 && Date.now() - S.lastTouch < 180000) return;
   if (Date.now() - S.lastTouch > S.state.settings.idleTimeoutSeconds * 1000) reset();
 }, 2000);
@@ -500,6 +586,8 @@ function fillPanel(info) {
   $("a-sync").textContent = (info.lastSync ? `Última sincronização: ${info.lastSync}.` : "Ainda não sincronizou.") +
     (info.pending ? ` ${info.pending} impressão(ões) aguardando envio.` : "") + (info.syncError ? ` Erro: ${info.syncError}` : "");
   $("a-autostart").checked = info.autostart;
+  $("a-point").textContent = info.pointTerminal ? `Maquininha em uso: ${info.pointTerminal}` : "Nenhuma maquininha ligada. O cliente paga só com Pix ou voucher.";
+  $("a-point-off").hidden = !info.pointTerminal;
   $("a-version").textContent = `Quioco para ${info.platform} ${info.version} · dados em ${info.dataDir}`;
   $("a-token-note").textContent = info.platform === "macOS" ? "O token fica criptografado com uma chave guardada nas Chaves (Keychain) deste Mac." : "O token fica criptografado com a conta do Windows deste computador.";
 }
@@ -535,6 +623,28 @@ $("a-activate").onclick = async () => { const r = await api("/api/admin/activate
 $("a-sync-now").onclick = async () => { adminMsg("Sincronizando…"); const info = await api("/api/admin/sync", {}); fillPanel(info); adminMsg(info.syncError ? `Erro: ${info.syncError}` : "Sincronizado.", !!info.syncError); };
 $("a-printer").onchange = async () => { const info = await api("/api/admin/printer", { name: $("a-printer").value }); if (info.error) return adminMsg(info.error, true); fillPanel(info); adminMsg("Impressora escolhida."); };
 $("a-autostart").onchange = async () => { const info = await api("/api/admin/autostart", { on: $("a-autostart").checked }); if (info.error) return adminMsg(info.error, true); fillPanel(info); };
+$("a-point-find").onclick = async () => {
+  adminMsg("Buscando maquininhas na conta do Mercado Pago…");
+  const r = await api("/api/admin/point/list", {});
+  if (r.error) return adminMsg(r.error, true);
+  const sel = $("a-point-list");
+  sel.innerHTML = "";
+  for (const t of r.terminals) {
+    const o = document.createElement("option");
+    o.value = t.id; o.textContent = `${t.id}${t.operating_mode ? ` (${t.operating_mode})` : ""}`;
+    sel.append(o);
+  }
+  $("a-point-pick").hidden = false;
+  adminMsg(`${r.terminals.length} maquininha(s) encontrada(s). Escolha e toque em Usar esta.`);
+};
+$("a-point-use").onclick = async () => {
+  const info = await api("/api/admin/point/set", { id: $("a-point-list").value });
+  if (info.error) return adminMsg(info.error, true);
+  $("a-point-pick").hidden = true;
+  fillPanel(info);
+  adminMsg("Maquininha ligada ao quiosque e colocada no modo de integração (PDV).");
+};
+$("a-point-off").onclick = async () => { const info = await api("/api/admin/point/set", { id: "" }); fillPanel(info); adminMsg("Maquininha desligada do quiosque."); };
 $("a-quit").onclick = async () => { await api("/api/admin/quit", {}); document.body.innerHTML = '<p style="padding:40px;font-size:24px">Quioco fechado.</p>'; };
 $("a-test-page").onclick = () => {
   const root = $("print-root");

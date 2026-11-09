@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -23,15 +22,6 @@ const uiPort = "47800"
 
 //go:embed ui
 var uiFiles embed.FS
-
-type payment struct {
-	charge   PixCharge
-	deadline time.Time
-	pages    int
-	copies   int
-	paid     bool
-	done     bool
-}
 
 type App struct {
 	store      *Store
@@ -45,7 +35,7 @@ type App struct {
 	syncError  string
 	lastTouch  time.Time
 	adminUntil time.Time
-	payments   map[int64]*payment
+	payments   map[string]*payment
 	browser    *exec.Cmd
 	quitting   bool
 }
@@ -249,6 +239,8 @@ func (app *App) routes() http.Handler {
 	api("/api/pay/status", false, app.apiPayStatus)
 	api("/api/pay/cancel", false, app.apiPayCancel)
 	api("/api/print/done", false, app.apiPrintDone)
+	api("/api/methods", false, app.apiMethods)
+	api("/api/voucher/redeem", false, app.apiVoucherRedeem)
 
 	// Staff settings
 	api("/api/admin/pin", false, app.apiSetPin)
@@ -350,6 +342,27 @@ func (app *App) routes() http.Handler {
 		}
 		app.apiAdminInfo(w, r)
 	})
+	api("/api/admin/point/list", true, func(w http.ResponseWriter, r *http.Request) {
+		list, err := pointTerminals(app.token())
+		if err != nil {
+			writeJSON(w, 200, map[string]any{"error": err.Error()})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"terminals": list})
+	})
+	api("/api/admin/point/set", true, func(w http.ResponseWriter, r *http.Request) {
+		var in struct{ ID string }
+		readJSON(r, &in)
+		id := strings.TrimSpace(in.ID)
+		if id != "" {
+			if err := pointSetPDV(app.token(), id); err != nil {
+				writeJSON(w, 200, map[string]any{"error": err.Error()})
+				return
+			}
+		}
+		app.store.Update(func(s *State) { s.PointTerminal = id })
+		app.apiAdminInfo(w, r)
+	})
 	api("/api/admin/quit", true, func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 200, map[string]any{"ok": true})
 		go func() {
@@ -394,22 +407,23 @@ func (app *App) apiAdminInfo(w http.ResponseWriter, r *http.Request) {
 		dash = serverURL
 	}
 	resp := map[string]any{
-		"settings":    st.Settings,
-		"license":     app.license(),
-		"storeCode":   storeCode(app.store.storeID()),
-		"pairingCode": pairingCode(st.SyncSecret),
-		"tokenSuffix": suffix,
-		"lastSync":    lastSync,
-		"syncError":   syncErr,
-		"pending":     len(st.Queue),
-		"dashboard":   dash,
-		"printers":    printers,
-		"autostart":   autostartOn(),
-		"priceLabel":  priceLabel,
-		"vendor":      vendorEmail,
-		"version":     appVersion,
-		"dataDir":     app.dir,
-		"platform":    platformName,
+		"settings":      st.Settings,
+		"license":       app.license(),
+		"storeCode":     storeCode(app.store.storeID()),
+		"pairingCode":   pairingCode(st.SyncSecret),
+		"tokenSuffix":   suffix,
+		"lastSync":      lastSync,
+		"syncError":     syncErr,
+		"pending":       len(st.Queue),
+		"dashboard":     dash,
+		"printers":      printers,
+		"autostart":     autostartOn(),
+		"priceLabel":    priceLabel,
+		"vendor":        vendorEmail,
+		"version":       appVersion,
+		"dataDir":       app.dir,
+		"platform":      platformName,
+		"pointTerminal": st.PointTerminal,
 	}
 	if perr != nil {
 		resp["printerError"] = perr.Error()
@@ -436,137 +450,6 @@ func (app *App) apiSetPin(w http.ResponseWriter, r *http.Request) {
 	app.mu.Lock()
 	app.adminUntil = time.Now().Add(10 * time.Minute)
 	app.mu.Unlock()
-	writeJSON(w, 200, map[string]any{"ok": true})
-}
-
-// apiCheckout decides: print now (free or demo), take a Pix payment, or refuse.
-func (app *App) apiCheckout(w http.ResponseWriter, r *http.Request) {
-	var in struct{ Pages, Copies int }
-	readJSON(r, &in)
-	st := app.store.Read()
-	lic := app.license()
-	if msg := blockedMessage(lic); msg != "" {
-		writeJSON(w, 200, map[string]any{"action": "blocked", "message": msg})
-		return
-	}
-	if in.Pages < 1 || in.Copies < 1 || in.Copies > st.Settings.MaxCopies || app.itemCount() == 0 {
-		writeJSON(w, 200, map[string]any{"action": "blocked", "message": "Nada para imprimir."})
-		return
-	}
-	if st.Settings.PricePerPageCents == 0 {
-		writeJSON(w, 200, map[string]any{"action": "print"})
-		return
-	}
-	token := app.token()
-	if !strings.Contains(st.Settings.PayerEmail, "@") || token == "" {
-		writeJSON(w, 200, map[string]any{"action": "blocked", "message": "O pagamento por Pix ainda não foi configurado. Peça ajuda a um atendente."})
-		return
-	}
-	total := in.Pages * in.Copies
-	cents := total * st.Settings.PricePerPageCents
-	charge, err := pixCreate(token, cents, st.Settings.KioskName+" – "+strconv.Itoa(total)+" página(s)", st.Settings.PayerEmail)
-	if err != nil {
-		writeJSON(w, 200, map[string]any{"action": "payError", "message": err.Error()})
-		return
-	}
-	p := &payment{charge: charge, deadline: time.Now().Add(time.Duration(st.Settings.PaymentTimeoutSeconds) * time.Second), pages: in.Pages, copies: in.Copies}
-	app.mu.Lock()
-	if app.payments == nil {
-		app.payments = map[int64]*payment{}
-	}
-	app.payments[charge.ID] = p
-	app.mu.Unlock()
-	q, _ := EncodeQR(charge.QRCode)
-	writeJSON(w, 200, map[string]any{
-		"action": "pay", "id": strconv.FormatInt(charge.ID, 10), "svg": q.SVG(), "copyPaste": charge.QRCode,
-		"amountCents": cents, "seconds": st.Settings.PaymentTimeoutSeconds,
-	})
-}
-
-func (app *App) findPayment(r *http.Request) *payment {
-	id, _ := strconv.ParseInt(r.URL.Query().Get("id"), 10, 64)
-	app.mu.Lock()
-	defer app.mu.Unlock()
-	return app.payments[id]
-}
-
-func (app *App) apiPayStatus(w http.ResponseWriter, r *http.Request) {
-	p := app.findPayment(r)
-	if p == nil {
-		writeJSON(w, 200, map[string]any{"status": "unknown"})
-		return
-	}
-	token := app.token()
-	status, err := pixStatus(token, p.charge.ID)
-	if err != nil {
-		writeJSON(w, 200, map[string]any{"status": "pending"}) // brief network blip
-		return
-	}
-	switch {
-	case status == "approved":
-		app.mu.Lock()
-		p.paid = true
-		app.mu.Unlock()
-		writeJSON(w, 200, map[string]any{"status": "approved"})
-	case finalFailure(status):
-		writeJSON(w, 200, map[string]any{"status": "failed"})
-	case time.Now().After(p.deadline):
-		pixCancel(token, p.charge.ID)
-		writeJSON(w, 200, map[string]any{"status": "expired"})
-	default:
-		writeJSON(w, 200, map[string]any{"status": "pending"})
-	}
-}
-
-// apiPayCancel: if they paid just before tapping Cancel, print anyway instead of keeping their money.
-func (app *App) apiPayCancel(w http.ResponseWriter, r *http.Request) {
-	p := app.findPayment(r)
-	if p == nil {
-		writeJSON(w, 200, map[string]any{"status": "cancelled"})
-		return
-	}
-	token := app.token()
-	if s, err := pixStatus(token, p.charge.ID); err == nil && s == "approved" {
-		app.mu.Lock()
-		p.paid = true
-		app.mu.Unlock()
-		writeJSON(w, 200, map[string]any{"status": "approved"})
-		return
-	}
-	pixCancel(token, p.charge.ID)
-	writeJSON(w, 200, map[string]any{"status": "cancelled"})
-}
-
-func (app *App) apiPrintDone(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Success   bool
-		Items     int
-		Pages     int
-		Copies    int
-		PaymentID string
-	}
-	readJSON(r, &in)
-	var paidID *string
-	amount := 0
-	if id, err := strconv.ParseInt(in.PaymentID, 10, 64); err == nil {
-		app.mu.Lock()
-		if p := app.payments[id]; p != nil && p.paid && !p.done {
-			p.done = true
-			s := in.PaymentID
-			paidID = &s
-			amount = p.charge.AmountCents
-		}
-		app.mu.Unlock()
-	}
-	demo := app.license().State != "active"
-	if demo && in.Success {
-		app.store.Update(func(s *State) { s.DemoUsed++ })
-	}
-	app.recordJob(PrintJob{
-		ID: newUUID(), PrintedAt: time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
-		Items: in.Items, Pages: in.Pages, Copies: in.Copies, TotalPages: in.Pages * in.Copies,
-		AmountCents: amount, PaidWithPix: paidID != nil, PixPaymentID: paidID, Success: in.Success, Demo: demo,
-	})
 	writeJSON(w, 200, map[string]any{"ok": true})
 }
 

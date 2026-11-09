@@ -28,17 +28,19 @@ func defaultSettings() Settings {
 
 // PrintJob is one finished print, as reported to the dashboard.
 type PrintJob struct {
-	ID           string  `json:"id"`
-	PrintedAt    string  `json:"printedAt"`
-	Items        int     `json:"items"`
-	Pages        int     `json:"pages"`
-	Copies       int     `json:"copies"`
-	TotalPages   int     `json:"totalPages"`
-	AmountCents  int     `json:"amountCents"`
-	PaidWithPix  bool    `json:"paidWithPix"`
-	PixPaymentID *string `json:"pixPaymentId"`
-	Success      bool    `json:"success"`
-	Demo         bool    `json:"demo"`
+	ID            string  `json:"id"`
+	PrintedAt     string  `json:"printedAt"`
+	Items         int     `json:"items"`
+	Pages         int     `json:"pages"`
+	Copies        int     `json:"copies"`
+	TotalPages    int     `json:"totalPages"`
+	AmountCents   int     `json:"amountCents"`
+	PaidWithPix   bool    `json:"paidWithPix"`
+	PixPaymentID  *string `json:"pixPaymentId"`
+	PaymentMethod string  `json:"paymentMethod,omitempty"` // pix, card or voucher
+	PaymentID     *string `json:"paymentId,omitempty"`
+	Success       bool    `json:"success"`
+	Demo          bool    `json:"demo"`
 }
 
 // State is everything the kiosk keeps, in %LOCALAPPDATA%\Quioco\state.json.
@@ -58,6 +60,7 @@ type State struct {
 	LockedUntilMs        int64      `json:"lockedUntilMs"`
 	SealedToken          string     `json:"sealedToken,omitempty"`
 	Printer              string     `json:"printer,omitempty"`
+	PointTerminal        string     `json:"pointTerminal,omitempty"` // Mercado Pago Point in PDV mode
 }
 
 type Store struct {

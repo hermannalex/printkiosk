@@ -90,20 +90,42 @@
   </section>
 
   <!-- Payment -->
+  <!-- Choose how to pay -->
+  <section class="screen" id="s-method" hidden>
+    <div class="methods card">
+      <h2>Como você quer pagar?</h2>
+      <p class="amount" id="m-amount"></p>
+      <div class="method-list">
+        <button class="method" id="m-pix" type="button">
+          <span class="method-icon">PIX</span>
+          <span><b>Pix</b><small>QR Code no app do banco</small></span>
+        </button>
+        <button class="method" id="m-card" type="button">
+          <span class="method-icon"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="12" width="36" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M6 19h36" stroke="currentColor" stroke-width="3"/><path d="M30 28h7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>
+          <span><b>Cartão ou celular</b><small>Crédito, débito, aproximação, Apple Pay e Google Pay na maquininha</small></span>
+        </button>
+        <button class="method" id="m-voucher" type="button">
+          <span class="method-icon"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 14h36v7a4 4 0 0 0 0 8v7H6v-7a4 4 0 0 0 0-8z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M30 15v18" stroke="currentColor" stroke-width="3" stroke-dasharray="3 3"/></svg></span>
+          <span><b>Voucher</b><small>Código de crédito da loja</small></span>
+        </button>
+      </div>
+    </div>
+    <footer class="actions">
+      <button class="btn btn-ghost" id="m-back" type="button">Voltar</button>
+    </footer>
+  </section>
+
+  <!-- Pix QR Code or the card terminal -->
   <section class="screen" id="s-pay" hidden>
     <div class="split pay">
       <div class="card center">
-        <h2>Pague com Pix</h2>
+        <h2 id="pay-title">Pague com Pix</h2>
         <p class="amount" id="pay-amount"></p>
         <div class="qr qr-big" id="pay-qr"></div>
         <p class="small muted">Expira em <b id="pay-timer">5:00</b></p>
       </div>
       <div class="card">
-        <ol class="steps big">
-          <li>Abra o app do seu banco</li>
-          <li>Escolha <b>Pix › Pagar com QR Code</b></li>
-          <li>Aponte a câmera e confirme</li>
-        </ol>
+        <ol class="steps big" id="pay-steps"></ol>
         <p class="muted">A impressão começa sozinha assim que o pagamento for confirmado.</p>
         <p class="notice" id="pay-message" hidden></p>
       </div>
@@ -111,6 +133,21 @@
     <footer class="actions">
       <button class="btn btn-ghost" id="pay-cancel" type="button">Cancelar</button>
       <button class="btn btn-primary btn-lg" id="pay-retry" type="button" hidden>Tentar de novo</button>
+    </footer>
+  </section>
+
+  <!-- Voucher code -->
+  <section class="screen" id="s-voucher" hidden>
+    <div class="voucher card center">
+      <h2>Digite o código do voucher</h2>
+      <p class="muted">Valor desta impressão: <b id="v-amount"></b></p>
+      <div class="code-box mono" id="v-code" aria-live="polite"></div>
+      <div class="letters" id="v-keys"></div>
+      <p class="notice bad" id="v-error" hidden></p>
+    </div>
+    <footer class="actions">
+      <button class="btn btn-ghost" id="v-back" type="button">Voltar</button>
+      <button class="btn btn-primary btn-lg" id="v-use" type="button" disabled>Usar voucher</button>
     </footer>
   </section>
 
@@ -194,6 +231,20 @@
           <label class="field">Wi-Fi dos clientes (nome)<input id="f-wifi" maxlength="32" autocomplete="off"></label>
           <label class="field">Senha do Wi-Fi dos clientes<input id="f-wifipass" maxlength="63" autocomplete="off"></label>
           <p class="small muted">Estas configurações também podem ser mudadas pelo painel online; o que for salvo lá chega em até 30 minutos.</p>
+        </section>
+
+        <section class="card">
+          <h2>Maquininha (cartão e aproximação)</h2>
+          <p id="a-point"></p>
+          <p class="small muted">Com uma Point Smart ou Point Pro 2 do Mercado Pago, da mesma conta do token, o cliente paga com cartão de crédito ou débito, por aproximação, Apple Pay ou Google Pay. O valor aparece sozinho na maquininha.</p>
+          <div class="row">
+            <button class="btn" id="a-point-find" type="button">Buscar maquininhas</button>
+            <button class="btn btn-ghost danger" id="a-point-off" type="button" hidden>Desligar</button>
+          </div>
+          <div class="row" id="a-point-pick" hidden>
+            <select id="a-point-list" class="field-select"></select>
+            <button class="btn btn-primary" id="a-point-use" type="button">Usar esta</button>
+          </div>
         </section>
 
         <section class="card">
