@@ -20,10 +20,16 @@ sealed interface KioskStep {
     data object Welcome : KioskStep
     data object Select : KioskStep
     data object Review : KioskStep
+    /** Pix, card on the Point terminal, or a credit voucher. */
+    data object ChooseMethod : KioskStep
+    data object Voucher : KioskStep
     data object Payment : KioskStep
     data object Printing : KioskStep
     data class Finished(val success: Boolean, val message: String?) : KioskStep
 }
+
+/** How a print was paid: "pix", "card" or "voucher", with the Mercado Pago id or the voucher use reference. */
+data class Paid(val method: String, val id: String, val amountCents: Int)
 
 /** A Pix charge created on Mercado Pago. `qrCode` is the "Pix copia e cola" payload. */
 data class PixCharge(val id: Long, val qrCode: String, val amountCents: Int)
@@ -31,6 +37,8 @@ data class PixCharge(val id: Long, val qrCode: String, val amountCents: Int)
 sealed interface PaymentState {
     data object Preparing : PaymentState
     data class Waiting(val charge: PixCharge) : PaymentState
+    /** The amount is on the Point terminal; the customer pays there (chip, contactless, Apple/Google Pay). */
+    data class CardWaiting(val orderId: String, val amountCents: Int) : PaymentState
     data object Expired : PaymentState
     data class Failed(val message: String) : PaymentState
 }

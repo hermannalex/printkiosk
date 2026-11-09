@@ -46,8 +46,24 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     var paymentDeadline by mutableStateOf<Long?>(null)
         private set
     /** Set once the customer has paid, so a retry after a printer error never charges twice. */
-    var paidPaymentId by mutableStateOf<Long?>(null)
+    var paid by mutableStateOf<Paid?>(null)
         private set
+    val paidPaymentId: String? get() = paid?.id
+    /** At least one copy of a paid job went to the printer (else an unused voucher is given back). */
+    private var paidPrinted = false
+    /** Voucher balance after paying, shown on the finish screen. */
+    var voucherBalance by mutableStateOf<Int?>(null)
+        private set
+    var voucherError by mutableStateOf<String?>(null)
+        private set
+    var voucherBusy by mutableStateOf(false)
+        private set
+    private val pointPrefs = application.getSharedPreferences("kiosk_point", android.content.Context.MODE_PRIVATE)
+    /** Mercado Pago Point terminal in PDV mode, or null. */
+    var pointTerminal by mutableStateOf(pointPrefs.getString("terminal", null))
+        private set
+    private var activeOrder: String? = null
+    private var lastMethod = "pix"
     var tokenSuffix by mutableStateOf(SecureStore.getToken(application)?.takeLast(4))
         private set
 
@@ -140,7 +156,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun recordPrint(success: Boolean, demo: Boolean) {
         val pages = items.sumOf { it.pageCount }
-        val paid = paidPaymentId
+        val payment = paid?.takeIf { success }
         cloud.record(
             PrintJobRecord(
                 id = java.util.UUID.randomUUID().toString(),
@@ -149,11 +165,13 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                 pages = pages,
                 copies = copies,
                 totalPages = pages * copies,
-                amountCents = if (paid != null) amountCents else 0,
-                paidWithPix = paid != null,
-                pixPaymentId = paid?.toString(),
+                amountCents = payment?.amountCents ?: 0,
+                paidWithPix = payment?.method == "pix",
+                pixPaymentId = payment?.takeIf { it.method == "pix" }?.id,
                 success = success,
                 demo = demo,
+                paymentMethod = payment?.method,
+                paymentId = payment?.id,
             )
         )
         syncNow()
@@ -168,6 +186,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     val requiresPayment: Boolean get() = settings.pricePerPageCents > 0
     val remainingSlots: Int get() = (settings.maxItems - items.size).coerceAtLeast(0)
     val isPixConfigured: Boolean get() = settings.payerEmail.contains("@") && tokenSuffix != null
+    val isCardConfigured: Boolean get() = tokenSuffix != null && pointTerminal != null
     private val token: String? get() = SecureStore.getToken(app)
 
     // endregion
@@ -206,8 +225,21 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         activeCharge = null
+        val order = activeOrder
+        if (order != null && currentToken != null) {
+            viewModelScope.launch { PointService(currentToken).cancel(order) }
+        }
+        activeOrder = null
+        // A voucher that paid for a print that never went out gets its value back.
+        val voucher = paid?.takeIf { it.method == "voucher" && !paidPrinted }
+        if (voucher != null) {
+            viewModelScope.launch { cloud.voucher(storeCode, "refund", null, 0, voucher.id) }
+        }
         paymentDeadline = null
-        paidPaymentId = null
+        paid = null
+        paidPrinted = false
+        voucherBalance = null
+        voucherError = null
         paymentState = PaymentState.Preparing
 
         items.clear()
@@ -222,7 +254,8 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
             KioskStep.Welcome, KioskStep.Printing -> return
             KioskStep.Payment -> {
                 // Never reset while a customer may be paying on their phone.
-                if (paymentState is PaymentState.Preparing || paymentState is PaymentState.Waiting) return
+                if (paymentState is PaymentState.Preparing || paymentState is PaymentState.Waiting ||
+                    paymentState is PaymentState.CardWaiting) return
             }
             else -> Unit
         }
@@ -389,14 +422,28 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     /** Called by the Print / Pay button on the review screen. */
     fun checkout() {
         refreshLicense()
-        if (!canPrint && paidPaymentId == null) {
+        if (!canPrint && paid == null) {
             step = KioskStep.Finished(false, blockedMessage())
             return
         }
-        if (!requiresPayment || paidPaymentId != null) {
+        if (!requiresPayment || paid != null) {
             sendToPrinter()
             return
         }
+        registerInteraction()
+        voucherError = null
+        step = KioskStep.ChooseMethod
+    }
+
+    fun retryPayment() {
+        when (lastMethod) {
+            "card" -> payWithCard()
+            else -> payWithPix()
+        }
+    }
+
+    fun payWithPix() {
+        lastMethod = "pix"
         val currentToken = token
         if (!isPixConfigured || currentToken == null) {
             step = KioskStep.Finished(false, "O pagamento por Pix ainda não foi configurado. Peça ajuda a um atendente.")
@@ -407,6 +454,102 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
         paymentState = PaymentState.Preparing
         paymentJob?.cancel()
         paymentJob = viewModelScope.launch { runPayment(currentToken) }
+    }
+
+    /** Sends the amount to the Point terminal and waits for the customer to pay there. */
+    fun payWithCard() {
+        lastMethod = "card"
+        val currentToken = token
+        val terminal = pointTerminal
+        if (currentToken == null || terminal == null) {
+            step = KioskStep.Finished(false, "A maquininha ainda não foi configurada. Peça ajuda a um atendente.")
+            return
+        }
+        registerInteraction()
+        step = KioskStep.Payment
+        paymentState = PaymentState.Preparing
+        paymentJob?.cancel()
+        paymentJob = viewModelScope.launch { runCardPayment(currentToken, terminal) }
+    }
+
+    private suspend fun runCardPayment(accessToken: String, terminal: String) {
+        val point = PointService(accessToken)
+        val cents = amountCents
+        val orderId = try {
+            point.createOrder(terminal, cents, settings.paymentTimeoutSeconds, "${settings.kioskName} – $totalPages página(s)")
+        } catch (e: PixException) {
+            paymentState = PaymentState.Failed(e.message ?: "Não foi possível enviar para a maquininha.")
+            return
+        }
+        activeOrder = orderId
+        val deadline = System.currentTimeMillis() + settings.paymentTimeoutSeconds * 1_000L
+        paymentDeadline = deadline
+        paymentState = PaymentState.CardWaiting(orderId, cents)
+        while (System.currentTimeMillis() < deadline) {
+            delay(3_000)
+            val status = try { point.status(orderId) } catch (e: PixException) { continue }
+            if (status == PointService.Status.APPROVED) {
+                cardApproved(orderId, cents)
+                return
+            }
+            if (status == PointService.Status.FAILED) {
+                activeOrder = null
+                paymentDeadline = null
+                paymentState = PaymentState.Failed("O pagamento foi recusado ou cancelado na maquininha. Nenhum valor foi cobrado.")
+                return
+            }
+        }
+        if (point.cancel(orderId) == PointService.Status.APPROVED) {
+            cardApproved(orderId, cents)
+            return
+        }
+        activeOrder = null
+        paymentDeadline = null
+        paymentState = PaymentState.Expired
+    }
+
+    private fun cardApproved(orderId: String, cents: Int) {
+        paid = Paid("card", orderId, cents)
+        activeOrder = null
+        paymentDeadline = null
+        sendToPrinter()
+    }
+
+    fun openVoucher() {
+        registerInteraction()
+        voucherError = null
+        step = KioskStep.Voucher
+    }
+
+    fun backToMethods() {
+        voucherError = null
+        step = KioskStep.ChooseMethod
+    }
+
+    /** Takes this print's value from a voucher made in the dashboard. */
+    fun redeemVoucher(code: String) {
+        if (voucherBusy) return
+        registerInteraction()
+        voucherBusy = true
+        voucherError = null
+        val cents = amountCents
+        val ref = java.util.UUID.randomUUID().toString()
+        val formatted = code.take(5) + "-" + code.drop(5)
+        viewModelScope.launch {
+            val json = cloud.voucher(storeCode, "redeem", formatted, cents, ref)
+            voucherBusy = false
+            when {
+                json == null -> voucherError = "Sem conexão com o painel. Verifique a internet e tente de novo."
+                !json.optBoolean("ok") -> voucherError = json.optString("error").ifEmpty { "Não foi possível usar o voucher." }
+                else -> {
+                    paid = Paid("voucher", ref, cents)
+                    voucherBalance = if (json.isNull("balanceCents")) null else json.optInt("balanceCents")
+                    step = KioskStep.Payment
+                    paymentState = PaymentState.Preparing
+                    sendToPrinter()
+                }
+            }
+        }
     }
 
     private suspend fun runPayment(accessToken: String) {
@@ -455,16 +598,37 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
         paymentState = PaymentState.Expired
     }
 
-    /** The customer tapped Cancel while the QR Code was showing. */
+    /** The customer tapped Cancel while the QR Code or the terminal was waiting. */
     fun cancelPayment() {
         paymentJob?.cancel()
         paymentJob = null
         paymentDeadline = null
 
+        val order = activeOrder
+        if (order != null) {
+            val orderToken = token
+            activeOrder = null
+            val cents = (paymentState as? PaymentState.CardWaiting)?.amountCents ?: amountCents
+            paymentState = PaymentState.Preparing
+            if (orderToken == null) {
+                step = KioskStep.ChooseMethod
+                return
+            }
+            viewModelScope.launch {
+                // If they paid just before tapping Cancel, print anyway instead of keeping their money.
+                if (PointService(orderToken).cancel(order) == PointService.Status.APPROVED) {
+                    cardApproved(order, cents)
+                } else {
+                    step = KioskStep.ChooseMethod
+                }
+            }
+            return
+        }
+
         val charge = activeCharge
         val currentToken = token
         if (charge == null || currentToken == null) {
-            step = KioskStep.Review
+            step = KioskStep.ChooseMethod
             return
         }
         activeCharge = null
@@ -478,12 +642,12 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
             try { pix.cancel(charge.id) } catch (e: PixException) { }
-            step = KioskStep.Review
+            step = KioskStep.ChooseMethod
         }
     }
 
     private fun paymentApproved(charge: PixCharge) {
-        paidPaymentId = charge.id
+        paid = Paid("pix", charge.id.toString(), charge.amountCents)
         activeCharge = null
         paymentDeadline = null
         sendToPrinter()
@@ -514,6 +678,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                 delay(1_000)
                 when {
                     job.isQueued || job.isStarted || job.isCompleted -> {
+                        paidPrinted = true
                         val demo = license !is LicenseState.Active
                         if (demo) {
                             licenseStore.recordDemoPrint()
@@ -587,6 +752,31 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     fun removeToken() {
         SecureStore.setToken(app, null)
         tokenSuffix = null
+    }
+
+    /** Point terminals of the Mercado Pago account, or an error message. */
+    suspend fun findTerminals(): Pair<List<PointService.Terminal>, String?> {
+        val currentToken = token ?: return emptyList<PointService.Terminal>() to "Salve o Access Token do Mercado Pago primeiro."
+        return try {
+            PointService(currentToken).terminals() to null
+        } catch (e: PixException) {
+            emptyList<PointService.Terminal>() to (e.message ?: "Não foi possível buscar as maquininhas.")
+        }
+    }
+
+    /** Uses this terminal for card payments (puts it in PDV mode); null turns card payments off. */
+    suspend fun useTerminal(id: String?): String? {
+        if (id != null) {
+            val currentToken = token ?: return "Salve o Access Token do Mercado Pago primeiro."
+            try {
+                PointService(currentToken).setPdvMode(id)
+            } catch (e: PixException) {
+                return e.message ?: "Não foi possível configurar a maquininha."
+            }
+        }
+        pointPrefs.edit().apply { if (id == null) remove("terminal") else putString("terminal", id) }.apply()
+        pointTerminal = id
+        return null
     }
 
     suspend fun testConnection(): String {

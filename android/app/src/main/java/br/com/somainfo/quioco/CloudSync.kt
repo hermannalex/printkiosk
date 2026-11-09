@@ -26,12 +26,16 @@ data class PrintJobRecord(
     val pixPaymentId: String?,
     val success: Boolean,
     val demo: Boolean,
+    /** "pix", "card" or "voucher"; null when free. */
+    val paymentMethod: String? = null,
+    val paymentId: String? = null,
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("id", id).put("printedAt", printedAt).put("items", items).put("pages", pages)
         .put("copies", copies).put("totalPages", totalPages).put("amountCents", amountCents)
         .put("paidWithPix", paidWithPix).put("pixPaymentId", pixPaymentId ?: JSONObject.NULL)
         .put("success", success).put("demo", demo)
+        .put("paymentMethod", paymentMethod ?: JSONObject.NULL).put("paymentId", paymentId ?: JSONObject.NULL)
 
     companion object {
         fun fromJson(o: JSONObject) = PrintJobRecord(
@@ -46,6 +50,8 @@ data class PrintJobRecord(
             pixPaymentId = if (o.isNull("pixPaymentId")) null else o.optString("pixPaymentId"),
             success = o.optBoolean("success", true),
             demo = o.optBoolean("demo"),
+            paymentMethod = if (o.isNull("paymentMethod")) null else o.optString("paymentMethod").ifEmpty { null },
+            paymentId = if (o.isNull("paymentId")) null else o.optString("paymentId").ifEmpty { null },
         )
     }
 }
@@ -182,6 +188,39 @@ class CloudSync(context: Context) {
                 } catch (e: Exception) {
                     null
                 }
+            }
+        }
+
+    /**
+     * Credit vouchers made in the dashboard (Painel › Vouchers). `action` is "redeem" (with code,
+     * amountCents and a fresh ref; a retry with the same ref is safe) or "refund" (ref only).
+     * Returns the server's JSON, or null when offline.
+     */
+    suspend fun voucher(storeCode: String, action: String, code: String?, amountCents: Int, ref: String): JSONObject? =
+        withContext(Dispatchers.IO) {
+            val body = JSONObject()
+                .put("storeCode", storeCode)
+                .put("secret", secret)
+                .put("action", action)
+                .put("code", code ?: JSONObject.NULL)
+                .put("amountCents", amountCents)
+                .put("ref", ref)
+            try {
+                val connection = (URL("$SERVER_URL/api/kiosk/voucher").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    connectTimeout = 15_000
+                    readTimeout = 15_000
+                    doOutput = true
+                    setRequestProperty("Content-Type", "application/json")
+                }
+                connection.outputStream.use { it.write(body.toString().toByteArray()) }
+                val status = connection.responseCode
+                val text = (if (status in 200..299) connection.inputStream else connection.errorStream)
+                    ?.bufferedReader()?.use { it.readText() } ?: ""
+                connection.disconnect()
+                runCatching { JSONObject(text) }.getOrNull()
+            } catch (e: Exception) {
+                null
             }
         }
 }

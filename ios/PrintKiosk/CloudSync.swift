@@ -15,6 +15,9 @@ struct PrintJobRecord: Codable, Equatable {
     var pixPaymentId: String?
     var success: Bool
     var demo: Bool
+    /// "pix", "card" or "voucher"; nil when free.
+    var paymentMethod: String? = nil
+    var paymentId: String? = nil
 }
 
 /// The settings the dashboard can change (web/lib/kiosk-config.ts); every key is optional.
@@ -161,6 +164,23 @@ final class CloudSync {
             UserDefaults.standard.set(url, forKey: Self.dashboardKey)
         }
         return decoded
+    }
+
+    /// Credit vouchers made in the dashboard (Painel › Vouchers). `action` is "redeem" (code, amount
+    /// and a fresh ref; a retry with the same ref is safe) or "refund" (ref only). Nil when offline.
+    func voucher(storeCode: String, action: String, code: String?, amountCents: Int, ref: String) async -> [String: Any]? {
+        var body: [String: Any] = [
+            "storeCode": storeCode, "secret": secret, "action": action,
+            "amountCents": amountCents, "ref": ref,
+        ]
+        if let code { body["code"] = code }
+        var request = URLRequest(url: Self.serverURL.appendingPathComponent("api/kiosk/voucher"))
+        request.httpMethod = "POST"
+        request.timeoutInterval = 15
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        guard let (data, _) = try? await URLSession.shared.data(for: request) else { return nil }
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
     }
 
     static func isoNow() -> String {

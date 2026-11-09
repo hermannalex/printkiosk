@@ -40,6 +40,9 @@ enum KioskStep: Equatable {
     case welcome
     case select
     case review
+    /// Pix, card on the Point terminal, or a credit voucher.
+    case chooseMethod
+    case voucher
     case payment
     case printing
     case finished(success: Bool, message: String?)
@@ -52,9 +55,18 @@ enum PhoneUploadState: Equatable {
     case unavailable(String)
 }
 
+/// How a print was paid: "pix", "card" or "voucher", with the Mercado Pago id or the voucher use reference.
+struct Paid: Equatable {
+    let method: String
+    let id: String
+    let amountCents: Int
+}
+
 enum PaymentState: Equatable {
     case preparing
     case waiting(PixCharge)
+    /// The amount is on the Point terminal; the customer pays there (chip, contactless, Apple/Google Pay).
+    case cardWaiting(orderID: String, amountCents: Int)
     case expired
     case failed(String)
 }
@@ -154,7 +166,18 @@ final class KioskStore: ObservableObject {
     @Published private(set) var paymentState: PaymentState = .preparing
     @Published private(set) var paymentDeadline: Date?
     /// Set once the customer has paid, so a retry after a printer error never charges twice.
-    @Published private(set) var paidPaymentID: Int64?
+    @Published private(set) var paid: Paid?
+    var paidPaymentID: String? { paid?.id }
+    /// At least one copy of a paid job went to the printer (else an unused voucher is given back).
+    private var paidPrinted = false
+    /// Voucher balance after paying, shown on the finish screen.
+    @Published private(set) var voucherBalance: Int?
+    @Published private(set) var voucherError: String?
+    @Published private(set) var voucherBusy = false
+    /// Mercado Pago Point terminal in PDV mode, or nil.
+    @Published private(set) var pointTerminal: String? = UserDefaults.standard.string(forKey: "point.terminal")
+    private var activeOrder: String?
+    private var lastMethod = "pix"
     // Subscription / demo
     @Published private(set) var license = License.state()
     let storeCode = License.storeCode(License.storeID)
@@ -241,11 +264,13 @@ final class KioskStore: ObservableObject {
             pages: pages,
             copies: copies,
             totalPages: pages * copies,
-            amountCents: paidPaymentID != nil ? amountCents : 0,
-            paidWithPix: paidPaymentID != nil,
-            pixPaymentId: paidPaymentID.map(String.init),
+            amountCents: success ? (paid?.amountCents ?? 0) : 0,
+            paidWithPix: success && paid?.method == "pix",
+            pixPaymentId: success && paid?.method == "pix" ? paid?.id : nil,
             success: success,
-            demo: demo
+            demo: demo,
+            paymentMethod: success ? paid?.method : nil,
+            paymentId: success ? paid?.id : nil
         ))
         Task { await syncWithDashboard() }
     }
@@ -259,6 +284,9 @@ final class KioskStore: ObservableObject {
     var isPrinterConfigured: Bool { settings.printerURL != nil }
     var isPixConfigured: Bool {
         settings.payerEmail.contains("@") && !(Keychain.get(Self.mercadoPagoTokenKey) ?? "").isEmpty
+    }
+    var isCardConfigured: Bool {
+        pointTerminal != nil && !(Keychain.get(Self.mercadoPagoTokenKey) ?? "").isEmpty
     }
 
     // MARK: Session flow
@@ -285,8 +313,20 @@ final class KioskStore: ObservableObject {
             Task { try? await PixService(accessToken: token).cancel(charge.id) }
         }
         activeCharge = nil
+        if let order = activeOrder, let token = Keychain.get(Self.mercadoPagoTokenKey) {
+            Task { _ = await PointService(accessToken: token).cancel(order) }
+        }
+        activeOrder = nil
+        // A voucher that paid for a print that never went out gets its value back.
+        if let voucher = paid, voucher.method == "voucher", !paidPrinted {
+            let code = storeCode
+            Task { _ = await cloud.voucher(storeCode: code, action: "refund", code: nil, amountCents: 0, ref: voucher.id) }
+        }
         paymentDeadline = nil
-        paidPaymentID = nil
+        paid = nil
+        paidPrinted = false
+        voucherBalance = nil
+        voucherError = nil
         paymentState = .preparing
 
         items.removeAll()
@@ -303,7 +343,7 @@ final class KioskStore: ObservableObject {
         case .payment:
             // Never reset while a customer may be paying on their phone.
             switch paymentState {
-            case .preparing, .waiting: return
+            case .preparing, .waiting, .cardWaiting: return
             default: break
             }
         default:
@@ -532,30 +572,182 @@ final class KioskStore: ObservableObject {
     /// Called by the Print / Pay button on the review screen.
     func checkout() {
         refreshLicense()
-        guard license.canPrint || paidPaymentID != nil else {
+        guard license.canPrint || paid != nil else {
             step = .finished(success: false, message: blockedMessage)
             return
         }
-        guard let printerURL = settings.printerURL else {
+        guard settings.printerURL != nil else {
             step = .finished(success: false, message: "Nenhuma impressora está configurada. Peça ajuda a um atendente.")
             return
         }
-
-        guard requiresPayment, paidPaymentID == nil else {
+        guard requiresPayment, paid == nil else {
             sendToPrinter()
             return
         }
+        registerInteraction()
+        voucherError = nil
+        step = .chooseMethod
+    }
 
+    func retryPayment() {
+        lastMethod == "card" ? payWithCard() : payWithPix()
+    }
+
+    func payWithPix() {
+        lastMethod = "pix"
+        guard let printerURL = settings.printerURL else { return checkout() }
         guard isPixConfigured, let token = Keychain.get(Self.mercadoPagoTokenKey) else {
             step = .finished(success: false, message: "O pagamento por Pix ainda não foi configurado. Peça ajuda a um atendente.")
             return
         }
-
         registerInteraction()
         step = .payment
         paymentState = .preparing
         paymentTask?.cancel()
         paymentTask = Task { await runPayment(token: token, printerURL: printerURL) }
+    }
+
+    /// Sends the amount to the Point terminal and waits for the customer to pay there.
+    func payWithCard() {
+        lastMethod = "card"
+        guard let printerURL = settings.printerURL else { return checkout() }
+        guard let terminal = pointTerminal, let token = Keychain.get(Self.mercadoPagoTokenKey), !token.isEmpty else {
+            step = .finished(success: false, message: "A maquininha ainda não foi configurada. Peça ajuda a um atendente.")
+            return
+        }
+        registerInteraction()
+        step = .payment
+        paymentState = .preparing
+        paymentTask?.cancel()
+        paymentTask = Task { await runCardPayment(token: token, terminal: terminal, printerURL: printerURL) }
+    }
+
+    private func runCardPayment(token: String, terminal: String, printerURL: URL) async {
+        guard await printService.isReachable(printerURL) else {
+            paymentState = .failed("A impressora não está respondendo, então nenhuma cobrança foi feita. Peça ajuda a um atendente.")
+            return
+        }
+        guard !Task.isCancelled else { return }
+        let point = PointService(accessToken: token)
+        let cents = amountCents
+        let orderID: String
+        do {
+            orderID = try await point.createOrder(
+                terminalID: terminal, amountCents: cents, seconds: settings.paymentTimeoutSeconds,
+                description: "\(settings.kioskName) – \(totalPages) página(s)"
+            )
+        } catch {
+            paymentState = .failed(error.localizedDescription)
+            return
+        }
+        guard !Task.isCancelled else {
+            _ = await point.cancel(orderID)
+            return
+        }
+        activeOrder = orderID
+        paymentDeadline = Date().addingTimeInterval(TimeInterval(settings.paymentTimeoutSeconds))
+        paymentState = .cardWaiting(orderID: orderID, amountCents: cents)
+
+        while let deadline = paymentDeadline, Date() < deadline, !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard !Task.isCancelled else { return }
+            guard let status = try? await point.status(of: orderID) else { continue }
+            if status == .approved {
+                cardApproved(orderID, cents: cents)
+                return
+            }
+            if status == .failed {
+                activeOrder = nil
+                paymentDeadline = nil
+                paymentState = .failed("O pagamento foi recusado ou cancelado na maquininha. Nenhum valor foi cobrado.")
+                return
+            }
+        }
+        guard !Task.isCancelled else { return }
+        if await point.cancel(orderID) == .approved {
+            cardApproved(orderID, cents: cents)
+            return
+        }
+        activeOrder = nil
+        paymentDeadline = nil
+        paymentState = .expired
+    }
+
+    private func cardApproved(_ orderID: String, cents: Int) {
+        paid = Paid(method: "card", id: orderID, amountCents: cents)
+        activeOrder = nil
+        paymentDeadline = nil
+        sendToPrinter()
+    }
+
+    func openVoucher() {
+        registerInteraction()
+        voucherError = nil
+        step = .voucher
+    }
+
+    func backToMethods() {
+        voucherError = nil
+        step = .chooseMethod
+    }
+
+    /// Takes this print's value from a voucher made in the dashboard.
+    func redeemVoucher(_ code: String) {
+        guard !voucherBusy else { return }
+        registerInteraction()
+        voucherBusy = true
+        voucherError = nil
+        let cents = amountCents
+        let ref = UUID().uuidString.lowercased()
+        let formatted = String(code.prefix(5)) + "-" + String(code.dropFirst(5))
+        Task {
+            let json = await cloud.voucher(storeCode: storeCode, action: "redeem", code: formatted, amountCents: cents, ref: ref)
+            voucherBusy = false
+            guard let json else {
+                voucherError = "Sem conexão com o painel. Verifique a internet e tente de novo."
+                return
+            }
+            guard json["ok"] as? Bool == true else {
+                voucherError = json["error"] as? String ?? "Não foi possível usar o voucher."
+                return
+            }
+            paid = Paid(method: "voucher", id: ref, amountCents: cents)
+            voucherBalance = (json["balanceCents"] as? NSNumber)?.intValue
+            step = .payment
+            paymentState = .preparing
+            sendToPrinter()
+        }
+    }
+
+    // MARK: Point terminal (staff settings)
+
+    /// Point terminals of the Mercado Pago account, or an error message.
+    func findTerminals() async -> ([PointService.Terminal], String?) {
+        guard let token = Keychain.get(Self.mercadoPagoTokenKey), !token.isEmpty else {
+            return ([], "Salve o Access Token do Mercado Pago primeiro.")
+        }
+        do {
+            return (try await PointService(accessToken: token).terminals(), nil)
+        } catch {
+            return ([], error.localizedDescription)
+        }
+    }
+
+    /// Uses this terminal for card payments (puts it in PDV mode); nil turns card payments off.
+    func useTerminal(_ id: String?) async -> String? {
+        if let id {
+            guard let token = Keychain.get(Self.mercadoPagoTokenKey), !token.isEmpty else {
+                return "Salve o Access Token do Mercado Pago primeiro."
+            }
+            do {
+                try await PointService(accessToken: token).setPDVMode(id)
+            } catch {
+                return error.localizedDescription
+            }
+        }
+        UserDefaults.standard.set(id, forKey: "point.terminal")
+        pointTerminal = id
+        return nil
     }
 
     private func runPayment(token: String, printerURL: URL) async {
@@ -618,14 +810,34 @@ final class KioskStore: ObservableObject {
         paymentState = .expired
     }
 
-    /// The customer tapped Cancel while the QR Code was showing.
+    /// The customer tapped Cancel while the QR Code or the terminal was waiting.
     func cancelPayment() {
         paymentTask?.cancel()
         paymentTask = nil
         paymentDeadline = nil
 
+        if let order = activeOrder {
+            activeOrder = nil
+            var cents = amountCents
+            if case .cardWaiting(_, let amount) = paymentState { cents = amount }
+            paymentState = .preparing
+            guard let token = Keychain.get(Self.mercadoPagoTokenKey) else {
+                step = .chooseMethod
+                return
+            }
+            Task {
+                // If they paid just before tapping Cancel, print anyway instead of keeping their money.
+                if await PointService(accessToken: token).cancel(order) == .approved {
+                    cardApproved(order, cents: cents)
+                } else {
+                    step = .chooseMethod
+                }
+            }
+            return
+        }
+
         guard let charge = activeCharge, let token = Keychain.get(Self.mercadoPagoTokenKey) else {
-            step = .review
+            step = .chooseMethod
             return
         }
 
@@ -639,12 +851,12 @@ final class KioskStore: ObservableObject {
                 return
             }
             try? await pix.cancel(charge.id)
-            step = .review
+            step = .chooseMethod
         }
     }
 
     private func paymentApproved(_ charge: PixCharge) {
-        paidPaymentID = charge.id
+        paid = Paid(method: "pix", id: String(charge.id), amountCents: charge.amountCents)
         activeCharge = nil
         paymentDeadline = nil
         sendToPrinter()
@@ -670,6 +882,7 @@ final class KioskStore: ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 let demo = !self.isSubscribed
+                if success { self.paidPrinted = true }
                 if success && demo {
                     License.recordDemoPrint()
                     self.refreshLicense()

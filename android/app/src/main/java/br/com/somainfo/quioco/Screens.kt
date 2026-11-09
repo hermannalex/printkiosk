@@ -30,6 +30,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Backspace
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.ConfirmationNumber
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Contactless
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
@@ -63,6 +68,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,6 +104,8 @@ fun KioskApp(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScreen: () -> U
             KioskStep.Welcome -> WelcomeScreen(vm)
             KioskStep.Select -> SelectScreen(vm)
             KioskStep.Review -> ReviewScreen(vm)
+            KioskStep.ChooseMethod -> ChooseMethodScreen(vm)
+            KioskStep.Voucher -> VoucherScreen(vm)
             KioskStep.Payment -> PaymentScreen(vm)
             KioskStep.Printing -> PrintingScreen(vm)
             is KioskStep.Finished -> FinishedScreen(vm, step)
@@ -516,7 +524,7 @@ private fun ReviewScreen(vm: KioskViewModel) {
             SecondaryButton(text = "Voltar", onClick = { vm.goToSelect() })
             Spacer(Modifier.weight(1f))
             if (vm.requiresPayment && vm.paidPaymentId == null) {
-                PrimaryButton(text = "Pagar com Pix", icon = Icons.Filled.QrCode2, onClick = { vm.checkout() })
+                PrimaryButton(text = "Pagar ${Money.format(vm.amountCents)}", icon = Icons.Filled.Payments, onClick = { vm.checkout() })
             } else {
                 PrimaryButton(text = "Imprimir", icon = Icons.Filled.Print, onClick = { vm.checkout() })
             }
@@ -561,14 +569,16 @@ private fun PaymentScreen(vm: KioskViewModel) {
                 }
             }
 
+            is PaymentState.CardWaiting -> CardInstructions(vm, state)
+
             PaymentState.Expired -> MessageBlock(
                 icon = Icons.Filled.Schedule,
                 iconTint = KioskOrange,
-                title = "O QR Code expirou",
-                message = "Nenhum valor foi cobrado. Gere um novo QR Code para tentar de novo.",
+                title = "O tempo para pagar acabou",
+                message = "Nenhum valor foi cobrado. Tente de novo ou escolha outra forma de pagamento.",
             ) {
-                SecondaryButton(text = "Recomeçar", onClick = { vm.reset() })
-                PrimaryButton(text = "Gerar novo QR Code", onClick = { vm.checkout() })
+                SecondaryButton(text = "Outra forma", onClick = { vm.backToMethods() })
+                PrimaryButton(text = "Tentar de novo", onClick = { vm.retryPayment() })
             }
 
             is PaymentState.Failed -> MessageBlock(
@@ -577,8 +587,8 @@ private fun PaymentScreen(vm: KioskViewModel) {
                 title = "Não foi possível concluir o pagamento",
                 message = state.message,
             ) {
-                SecondaryButton(text = "Voltar", onClick = { vm.goToReview() })
-                PrimaryButton(text = "Tentar de novo", onClick = { vm.checkout() })
+                SecondaryButton(text = "Outra forma", onClick = { vm.backToMethods() })
+                PrimaryButton(text = "Tentar de novo", onClick = { vm.retryPayment() })
             }
         }
     }
@@ -622,6 +632,157 @@ private fun PaymentInstructions(vm: KioskViewModel, charge: PixCharge) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         SecondaryButton(text = "Cancelar", onClick = { vm.cancelPayment() })
+    }
+}
+
+/** The amount is on the Point terminal: the customer taps a card, phone or watch there, or inserts the card. */
+@Composable
+private fun CardInstructions(vm: KioskViewModel, state: PaymentState.CardWaiting) {
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(state.orderId) {
+        while (true) {
+            delay(1_000)
+            now = System.currentTimeMillis()
+        }
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(56.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            Icons.Filled.Contactless,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(220.dp),
+        )
+        Column(modifier = Modifier.widthIn(max = 480.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            Text("Pague na maquininha", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+            Text(
+                Money.format(state.amountCents),
+                style = MaterialTheme.typography.displayMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("1. Na maquininha ao lado, escolha crédito ou débito", style = MaterialTheme.typography.titleLarge)
+                Text("2. Aproxime o cartão, o celular ou o relógio, ou insira o cartão", style = MaterialTheme.typography.titleLarge)
+                Text("3. Aguarde a aprovação", style = MaterialTheme.typography.titleLarge)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 3.dp)
+                val remaining = ((vm.paymentDeadline ?: now) - now).coerceAtLeast(0) / 1_000
+                Text(
+                    "Aguardando pagamento · %d:%02d".format(remaining / 60, remaining % 60),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            SecondaryButton(text = "Cancelar", onClick = { vm.cancelPayment() })
+        }
+    }
+}
+
+/** Pix, card on the terminal, or voucher; only the ones this kiosk can take are shown. */
+@Composable
+private fun ChooseMethodScreen(vm: KioskViewModel) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
+    ) {
+        Text("Como você quer pagar?", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        Text(
+            Money.format(vm.amountCents),
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        if (vm.isPixConfigured) {
+            MethodCard(Icons.Filled.QrCode2, "Pix", "QR Code no app do banco") { vm.payWithPix() }
+        }
+        if (vm.isCardConfigured) {
+            MethodCard(Icons.Filled.CreditCard, "Cartão ou celular", "Crédito, débito, aproximação, Apple Pay e Google Pay na maquininha") { vm.payWithCard() }
+        }
+        MethodCard(Icons.Filled.ConfirmationNumber, "Voucher", "Código de crédito da loja") { vm.openVoucher() }
+        SecondaryButton(text = "Voltar", onClick = { vm.goToReview() })
+    }
+}
+
+@Composable
+private fun MethodCard(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(24.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
+            Column {
+                Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text(subtitle, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+private const val VOUCHER_KEYS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+/** On-screen keys for the voucher code: no 0/O or 1/I/L, as printed on the vouchers. */
+@Composable
+private fun VoucherScreen(vm: KioskViewModel) {
+    var code by remember { mutableStateOf("") }
+    Column(
+        modifier = Modifier.fillMaxSize().padding(40.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterVertically),
+    ) {
+        Text("Digite o código do voucher", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        Text(
+            "Valor desta impressão: ${Money.format(vm.amountCents)}",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        val shown = code.padEnd(10, '·')
+        Text(
+            shown.take(5) + "-" + shown.drop(5),
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 6.sp,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            (VOUCHER_KEYS.map { it.toString() } + "⌫").chunked(11).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { key ->
+                        FilledTonalButton(
+                            onClick = {
+                                vm.registerInteraction()
+                                code = if (key == "⌫") code.dropLast(1) else if (code.length < 10) code + key else code
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            modifier = Modifier.size(width = if (key == "⌫") 128.dp else 60.dp, height = 60.dp),
+                        ) {
+                            if (key == "⌫") Icon(Icons.Filled.Backspace, contentDescription = "Apagar")
+                            else Text(key, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+        }
+        vm.voucherError?.let {
+            Text(it, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            SecondaryButton(text = "Voltar", onClick = { vm.backToMethods() })
+            PrimaryButton(
+                text = if (vm.voucherBusy) "Conferindo…" else "Usar voucher",
+                enabled = code.length == 10 && !vm.voucherBusy,
+                onClick = { vm.redeemVoucher(code) },
+            )
+        }
     }
 }
 
@@ -710,7 +871,8 @@ private fun FinishedScreen(vm: KioskViewModel, result: KioskStep.Finished) {
             iconTint = if (result.success) KioskGreen else KioskOrange,
             title = if (result.success) "Enviado para a impressora" else "Não foi possível imprimir",
             message = if (result.success) {
-                "Retire suas páginas na impressora. Esta tela volta ao início em alguns segundos."
+                "Retire suas páginas na impressora. Esta tela volta ao início em alguns segundos." +
+                    (vm.voucherBalance?.let { " Saldo restante no voucher: ${Money.format(it)}." } ?: "")
             } else {
                 result.message ?: "Algo deu errado. Tente de novo."
             },

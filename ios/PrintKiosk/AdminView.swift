@@ -24,6 +24,9 @@ struct AdminView: View {
 
     @State private var activationCode = ""
     @State private var activationMessage: String?
+    @State private var terminals: [PointService.Terminal] = []
+    @State private var pointMessage: String?
+    @State private var pointBusy = false
 
     init() {}
 
@@ -281,6 +284,44 @@ struct AdminView: View {
                 Text("Pagamento Pix (Mercado Pago)")
             } footer: {
                 Text("Estas configurações também podem ser mudadas pelo painel online (quioco.vercel.app); o que for salvo lá chega em até 30 minutos. Deixe o preço em R$ 0,00 para impressão gratuita. O Mercado Pago exige um e-mail de pagador em toda cobrança Pix; use o e-mail da loja. O token fica guardado no Keychain deste iPad.")
+            }
+
+            Section {
+                Text(store.pointTerminal.map { "Maquininha em uso: \($0)" } ?? "Nenhuma maquininha ligada. O cliente paga só com Pix ou voucher.")
+                Button(pointBusy ? "Buscando…" : "Buscar maquininhas") {
+                    pointBusy = true
+                    pointMessage = nil
+                    Task {
+                        let (list, error) = await store.findTerminals()
+                        terminals = list
+                        pointMessage = error ?? "\(list.count) maquininha(s) encontrada(s). Toque na que fica ao lado do quiosque."
+                        pointBusy = false
+                    }
+                }
+                .disabled(tokenSuffix == nil || pointBusy)
+                ForEach(terminals) { terminal in
+                    Button(terminal.id) {
+                        pointBusy = true
+                        Task {
+                            let error = await store.useTerminal(terminal.id)
+                            pointMessage = error ?? "Maquininha ligada ao quiosque e colocada no modo de integração (PDV)."
+                            if error == nil { terminals = [] }
+                            pointBusy = false
+                        }
+                    }
+                    .disabled(pointBusy)
+                }
+                if store.pointTerminal != nil {
+                    Button("Desligar maquininha", role: .destructive) {
+                        Task { _ = await store.useTerminal(nil) }
+                        pointMessage = "Maquininha desligada do quiosque."
+                    }
+                }
+                if let pointMessage { Text(pointMessage).foregroundStyle(.secondary) }
+            } header: {
+                Text("Maquininha (cartão e aproximação)")
+            } footer: {
+                Text("Com uma Point Smart ou Point Pro 2 do Mercado Pago, da mesma conta do token, o cliente paga com cartão de crédito ou débito, por aproximação, Apple Pay ou Google Pay. O valor aparece sozinho na maquininha.")
             }
 
             Section("Quiosque") {

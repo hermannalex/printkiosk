@@ -16,6 +16,7 @@ Estação de impressão self-service para a loja. O cliente escolhe fotos ou PDF
 - Pix pelo Mercado Pago com QR Code dinâmico e confirmação automática, sem cobrar duas vezes em caso de falha na impressão
 - Volta ao início por inatividade
 - Configurações protegidas por PIN (padrão 1234): impressora, preço por página, token do Mercado Pago, Wi-Fi da loja (SSID e senha), limites e tempos
+- Pagamento por Pix, cartão e aproximação (Apple Pay, Google Pay) na maquininha Point do Mercado Pago, ou voucher de crédito criado no painel
 - Token do Mercado Pago guardado criptografado no aparelho (Keychain / Android Keystore / DPAPI do Windows / Chaves do macOS), nunca no código
 - **Assinatura mensal** (Básico R$ 19,99 por quiosque; Pro R$ 49,99 + R$ 9,99 por quiosque adicional), liberada por código de ativação, com **5 impressões de demonstração** por aparelho
 

@@ -12,8 +12,9 @@ O mesmo programa para os dois sistemas, sem instalação:
   Se alguém fechar a janela, ela abre de novo sozinha.
 - O cliente envia fotos e PDFs **do celular**, lendo o QR Code (o celular precisa estar na mesma rede da loja).
 - A impressão vai **direto para a impressora**, sem janela de impressão, em folha A4.
-- Pix pelo Mercado Pago, assinatura, painel online (quioco.vercel.app) e configurações pelo painel:
-  iguais aos apps de iPad/iPhone e Android.
+- O cliente paga com **Pix** (QR Code), **cartão ou aproximação** (crédito, débito, Apple Pay, Google Pay) numa
+  maquininha **Point** do Mercado Pago, ou com um **voucher** de crédito criado no painel (Painel › Vouchers).
+- Assinatura, painel online (quioco.vercel.app) e configurações pelo painel: iguais aos apps de iPad/iPhone e Android.
 - O token do Mercado Pago fica criptografado: com a conta do Windows (DPAPI) ou com uma chave nas Chaves do Mac.
 - Dados em `%LOCALAPPDATA%\Quioco` (Windows) ou `~/Library/Application Support/Quioco` (Mac): configurações,
   assinatura, fila de envio ao painel e o registro `quioco.log`. Os arquivos dos clientes são apagados ao fim de
@@ -40,6 +41,8 @@ O mesmo programa para os dois sistemas, sem instalação:
 
 1. Toque em **Configurações** (canto superior direito), crie o PIN do atendente e preencha:
    impressora, preço por página, e-mail do pagador e Access Token do Mercado Pago.
+   Com uma maquininha Point (Point Smart ou Point Pro 2) da mesma conta, toque em **Buscar maquininhas**
+   e escolha a que fica ao lado do quiosque: ela passa para o modo de integração (PDV) sozinha.
 2. Marque **Abrir o Quioco ao ligar o computador**.
 3. Cadastre o quiosque no painel online com o **código da loja** e o **código de vínculo** mostrados em Configurações.
 

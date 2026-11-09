@@ -171,6 +171,9 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
     var activationCode by remember { mutableStateOf("") }
     var activationMessage by remember { mutableStateOf<String?>(null) }
     val clipboard = LocalClipboardManager.current
+    var terminals by remember { mutableStateOf<List<PointService.Terminal>>(emptyList()) }
+    var pointMessage by remember { mutableStateOf<String?>(null) }
+    var pointBusy by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -339,6 +342,54 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+
+        Section("Maquininha (cartão e aproximação)") {
+            Text(
+                vm.pointTerminal?.let { "Maquininha em uso: $it" } ?: "Nenhuma maquininha ligada. O cliente paga só com Pix ou voucher.",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                "Com uma Point Smart ou Point Pro 2 do Mercado Pago, da mesma conta do token, o cliente paga com cartão de crédito ou débito, por aproximação, Apple Pay ou Google Pay. O valor aparece sozinho na maquininha.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        pointBusy = true
+                        pointMessage = null
+                        scope.launch {
+                            val (list, error) = vm.findTerminals()
+                            terminals = list
+                            pointMessage = error ?: "${list.size} maquininha(s) encontrada(s). Toque na que fica ao lado do quiosque."
+                            pointBusy = false
+                        }
+                    },
+                    enabled = vm.tokenSuffix != null && !pointBusy,
+                ) { Text(if (pointBusy) "Buscando…" else "Buscar maquininhas") }
+                if (vm.pointTerminal != null) {
+                    TextButton(onClick = {
+                        scope.launch { vm.useTerminal(null) }
+                        pointMessage = "Maquininha desligada do quiosque."
+                    }) { Text("Desligar", color = MaterialTheme.colorScheme.error) }
+                }
+            }
+            terminals.forEach { terminal ->
+                Button(
+                    onClick = {
+                        pointBusy = true
+                        scope.launch {
+                            val error = vm.useTerminal(terminal.id)
+                            pointMessage = error ?: "Maquininha ligada ao quiosque e colocada no modo de integração (PDV)."
+                            if (error == null) terminals = emptyList()
+                            pointBusy = false
+                        }
+                    },
+                    enabled = !pointBusy,
+                ) { Text(terminal.id) }
+            }
+            pointMessage?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
         }
 
         Section("Quiosque") {

@@ -21,6 +21,10 @@ struct RootView: View {
                 SelectView()
             case .review:
                 ReviewView()
+            case .chooseMethod:
+                ChooseMethodView()
+            case .voucher:
+                VoucherView()
             case .payment:
                 PaymentView()
             case .printing:
@@ -405,7 +409,7 @@ struct ReviewView: View {
                     store.checkout()
                 } label: {
                     if store.requiresPayment && store.paidPaymentID == nil {
-                        Label("Pagar com Pix", systemImage: "qrcode")
+                        Label("Pagar \(Money.format(cents: store.amountCents))", systemImage: "creditcard")
                     } else {
                         Label("Imprimir", systemImage: "printer.fill")
                     }
@@ -449,15 +453,27 @@ struct PaymentView: View {
                     }
                 }
 
+            case .cardWaiting(_, let cents):
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .center, spacing: 56) {
+                        terminalArt
+                        cardInstructions(cents)
+                    }
+                    VStack(spacing: compact ? 20 : 32) {
+                        terminalArt
+                        cardInstructions(cents)
+                    }
+                }
+
             case .expired:
                 PaymentMessage(
                     systemImage: "clock.badge.xmark",
-                    title: "O QR Code expirou",
-                    message: "Nenhum valor foi cobrado. Gere um novo QR Code para tentar de novo."
+                    title: "O tempo para pagar acabou",
+                    message: "Nenhum valor foi cobrado. Tente de novo ou escolha outra forma de pagamento."
                 ) {
-                    Button("Recomeçar") { store.reset() }
+                    Button("Outra forma") { store.backToMethods() }
                         .buttonStyle(SecondaryButtonStyle())
-                    Button("Gerar novo QR Code") { store.checkout() }
+                    Button("Tentar de novo") { store.retryPayment() }
                         .buttonStyle(PrimaryButtonStyle())
                 }
 
@@ -467,9 +483,9 @@ struct PaymentView: View {
                     title: "Não foi possível concluir o pagamento",
                     message: message
                 ) {
-                    Button("Voltar") { store.step = .review }
+                    Button("Outra forma") { store.backToMethods() }
                         .buttonStyle(SecondaryButtonStyle())
-                    Button("Tentar de novo") { store.checkout() }
+                    Button("Tentar de novo") { store.retryPayment() }
                         .buttonStyle(PrimaryButtonStyle())
                 }
             }
@@ -528,9 +544,163 @@ struct PaymentView: View {
         .frame(maxWidth: 420, alignment: .leading)
     }
 
+    private var terminalArt: some View {
+        Image(systemName: "wave.3.right.circle.fill")
+            .kioskFont(compact ? 140 : 200)
+            .foregroundStyle(.tint)
+            .frame(maxWidth: compact ? 260 : 340)
+    }
+
+    /// The amount is on the Point terminal: the customer taps a card, phone or watch there, or inserts the card.
+    private func cardInstructions(_ cents: Int) -> some View {
+        VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Pague na maquininha")
+                    .kioskFont(40, weight: .bold, design: .rounded)
+                Text(Money.format(cents: cents))
+                    .kioskFont(56, weight: .heavy, design: .rounded)
+                    .minimumScaleFactor(0.6)
+                    .monospacedDigit()
+                    .foregroundStyle(.tint)
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Na maquininha ao lado, escolha crédito ou débito", systemImage: "1.circle.fill")
+                Label("Aproxime o cartão, o celular ou o relógio, ou insira o cartão", systemImage: "2.circle.fill")
+                Label("Aguarde a aprovação", systemImage: "3.circle.fill")
+            }
+            .font(.title3)
+            HStack(spacing: 12) {
+                ProgressView()
+                Text("Aguardando pagamento")
+                if let deadline = store.paymentDeadline {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text(Self.remaining(until: deadline, from: context.date))
+                            .monospacedDigit()
+                    }
+                }
+            }
+            .font(.headline)
+            .foregroundStyle(.secondary)
+            Button("Cancelar") { store.cancelPayment() }
+                .buttonStyle(SecondaryButtonStyle())
+        }
+        .frame(maxWidth: 460, alignment: .leading)
+    }
+
     private static func remaining(until deadline: Date, from now: Date) -> String {
         let seconds = max(0, Int(deadline.timeIntervalSince(now)))
         return String(format: "· %d:%02d", seconds / 60, seconds % 60)
+    }
+}
+
+// MARK: - Choosing how to pay
+
+/// Pix, card on the terminal, or voucher; only the ones this kiosk can take are shown.
+struct ChooseMethodView: View {
+    @EnvironmentObject private var store: KioskStore
+
+    init() {}
+
+    var body: some View {
+        CenteredScroll {
+            VStack(spacing: 20) {
+                Text("Como você quer pagar?")
+                    .font(.largeTitle.bold())
+                Text(Money.format(cents: store.amountCents))
+                    .kioskFont(48, weight: .heavy, design: .rounded)
+                    .monospacedDigit()
+                    .foregroundStyle(.tint)
+                if store.isPixConfigured {
+                    methodButton("qrcode", "Pix", "QR Code no app do banco") { store.payWithPix() }
+                }
+                if store.isCardConfigured {
+                    methodButton("wave.3.right.circle", "Cartão ou celular",
+                                 "Crédito, débito, aproximação, Apple Pay e Google Pay na maquininha") { store.payWithCard() }
+                }
+                methodButton("ticket", "Voucher", "Código de crédito da loja") { store.openVoucher() }
+                Button("Voltar") { store.step = .review }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .padding(.top, 8)
+            }
+            .frame(maxWidth: 720)
+        }
+        .kioskPadding(40)
+    }
+
+    private func methodButton(_ icon: String, _ title: String, _ subtitle: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 20) {
+                Image(systemName: icon)
+                    .font(.system(size: 40, weight: .semibold))
+                    .foregroundStyle(.tint)
+                    .frame(width: 64)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.title.bold()).foregroundStyle(.primary)
+                    Text(subtitle).font(.title3).foregroundStyle(.secondary).multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity)
+            .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 20))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// On-screen keys for the voucher code: no 0/O or 1/I/L, as printed on the vouchers.
+struct VoucherView: View {
+    @EnvironmentObject private var store: KioskStore
+    @State private var code = ""
+    private static let keys = Array("ABCDEFGHJKMNPQRSTUVWXYZ23456789").map(String.init) + ["⌫"]
+
+    init() {}
+
+    var body: some View {
+        CenteredScroll {
+            VStack(spacing: 18) {
+                Text("Digite o código do voucher")
+                    .font(.largeTitle.bold())
+                Text("Valor desta impressão: \(Money.format(cents: store.amountCents))")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+                let shown = code.padding(toLength: 10, withPad: "·", startingAt: 0)
+                Text(String(shown.prefix(5)) + "-" + String(shown.suffix(5)))
+                    .font(.system(size: 44, weight: .bold, design: .monospaced))
+                    .kerning(6)
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(62), spacing: 8), count: 8), spacing: 8) {
+                    ForEach(Self.keys, id: \.self) { key in
+                        Button {
+                            store.registerInteraction()
+                            if key == "⌫" { code = String(code.dropLast()) } else if code.count < 10 { code += key }
+                        } label: {
+                            Group {
+                                if key == "⌫" { Image(systemName: "delete.left") } else { Text(key) }
+                            }
+                            .font(.title2.weight(.semibold))
+                            .frame(width: 62, height: 58)
+                            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .frame(maxWidth: 560)
+                if let error = store.voucherError {
+                    Text(error)
+                        .font(.headline)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                }
+                HStack(spacing: 20) {
+                    Button("Voltar") { store.backToMethods() }
+                        .buttonStyle(SecondaryButtonStyle())
+                    Button(store.voucherBusy ? "Conferindo…" : "Usar voucher") { store.redeemVoucher(code) }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .disabled(code.count != 10 || store.voucherBusy)
+                }
+            }
+        }
+        .kioskPadding(40)
     }
 }
 
@@ -655,6 +825,7 @@ struct FinishedView: View {
 
             Text(success
                  ? "Retire suas páginas na impressora. Esta tela volta ao início em alguns segundos."
+                   + (store.voucherBalance.map { " Saldo restante no voucher: \(Money.format(cents: $0))." } ?? "")
                  : (message ?? "Algo deu errado. Tente de novo."))
                 .font(.title3)
                 .foregroundStyle(.secondary)
@@ -662,7 +833,7 @@ struct FinishedView: View {
                 .frame(maxWidth: 560)
 
             if !success, let paymentID = store.paidPaymentID {
-                Text("Seu pagamento foi recebido e você não será cobrado de novo ao tentar outra vez. Se a impressão não sair, mostre este código a um atendente: \(String(paymentID))")
+                Text("Seu pagamento foi recebido e você não será cobrado de novo ao tentar outra vez. Se a impressão não sair, mostre este código a um atendente: \(paymentID)")
                     .font(.headline)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 560)
