@@ -78,7 +78,9 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     var license by mutableStateOf(licenseStore.state())
         private set
     val storeCode: String = LicenseCodec.storeCode(licenseStore.storeId)
-    val canPrint: Boolean get() = license is LicenseState.Active || license is LicenseState.Demo
+    /** The kiosk always prints; after the free trial (or a lapsed subscription) pages carry the watermark. */
+    val canPrint: Boolean get() = true
+    val watermarked: Boolean get() = license is LicenseState.Expired || license is LicenseState.DemoOver
 
     // Staff PIN (hash only, see AdminLock)
     val adminLock = AdminLock(application)
@@ -665,7 +667,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
         }
         step = KioskStep.Printing
 
-        val job = launcher(KioskPrintAdapter(app, items.toList(), copies), settings.kioskName)
+        val job = launcher(KioskPrintAdapter(app, items.toList(), copies, watermarked), settings.kioskName)
         if (job == null) {
             step = KioskStep.Finished(false, "Não foi possível abrir a impressão. Tente de novo.")
             return

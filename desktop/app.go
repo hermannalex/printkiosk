@@ -88,14 +88,16 @@ func (app *App) pixReady() bool {
 	return strings.Contains(app.store.Read().Settings.PayerEmail, "@") && app.token() != ""
 }
 
+// blockedMessage used to stop printing after the trial; now the kiosk keeps working and
+// prints carry the imprime.ai watermark instead (see watermarked), so nothing is blocked.
 func blockedMessage(lic License) string {
-	switch lic.State {
-	case "expired":
-		return "A assinatura deste quiosque venceu. Peça ajuda a um atendente."
-	case "demoOver":
-		return "A demonstração gratuita terminou. Peça ajuda a um atendente."
-	}
 	return ""
+}
+
+// watermarked: after the free trial (or when the subscription lapses) every page is printed
+// with the "imprime.ai" watermark until the kiosk is licensed again.
+func watermarked(lic License) bool {
+	return lic.State == "demoOver" || lic.State == "expired"
 }
 
 // ---------------------------------------------------------------- HTTP plumbing
@@ -380,6 +382,7 @@ func (app *App) apiState(w http.ResponseWriter, r *http.Request) {
 		"settings":   st.Settings,
 		"license":    lic,
 		"blocked":    blockedMessage(lic),
+		"watermark":  watermarked(lic),
 		"pixReady":   app.pixReady(),
 		"pinSet":     st.PinHash != "",
 		"version":    appVersion,

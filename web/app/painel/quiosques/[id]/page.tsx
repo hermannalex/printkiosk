@@ -132,7 +132,7 @@ export default async function OwnerKiosk({
           ) : (
             <p className="muted">
               Ainda não há código. Ele é gerado quando o primeiro pagamento é confirmado.
-              {kiosk.demo_remaining != null && ` Demonstração: ${kiosk.demo_remaining} impressões restantes.`}
+              {kiosk.demo_remaining != null && ` Teste grátis: ${kiosk.demo_remaining} impressões sem marca d'água restantes.`}
             </p>
           )}
           <form action={renameKiosk} className="inline">

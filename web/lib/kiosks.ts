@@ -13,7 +13,7 @@ export function kioskStatus(kiosk: { paid_until?: string | Date | null; last_see
 export const STATUS_LABEL: Record<KioskStatus, string> = {
   active: "Ativo",
   expired: "Vencido",
-  demo: "Demonstração",
+  demo: "Teste grátis",
   never: "Aguardando conexão",
 };
 

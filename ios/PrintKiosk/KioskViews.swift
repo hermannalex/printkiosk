@@ -159,13 +159,11 @@ struct LicenseBanner: View {
         case .active:
             EmptyView()
         case .demo(let remaining):
-            banner(remaining == 1 ? "Modo demonstração · 1 impressão restante"
-                                  : "Modo demonstração · \(remaining) impressões restantes",
+            banner(remaining == 1 ? "Teste grátis · 1 impressão sem marca d'água"
+                                  : "Teste grátis · \(remaining) impressões sem marca d'água",
                    color: .orange, icon: "sparkles")
-        case .expired:
-            banner("Assinatura vencida. Atendente: toque em Configurações.", color: .red, icon: "lock.fill")
-        case .demoOver:
-            banner("Demonstração encerrada. Atendente: toque em Configurações para assinar.", color: .red, icon: "lock.fill")
+        case .expired, .demoOver:
+            banner("Versão gratuita · as folhas saem com a marca d'água imprime.ai", color: .indigo, icon: "drop.fill")
         }
     }
 
@@ -1128,7 +1126,7 @@ private struct KioskPadding: ViewModifier {
     let regular: CGFloat
 
     func body(content: Content) -> some View {
-        content.padding(sizeClass == .compact ? 20 : regular)
+        content.padding(sizeClass == .compact ? (isSmallPhone ? 14 : 20) : regular)
     }
 }
 
@@ -1138,8 +1136,14 @@ extension View {
     }
 }
 
-/// Fixed-size type for the kiosk. iPad keeps the size given; iPhone gets about 60% of it,
-/// so headlines like "XEROX" and the Pix amount fit a phone screen.
+/// Small iPhones (SE, mini: under 390 pt wide) get a little less than other phones.
+@MainActor private var isSmallPhone: Bool {
+    let screen = UIScreen.main.bounds
+    return min(screen.width, screen.height) < 390
+}
+
+/// Fixed-size type for the kiosk. iPad keeps the size given; iPhone gets about 60% of it
+/// (50% on small iPhones), so headlines like "XEROX" and the Pix amount fit a phone screen.
 private struct KioskFont: ViewModifier {
     @Environment(\.horizontalSizeClass) private var sizeClass
     let size: CGFloat
@@ -1147,7 +1151,8 @@ private struct KioskFont: ViewModifier {
     let design: Font.Design
 
     func body(content: Content) -> some View {
-        let scaled = sizeClass == .compact ? max(17, (size * 0.6).rounded()) : size
+        let factor: CGFloat = isSmallPhone ? 0.5 : 0.6
+        let scaled = sizeClass == .compact ? max(17, (size * factor).rounded()) : size
         return content.font(.system(size: scaled, weight: weight, design: design))
     }
 }

@@ -186,9 +186,9 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
             val dateFormat = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
             val (status, color) = when (val license = vm.license) {
                 is LicenseState.Active -> "Ativa até ${license.until.format(dateFormat)}" to KioskGreen
-                is LicenseState.Demo -> "Demonstração: ${license.remaining} de ${LicenseCodec.DEMO_PRINTS} impressões restantes" to KioskOrange
-                is LicenseState.Expired -> "Vencida em ${license.on.format(dateFormat)}" to MaterialTheme.colorScheme.error
-                LicenseState.DemoOver -> "Demonstração encerrada" to MaterialTheme.colorScheme.error
+                is LicenseState.Demo -> "Teste grátis: ${license.remaining} de ${LicenseCodec.DEMO_PRINTS} impressões sem marca d'água" to KioskOrange
+                is LicenseState.Expired -> "Vencida em ${license.on.format(dateFormat)} · imprimindo com marca d'água" to MaterialTheme.colorScheme.error
+                LicenseState.DemoOver -> "Teste encerrado · imprimindo com marca d'água imprime.ai" to MaterialTheme.colorScheme.primary
             }
             Text(status, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = color)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

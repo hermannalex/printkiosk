@@ -1,17 +1,20 @@
 import Foundation
 import CryptoKit
 
-/// Whether this kiosk may print: monthly subscription or the free demo.
+/// Subscription, free trial, or the free version. The kiosk always prints; after the 10 free
+/// prints (or when the subscription lapses) every page carries the "imprime.ai" watermark.
 enum LicenseState: Equatable {
     case active(until: Date)
     case demo(remaining: Int)
     case expired(on: Date)
     case demoOver
 
-    var canPrint: Bool {
+    var canPrint: Bool { true }
+
+    var watermarked: Bool {
         switch self {
-        case .active, .demo: return true
-        case .expired, .demoOver: return false
+        case .active, .demo: return false
+        case .expired, .demoOver: return true
         }
     }
 }
@@ -20,7 +23,7 @@ enum LicenseState: Equatable {
 /// payload = version (1 byte) + store ID (5 bytes) + last valid day (2 bytes, days since 2024-01-01).
 /// Codes are made with tools/gerar-codigo.py and the private key, which never ships in the app.
 enum License {
-    static let demoPrints = 5
+    static let demoPrints = 10
     static let priceLabel = "a partir de R$ 19,99/mês"
     static let vendorContact = "alex@somainfo.com.br"
 

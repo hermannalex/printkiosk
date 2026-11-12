@@ -18,7 +18,7 @@ Estação de impressão self-service para a loja. O cliente escolhe fotos ou PDF
 - Configurações protegidas por PIN (padrão 1234): impressora, preço por página, token do Mercado Pago, Wi-Fi da loja (SSID e senha), limites e tempos
 - Pagamento por Pix, cartão e aproximação (Apple Pay, Google Pay) na maquininha Point do Mercado Pago, ou voucher de crédito criado no painel
 - Token do Mercado Pago guardado criptografado no aparelho (Keychain / Android Keystore / DPAPI do Windows / Chaves do macOS), nunca no código
-- **Assinatura mensal** (Básico R$ 19,99 por quiosque; Pro R$ 49,99 + R$ 9,99 por quiosque adicional), liberada por código de ativação, com **5 impressões de demonstração** por aparelho
+- **Assinatura mensal** (Básico R$ 19,99 por quiosque; Pro R$ 49,99 + R$ 9,99 por quiosque adicional), liberada por código de ativação, com **10 impressões grátis** por aparelho e, depois, impressão com marca d'água
 
 ## Compilar
 
@@ -33,9 +33,9 @@ Estação de impressão self-service para a loja. O cliente escolhe fotos ou PDF
 3. Preencha o **Wi-Fi da loja**, o **preço por página** e, para cobrar, o e-mail da loja e o **Access Token de produção** do Mercado Pago.
 4. Para o envio pelo celular, o quiosque e os celulares dos clientes precisam estar no mesmo Wi-Fi, sem isolamento de clientes no roteador.
 
-## Assinatura e demonstração
+## Assinatura, teste grátis e marca d'água
 
-Sem assinatura, cada aparelho faz **5 impressões de demonstração** (cada envio para a impressora conta 1). Depois, o app só imprime com um **código de ativação** válido.
+Sem assinatura, cada aparelho faz **10 impressões grátis** (cada envio para a impressora conta 1). Depois disso, e também se a assinatura vencer, o app continua imprimindo, mas cada folha sai com a **marca d'água "imprime.ai"** (texto diagonal e uma linha no rodapé). Com um **código de ativação** válido as folhas voltam a sair limpas.
 
 1. Em **Configurações › Assinatura**, o aparelho mostra o **código da loja** (por exemplo `ABCD-EFGH`).
 2. O dono da loja envia esse código e paga a mensalidade.

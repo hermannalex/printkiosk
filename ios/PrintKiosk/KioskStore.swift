@@ -873,10 +873,11 @@ final class KioskStore: ObservableObject {
         step = .printing
         let allPhotos = items.allSatisfy(\.isPhoto)
 
+        let watermark = license.watermarked
         printService.print(
-            items.map(\.printingItem),
+            watermark ? Watermark.apply(to: items.map(\.printingItem)) : items.map(\.printingItem),
             copies: copies,
-            asPhoto: allPhotos,
+            asPhoto: allPhotos && !watermark,
             printerURL: printerURL
         ) { [weak self] success, message in
             Task { @MainActor in

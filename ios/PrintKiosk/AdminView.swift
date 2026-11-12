@@ -205,7 +205,7 @@ struct AdminView: View {
             } header: {
                 Text("Assinatura")
             } footer: {
-                Text("Crie sua conta no painel online e adicione este quiosque com o código da loja e o código de vinculação (não mostre esse código a clientes). Ao pagar a assinatura por lá, o quiosque é liberado sozinho na próxima conexão. O painel mostra impressões, cópias e faturamento. Sem assinatura, o app faz \(License.demoPrints) impressões de demonstração.")
+                Text("Crie sua conta no painel online e adicione este quiosque com o código da loja e o código de vinculação (não mostre esse código a clientes). Ao pagar a assinatura por lá, o quiosque é liberado sozinho na próxima conexão. O painel mostra impressões, cópias e faturamento. Sem assinatura, as \(License.demoPrints) primeiras impressões saem normais e as seguintes com a marca d'água imprime.ai.")
             }
 
             Section("Impressora") {
@@ -387,14 +387,14 @@ struct AdminView: View {
             Label("Ativa até \(until.formatted(date: .numeric, time: .omitted))", systemImage: "checkmark.seal.fill")
                 .foregroundStyle(.green)
         case .demo(let remaining):
-            Label("Demonstração: \(remaining) de \(License.demoPrints) impressões restantes", systemImage: "sparkles")
+            Label("Teste grátis: \(remaining) de \(License.demoPrints) impressões sem marca d'água", systemImage: "sparkles")
                 .foregroundStyle(.orange)
         case .expired(let on):
-            Label("Vencida em \(on.formatted(date: .numeric, time: .omitted))", systemImage: "exclamationmark.triangle.fill")
+            Label("Vencida em \(on.formatted(date: .numeric, time: .omitted)) · imprimindo com marca d'água", systemImage: "exclamationmark.triangle.fill")
                 .foregroundStyle(.red)
         case .demoOver:
-            Label("Demonstração encerrada", systemImage: "lock.fill")
-                .foregroundStyle(.red)
+            Label("Teste encerrado · imprimindo com marca d'água imprime.ai", systemImage: "drop.fill")
+                .foregroundStyle(.indigo)
         }
     }
 

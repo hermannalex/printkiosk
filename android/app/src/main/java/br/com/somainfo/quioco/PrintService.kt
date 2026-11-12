@@ -30,6 +30,8 @@ class KioskPrintAdapter(
     private val context: Context,
     private val items: List<PrintItem>,
     copies: Int,
+    /** Free version: every page gets the "imprime.ai" watermark (after the 10 free prints). */
+    private val watermark: Boolean = false,
 ) : PrintDocumentAdapter() {
 
     private data class PageRef(val item: PrintItem, val pageIndex: Int)
@@ -90,6 +92,7 @@ class KioskPrintAdapter(
                     }
                     val page = document.startPage(index)
                     drawPage(page.canvas, page.info.contentRect, ref, renderers)
+                    if (watermark) Watermark.stamp(page.canvas, page.info.contentRect)
                     document.finishPage(page)
                 }
                 FileOutputStream(destination.fileDescriptor).use { document.writeTo(it) }
@@ -194,5 +197,28 @@ class TestPageAdapter(private val context: Context, private val kioskName: Strin
         } finally {
             document.close()
         }
+    }
+}
+
+/** The free version's mark: a big diagonal "imprime.ai" in light indigo and a line at the foot. */
+object Watermark {
+    fun stamp(canvas: Canvas, area: Rect) {
+        val big = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.argb(41, 79, 70, 229)
+            textSize = min(area.width(), area.height()) * 0.17f
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD)
+            textAlign = Paint.Align.CENTER
+        }
+        canvas.save()
+        canvas.rotate(-36f, area.exactCenterX(), area.exactCenterY())
+        canvas.drawText("imprime.ai", area.exactCenterX(), area.exactCenterY() - (big.descent() + big.ascent()) / 2, big)
+        canvas.restore()
+
+        val foot = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.argb(190, 50, 50, 60)
+            textSize = 8f
+            textAlign = Paint.Align.CENTER
+        }
+        canvas.drawText("Impresso na versão gratuita do imprime.ai · imprime.ai", area.exactCenterX(), area.bottom - 6f, foot)
     }
 }

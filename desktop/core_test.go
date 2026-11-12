@@ -47,3 +47,18 @@ func TestWifiPayload(t *testing.T) {
 		t.Fatal(wifiPayload("Loja;1", "a:b"))
 	}
 }
+
+func TestTrialEndsInWatermarkNotBlock(t *testing.T) {
+	if demoPrints != 10 {
+		t.Fatalf("free trial should be 10 prints, got %d", demoPrints)
+	}
+	for state, want := range map[string]bool{"active": false, "demo": false, "demoOver": true, "expired": true} {
+		lic := License{State: state}
+		if got := watermarked(lic); got != want {
+			t.Errorf("watermarked(%s) = %v, want %v", state, got, want)
+		}
+		if msg := blockedMessage(lic); msg != "" {
+			t.Errorf("state %s should not block printing, got %q", state, msg)
+		}
+	}
+}

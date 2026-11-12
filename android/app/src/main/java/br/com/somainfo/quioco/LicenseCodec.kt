@@ -13,7 +13,7 @@ import java.util.Base64
  * Codes are made with tools/gerar-codigo.py and the private key, which never ships in the app.
  */
 object LicenseCodec {
-    const val DEMO_PRINTS = 5
+    const val DEMO_PRINTS = 10
     const val PRICE_LABEL = "a partir de R\$ 19,99/mês"
     const val VENDOR_CONTACT = "alex@somainfo.com.br"
 

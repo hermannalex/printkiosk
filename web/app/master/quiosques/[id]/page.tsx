@@ -103,7 +103,7 @@ export default async function MasterKiosk({
             <button className="btn" type="submit">Ligar</button>
           </form>
           {kiosk.demo_remaining != null && !kiosk.paid_until && (
-            <p className="small muted">Demonstração: {kiosk.demo_remaining} impressões restantes no aparelho.</p>
+            <p className="small muted">Teste grátis: {kiosk.demo_remaining} impressões sem marca d'água restantes no aparelho.</p>
           )}
         </div>
       </section>

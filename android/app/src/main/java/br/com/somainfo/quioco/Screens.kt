@@ -99,7 +99,7 @@ fun KioskApp(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScreen: () -> U
     // The back button does nothing in the kiosk; customers move with the on-screen buttons.
     BackHandler(enabled = true) { }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    ProvideScreenSize { Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when (val step = vm.step) {
             KioskStep.Welcome -> WelcomeScreen(vm)
             KioskStep.Select -> SelectScreen(vm)
@@ -128,6 +128,7 @@ fun KioskApp(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScreen: () -> U
             text = { Text(message) },
         )
     }
+    }
 }
 
 // endregion
@@ -139,14 +140,14 @@ private fun WelcomeScreen(vm: KioskViewModel) {
     val wifiName = vm.settings.wifiName.trim()
 
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(40.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(kd(40)),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
     ) {
         Icon(
             imageVector = Icons.Filled.Print,
             contentDescription = null,
-            modifier = Modifier.size(80.dp),
+            modifier = Modifier.size(kd(80)),
             tint = MaterialTheme.colorScheme.primary,
         )
 
@@ -160,16 +161,16 @@ private fun WelcomeScreen(vm: KioskViewModel) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 "XEROX",
-                fontSize = 120.sp,
-                lineHeight = 124.sp,
+                fontSize = ks(120),
+                lineHeight = ks(124),
                 fontWeight = FontWeight.Black,
                 letterSpacing = 6.sp,
                 maxLines = 1,
             )
             Text(
                 "AUTO SERVIÇO",
-                fontSize = 56.sp,
-                lineHeight = 60.sp,
+                fontSize = ks(56),
+                lineHeight = ks(60),
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 2.sp,
                 color = MaterialTheme.colorScheme.primary,
@@ -180,14 +181,14 @@ private fun WelcomeScreen(vm: KioskViewModel) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 if (vm.requiresPayment) "Imprima aqui por ${Money.format(vm.settings.pricePerPageCents)}" else "Imprima aqui",
-                fontSize = 42.sp,
-                lineHeight = 48.sp,
+                fontSize = ks(42),
+                lineHeight = ks(48),
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
             Text(
                 if (vm.requiresPayment) "por página · fotos e PDFs · pagamento via Pix"
-                else "Fotos e PDFs, do seu celular ou deste tablet",
+                else "Fotos e PDFs, do seu celular ou deste aparelho",
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -214,10 +215,10 @@ private fun WelcomeScreen(vm: KioskViewModel) {
 private fun LicenseBanner(license: LicenseState) {
     val (text, color) = when (license) {
         is LicenseState.Active -> return
-        is LicenseState.Demo -> (if (license.remaining == 1) "Modo demonstração · 1 impressão restante"
-            else "Modo demonstração · ${license.remaining} impressões restantes") to KioskOrange
-        is LicenseState.Expired -> "Assinatura vencida. Atendente: toque em Configurações." to MaterialTheme.colorScheme.error
-        LicenseState.DemoOver -> "Demonstração encerrada. Atendente: toque em Configurações para assinar." to MaterialTheme.colorScheme.error
+        is LicenseState.Demo -> (if (license.remaining == 1) "Teste grátis · 1 impressão sem marca d'água"
+            else "Teste grátis · ${license.remaining} impressões sem marca d'água") to KioskOrange
+        is LicenseState.Expired, LicenseState.DemoOver ->
+            "Versão gratuita · as folhas saem com a marca d'água imprime.ai" to MaterialTheme.colorScheme.primary
     }
     Surface(shape = RoundedCornerShape(999.dp), color = color.copy(alpha = 0.12f)) {
         Text(
@@ -243,7 +244,7 @@ private fun WifiCard(name: String, password: String) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            QrImage(payload = wifiQrPayload(name, password), modifier = Modifier.size(170.dp))
+            QrImage(payload = wifiQrPayload(name, password), modifier = Modifier.size(kd(170)))
             Column(modifier = Modifier.widthIn(max = 360.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Filled.Wifi, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -350,7 +351,7 @@ private fun SelectScreen(vm: KioskViewModel) {
                     shadowElevation = 6.dp,
                 ) {
                     Row(
-                        modifier = Modifier.padding(28.dp),
+                        modifier = Modifier.padding(kd(28)),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
@@ -538,13 +539,13 @@ private fun ReviewScreen(vm: KioskViewModel) {
 
 @Composable
 private fun PaymentScreen(vm: KioskViewModel) {
-    Box(modifier = Modifier.fillMaxSize().padding(48.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize().padding(kd(48)), contentAlignment = Alignment.Center) {
         when (val state = vm.paymentState) {
             PaymentState.Preparing -> Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                CircularProgressIndicator(modifier = Modifier.size(72.dp))
+                CircularProgressIndicator(modifier = Modifier.size(kd(72)))
                 Text("Preparando o pagamento…", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             }
 
@@ -555,15 +556,16 @@ private fun PaymentScreen(vm: KioskViewModel) {
                         horizontalArrangement = Arrangement.spacedBy(56.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        QrImage(payload = state.charge.qrCode, modifier = Modifier.size(380.dp))
+                        QrImage(payload = state.charge.qrCode, modifier = Modifier.size(kd(380)))
                         PaymentInstructions(vm, state.charge)
                     }
                 } else {
                     Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(32.dp),
+                        verticalArrangement = Arrangement.spacedBy(kd(32)),
                     ) {
-                        QrImage(payload = state.charge.qrCode, modifier = Modifier.size(340.dp))
+                        QrImage(payload = state.charge.qrCode, modifier = Modifier.size(if (LocalCompact.current) 240.dp else 340.dp))
                         PaymentInstructions(vm, state.charge)
                     }
                 }
@@ -645,12 +647,12 @@ private fun CardInstructions(vm: KioskViewModel, state: PaymentState.CardWaiting
             now = System.currentTimeMillis()
         }
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(56.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(horizontalArrangement = Arrangement.spacedBy(kd(56)), verticalAlignment = Alignment.CenterVertically) {
         Icon(
             Icons.Filled.Contactless,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(220.dp),
+            modifier = Modifier.size(kd(220)),
         )
         Column(modifier = Modifier.widthIn(max = 480.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             Text("Pague na maquininha", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
@@ -683,7 +685,7 @@ private fun CardInstructions(vm: KioskViewModel, state: PaymentState.CardWaiting
 @Composable
 private fun ChooseMethodScreen(vm: KioskViewModel) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(48.dp),
+        modifier = Modifier.fillMaxSize().padding(kd(48)),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
     ) {
@@ -734,7 +736,7 @@ private const val VOUCHER_KEYS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 private fun VoucherScreen(vm: KioskViewModel) {
     var code by remember { mutableStateOf("") }
     Column(
-        modifier = Modifier.fillMaxSize().padding(40.dp),
+        modifier = Modifier.fillMaxSize().padding(kd(40)),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterVertically),
     ) {
@@ -753,7 +755,8 @@ private fun VoucherScreen(vm: KioskViewModel) {
             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
         )
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            (VOUCHER_KEYS.map { it.toString() } + "⌫").chunked(11).forEach { row ->
+            val compact = LocalCompact.current
+            (VOUCHER_KEYS.map { it.toString() } + "⌫").chunked(if (compact) 6 else 11).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { key ->
                         FilledTonalButton(
@@ -763,7 +766,10 @@ private fun VoucherScreen(vm: KioskViewModel) {
                             },
                             shape = RoundedCornerShape(12.dp),
                             contentPadding = PaddingValues(0.dp),
-                            modifier = Modifier.size(width = if (key == "⌫") 128.dp else 60.dp, height = 60.dp),
+                            modifier = Modifier.size(
+                                width = if (key == "⌫") (if (compact) 96.dp else 128.dp) else (if (compact) 46.dp else 60.dp),
+                                height = if (compact) 50.dp else 60.dp,
+                            ),
                         ) {
                             if (key == "⌫") Icon(Icons.Filled.Backspace, contentDescription = "Apagar")
                             else Text(key, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -775,7 +781,7 @@ private fun VoucherScreen(vm: KioskViewModel) {
         vm.voucherError?.let {
             Text(it, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        AdaptiveRow(spacing = 16.dp) {
             SecondaryButton(text = "Voltar", onClick = { vm.backToMethods() })
             PrimaryButton(
                 text = if (vm.voucherBusy) "Conferindo…" else "Usar voucher",
@@ -835,11 +841,11 @@ private fun renderQrCode(payload: String): ImageBitmap? = try {
 @Composable
 private fun PrintingScreen(vm: KioskViewModel) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(48.dp),
+        modifier = Modifier.fillMaxSize().padding(kd(48)),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
     ) {
-        CircularProgressIndicator(modifier = Modifier.size(72.dp))
+        CircularProgressIndicator(modifier = Modifier.size(kd(72)))
         if (vm.paidPaymentId != null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Filled.Verified, contentDescription = null, tint = KioskGreen)
@@ -865,7 +871,7 @@ private fun FinishedScreen(vm: KioskViewModel, result: KioskStep.Finished) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().padding(48.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize().padding(kd(48)), contentAlignment = Alignment.Center) {
         MessageBlock(
             icon = if (result.success) Icons.Filled.CheckCircle else Icons.Filled.Warning,
             iconTint = if (result.success) KioskGreen else KioskOrange,
@@ -917,10 +923,10 @@ private fun PhoneUploadDialog(vm: KioskViewModel) {
         Surface(
             shape = RoundedCornerShape(28.dp),
             color = MaterialTheme.colorScheme.background,
-            modifier = Modifier.padding(32.dp).widthIn(max = 880.dp),
+            modifier = Modifier.padding(kd(32)).widthIn(max = 880.dp),
         ) {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()).padding(32.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState()).padding(kd(32)),
                 verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -964,7 +970,7 @@ private fun PhoneUploadDialog(vm: KioskViewModel) {
                         }
                         if (wifiName.isEmpty()) {
                             Text(
-                                "O celular precisa estar no mesmo Wi-Fi deste tablet.",
+                                "O celular precisa estar no mesmo Wi-Fi deste aparelho.",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -1015,7 +1021,7 @@ private fun QrStep(number: Int, title: String, caption: String, payload: String,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("$number. $title", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-        QrImage(payload = payload, modifier = Modifier.size(260.dp))
+        QrImage(payload = payload, modifier = Modifier.size(kd(260)))
         Text(
             caption,
             style = MaterialTheme.typography.bodyLarge,
@@ -1032,7 +1038,7 @@ private fun QrStep(number: Int, title: String, caption: String, payload: String,
 @Composable
 private fun ScreenColumn(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(40.dp),
+        modifier = Modifier.fillMaxSize().padding(kd(40)),
         verticalArrangement = Arrangement.spacedBy(24.dp),
         content = content,
     )
@@ -1041,8 +1047,9 @@ private fun ScreenColumn(content: @Composable androidx.compose.foundation.layout
 @Composable
 private fun Header(title: String, subtitle: String) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(title, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-        Text(subtitle, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val compact = LocalCompact.current
+        Text(title, style = if (compact) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        Text(subtitle, style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -1060,16 +1067,16 @@ private fun MessageBlock(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(112.dp))
-        Text(title, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(kd(112)))
+        Text(title, style = if (LocalCompact.current) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         Text(
             message,
-            style = MaterialTheme.typography.titleLarge,
+            style = if (LocalCompact.current) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         footer()
-        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) { actions() }
+        AdaptiveRow { actions() }
     }
 }
 
@@ -1087,8 +1094,8 @@ fun PrimaryButton(text: String, icon: ImageVector? = null, enabled: Boolean = tr
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
-        contentPadding = PaddingValues(horizontal = 40.dp, vertical = 18.dp),
-        modifier = Modifier.heightIn(min = 64.dp),
+        contentPadding = PaddingValues(horizontal = kd(40), vertical = 18.dp),
+        modifier = Modifier.heightIn(min = 56.dp),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null)
@@ -1103,8 +1110,8 @@ fun SecondaryButton(text: String, onClick: () -> Unit) {
     FilledTonalButton(
         onClick = onClick,
         shape = CircleShape,
-        contentPadding = PaddingValues(horizontal = 32.dp, vertical = 16.dp),
-        modifier = Modifier.heightIn(min = 60.dp),
+        contentPadding = PaddingValues(horizontal = kd(32), vertical = 14.dp),
+        modifier = Modifier.heightIn(min = 52.dp),
     ) {
         Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
     }

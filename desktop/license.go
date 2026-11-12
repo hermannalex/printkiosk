@@ -13,7 +13,7 @@ import (
 // Monthly activation codes, the same as LicenseCodec.kt / License.swift:
 // "PK1-" + base64url(payload + ECDSA P-256 signature), payload = version(1) + store ID(5) + last day(2).
 const (
-	demoPrints     = 5
+	demoPrints     = 10
 	priceLabel     = "a partir de R$ 19,99/mês"
 	vendorEmail    = "alex@somainfo.com.br"
 	licensePubKey  = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvKAdZ2rVE+ExL+GWj0OJcDS05O4NnOBt8hAXeUANqC/aX1J2RW9cpXoDr78Xag57U0tm1Vo2oO90bSO95fiYYw=="

@@ -55,7 +55,9 @@ async function refreshState() {
   } else if (s.pricePerPageCents > 0 && !S.state.pixReady) {
     notice.textContent = "Pagamento Pix não configurado. Atendente: toque em Configurações."; notice.className = "notice"; notice.hidden = false;
   } else if (lic.state === "demo") {
-    notice.textContent = `Demonstração: ${lic.remaining} impressão(ões) grátis restante(s).`; notice.className = "notice"; notice.hidden = false;
+    notice.textContent = `Teste grátis: ${lic.remaining} impressão(ões) sem marca d'água restante(s).`; notice.className = "notice"; notice.hidden = false;
+  } else if (S.state.watermark) {
+    notice.textContent = "Versão gratuita: as folhas saem com a marca d'água imprime.ai."; notice.className = "notice"; notice.hidden = false;
   } else notice.hidden = true;
 
   const wifi = await api("/api/wifi-qr").catch(() => ({}));
@@ -423,6 +425,14 @@ async function buildPages() {
   return sheets;
 }
 
+/** The "imprime.ai" mark printed over every page after the free trial (versão gratuita). */
+function watermarkMark() {
+  const mark = document.createElement("div");
+  mark.className = "watermark";
+  mark.innerHTML = '<span class="wm-big">imprime.ai</span><span class="wm-foot">Impresso na versão gratuita do imprime.ai · imprime.ai</span>';
+  return mark;
+}
+
 async function printNow(heading) {
   status(heading || "Preparando a impressão…", "Isso leva alguns segundos.");
   let ok = false;
@@ -438,6 +448,7 @@ async function printNow(heading) {
         const img = document.createElement("img");
         img.src = src;
         div.append(img);
+        if (S.state && S.state.watermark) div.append(watermarkMark());
         root.append(div);
       }
     }
@@ -556,9 +567,9 @@ function fillPanel(info) {
   const lic = info.license;
   $("a-license").innerHTML = "";
   const t = { active: `Assinatura ativa até ${new Date(lic.until + "T12:00").toLocaleDateString("pt-BR")}.`,
-    expired: `Assinatura vencida em ${new Date(lic.until + "T12:00").toLocaleDateString("pt-BR")}.`,
-    demo: `Demonstração: ${lic.remaining} impressão(ões) grátis restante(s).`,
-    demoOver: "Demonstração encerrada." }[lic.state];
+    expired: `Assinatura vencida em ${new Date(lic.until + "T12:00").toLocaleDateString("pt-BR")}: as impressões saem com a marca d'água imprime.ai.`,
+    demo: `Teste grátis: ${lic.remaining} de 10 impressões sem marca d'água restantes.`,
+    demoOver: "Teste grátis encerrado: as impressões saem com a marca d'água imprime.ai." }[lic.state];
   $("a-license").textContent = `${t} Planos ${info.priceLabel}. Contato: ${info.vendor}`;
   $("a-store").textContent = info.storeCode;
   $("a-pair").textContent = info.pairingCode;
