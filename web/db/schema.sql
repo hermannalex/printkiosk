@@ -192,3 +192,17 @@ alter table print_jobs drop constraint if exists print_jobs_payment_method_check
 alter table print_jobs add constraint print_jobs_payment_method_check check (payment_method in ('pix','card','voucher'));
 grant select, insert, update, delete on vouchers, voucher_uses to printkiosk_app;
 grant usage, select on sequence vouchers_id_seq, voucher_uses_id_seq to printkiosk_app;
+
+-- Segundo fator por e-mail (Resend), alternativa ao aplicativo autenticador. Uma conta usa um dos dois.
+alter table users add column if not exists email_mfa_enabled boolean not null default false;
+
+-- Códigos de 6 números enviados por e-mail: só o HMAC (chave SESSION_SECRET) fica aqui; um por conta e finalidade.
+create table if not exists email_codes (
+  user_id    bigint not null references users(id) on delete cascade,
+  purpose    text not null check (purpose in ('login','setup')),
+  code_hash  text not null,
+  expires_at timestamptz not null,
+  attempts   int not null default 0,
+  sent_at    timestamptz not null default now(),
+  primary key (user_id, purpose)
+);

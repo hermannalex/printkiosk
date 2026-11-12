@@ -1,5 +1,6 @@
 import { one, sql } from "./db";
 import { newSecret, openSecret, sealSecret } from "./totp";
+import { issueEmailCode } from "./email-code";
 
 /** Server-only helpers for 2FA setup (kept out of "use server" files, which expose every export). */
 
@@ -20,3 +21,12 @@ export async function ensurePendingSecret(userId: number): Promise<string> {
   return secret;
 }
 
+
+/**
+ * Login with the e-mail factor: send the code right when the password (or Google) is accepted.
+ * A failure is not fatal; the code page shows a button to send it again.
+ */
+export async function sendLoginEmailCode(userId: number): Promise<void> {
+  const result = await issueEmailCode(userId, "login");
+  if (!result.ok) console.error("login email code", userId, result.error);
+}

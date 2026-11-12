@@ -13,7 +13,7 @@ export default async function MasterStores({ searchParams }: { searchParams: Sea
   const params = await searchParams;
   const today = todayIso();
   const owners = await sql`
-    select u.id, u.name, u.email, u.phone, u.role, u.blocked, u.created_at, u.totp_enabled,
+    select u.id, u.name, u.email, u.phone, u.role, u.blocked, u.created_at, u.totp_enabled, u.email_mfa_enabled,
            count(k.id)::int as kiosks,
            (count(k.id) filter (where k.paid_until >= ${today}))::int as paying,
            (count(k.id) filter (where k.paid_until >= ${today} and k.plan = 'pro'))::int as pro,
@@ -52,11 +52,13 @@ export default async function MasterStores({ searchParams }: { searchParams: Sea
                   <td className="num">{num(o.pro)}</td>
                   <td className="num">{brl(o.mrr)}</td>
                   <td>
-                    {o.totp_enabled ? <span className="pill pill-active">Ativa</span> : <span className="pill pill-demo">Pendente</span>}
+                    {o.totp_enabled ? <span className="pill pill-active">App</span>
+                      : o.email_mfa_enabled ? <span className="pill pill-active">E-mail</span>
+                      : <span className="pill pill-demo">Pendente</span>}
                   </td>
                   <td className="mono small">{dateBR(o.created_at)}</td>
                   <td className="inline-actions">
-                    {o.totp_enabled && Number(o.id) !== user.id && (
+                    {(o.totp_enabled || o.email_mfa_enabled) && Number(o.id) !== user.id && (
                       <form action={masterResetMfa}>
                         <input type="hidden" name="id" value={o.id} />
                         <button className="btn btn-sm" type="submit">Redefinir 2 etapas</button>

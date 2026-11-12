@@ -5,6 +5,7 @@ import { startChallenge, startSession } from "@/lib/auth";
 import { one } from "@/lib/db";
 import { finishGoogle, readCookie } from "@/lib/google";
 import { audit, safeEqual } from "@/lib/security";
+import { sendLoginEmailCode } from "@/lib/mfa";
 
 export const dynamic = "force-dynamic";
 const COOKIE = process.env.NODE_ENV === "production" ? "__Host-pk_oauth" : "pk_oauth";
@@ -31,10 +32,10 @@ export async function GET(request: Request) {
   }
 
   // 1) Already linked. 2) Same verified e-mail as an existing account: link it. 3) New store owner.
-  let user = await one`select id, role, blocked, totp_enabled, email from users where google_sub = ${profile.sub}`;
+  let user = await one`select id, role, blocked, totp_enabled, email_mfa_enabled, email from users where google_sub = ${profile.sub}`;
   if (!user) {
     user = await one`update users set google_sub = ${profile.sub} where email = ${profile.email} and google_sub is null
-                     returning id, role, blocked, totp_enabled, email`;
+                     returning id, role, blocked, totp_enabled, email_mfa_enabled, email`;
     if (user) await audit(Number(user.id), "google_vinculado", profile.email);
   }
   if (!user) {
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
     // No password: "google$…" is not a scheme verifyPassword accepts, so only Google can sign in.
     user = await one`insert into users (email, name, password_hash, role, google_sub)
                      values (${profile.email}, ${profile.name}, ${"google$" + randomBytes(16).toString("hex")}, 'owner', ${profile.sub})
-                     on conflict (email) do nothing returning id, role, blocked, totp_enabled, email`;
+                     on conflict (email) do nothing returning id, role, blocked, totp_enabled, email_mfa_enabled, email`;
     if (!user) fail(back, "Já existe uma conta com este e-mail. Entre com sua senha.");
     await audit(Number(user!.id), "cadastro", profile.email, "via Google");
   }
@@ -56,9 +57,10 @@ export async function GET(request: Request) {
     fail("entrar", "Conta indisponível.");
   }
   // Google replaces the password, not the second factor.
-  if (user!.totp_enabled) {
+  if (user!.totp_enabled || user!.email_mfa_enabled) {
     await startChallenge(Number(user!.id));
     await audit(Number(user!.id), "senha_ok", profile.email, "Google ok, aguardando o segundo fator");
+    if (!user!.totp_enabled) await sendLoginEmailCode(Number(user!.id));
     redirect("/entrar/codigo");
   }
   await startSession(Number(user!.id), user!.role);

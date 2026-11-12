@@ -24,6 +24,7 @@ import { cancelPreapproval, createPreapproval, mercadoPagoConfigured } from "@/l
 import { DEFAULT_CONFIG, sanitizeConfig } from "@/lib/kiosk-config";
 import { PLANS, monthlyPrice, type PlanId } from "@/lib/plans";
 import { audit, clientIp, rateLimit, safeEqual } from "@/lib/security";
+import { sendLoginEmailCode } from "@/lib/mfa";
 
 /** Trimmed form value, cut to `max` characters so oversized input never reaches the database. */
 const text = (form: FormData, key: string, max = 200) => String(form.get(key) ?? "").trim().slice(0, max);
@@ -45,7 +46,7 @@ export async function login(form: FormData) {
     go("/entrar", "erro", TOO_MANY);
   }
 
-  const user = await one`select id, password_hash, role, blocked, totp_enabled from users where email = ${email}`;
+  const user = await one`select id, password_hash, role, blocked, totp_enabled, email_mfa_enabled from users where email = ${email}`;
   if (!user) burnPasswordCheck(password); // same response time whether or not the e-mail exists
   const valid = !!user && verifyPassword(password, user.password_hash);
   if (!user || !valid || user.blocked) {
@@ -56,10 +57,11 @@ export async function login(form: FormData) {
   if (needsRehash(user!.password_hash)) {
     await sql`update users set password_hash = ${hashPassword(password)} where id = ${user!.id}`;
   }
-  if (user!.totp_enabled) {
-    // Password is right; the session only starts after the code from the authenticator app.
+  if (user!.totp_enabled || user!.email_mfa_enabled) {
+    // Password is right; the session only starts after the code from the app or the e-mail.
     await startChallenge(Number(user!.id));
     await audit(Number(user!.id), "senha_ok", email, "aguardando o segundo fator");
+    if (!user!.totp_enabled) await sendLoginEmailCode(Number(user!.id));
     redirect("/entrar/codigo");
   }
   // No 2FA yet: a session that can only reach the setup page (requireUser enforces it).

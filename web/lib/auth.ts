@@ -12,6 +12,8 @@ export type User = {
   phone: string | null;
   /** Two-factor authentication is set up. Required to use the panel (requireUser). */
   mfaEnabled: boolean;
+  /** Which second factor: an authenticator app, a code by e-mail, or none yet. */
+  mfaMethod: "app" | "email" | null;
 };
 
 const PRODUCTION = process.env.NODE_ENV === "production";
@@ -92,7 +94,7 @@ export async function currentUser(): Promise<User | null> {
   const token = store.get(COOKIE)?.value;
   if (!token || token.length > 100) return null;
   const row = await one`
-    select u.id, u.email, u.name, u.role, u.phone, u.totp_enabled
+    select u.id, u.email, u.name, u.role, u.phone, u.totp_enabled, u.email_mfa_enabled
     from sessions s join users u on u.id = s.user_id
     where s.id_hash = ${tokenHash(token)} and s.expires_at > now() and not u.blocked`;
   if (!row) return null;
@@ -102,7 +104,8 @@ export async function currentUser(): Promise<User | null> {
     name: row.name,
     role: row.role,
     phone: row.phone,
-    mfaEnabled: !!row.totp_enabled,
+    mfaEnabled: !!row.totp_enabled || !!row.email_mfa_enabled,
+    mfaMethod: row.totp_enabled ? "app" : row.email_mfa_enabled ? "email" : null,
   };
 }
 
@@ -149,6 +152,16 @@ export async function takeChallengeAttempt(): Promise<{ userId: number; triesLef
                         returning user_id, attempts`;
   if (!row) return null;
   return { userId: Number(row.user_id), triesLeft: CHALLENGE_TRIES - Number(row.attempts) };
+}
+
+/** Whose login is waiting for the second factor, without spending a try (for resending the e-mail code). */
+export async function challengeUserId(): Promise<number | null> {
+  const store = await cookies();
+  const token = store.get(MFA_COOKIE)?.value;
+  if (!token || token.length > 100) return null;
+  const row = await one`select user_id from login_challenges where id_hash = ${tokenHash(token)} and expires_at > now()
+                        and attempts < ${CHALLENGE_TRIES}`;
+  return row ? Number(row.user_id) : null;
 }
 
 export async function hasChallenge(): Promise<boolean> {

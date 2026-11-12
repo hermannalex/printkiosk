@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
+  challengeUserId,
   endChallenge,
   requireMaster,
   requireSignedIn,
@@ -19,18 +20,20 @@ import {
   openSecret,
   verifyCode,
 } from "@/lib/totp";
+import { checkEmailCode, issueEmailCode } from "@/lib/email-code";
 
 const masterSecret = () => process.env.SESSION_SECRET ?? "";
 const field = (form: FormData, key: string) => String(form.get(key) ?? "").trim().slice(0, 32);
 const back = (message: string): never => redirect(`/entrar/codigo?erro=${encodeURIComponent(message)}`);
 
 /**
- * Checks a 6-digit code (or a recovery code) for a user. The code's 30-second step is stored
- * atomically, so the same code cannot be used twice, even by two requests at the same moment.
+ * Checks the second factor for a user: a recovery code, then the method the account uses.
+ * App: the code's 30-second step is stored atomically, so the same code cannot be used twice.
+ * E-mail: the code is deleted in the statement that matches it (lib/email-code.ts).
  */
 async function checkSecondFactor(userId: number, input: string): Promise<"code" | "recovery" | null> {
-  const user = await one`select totp_secret, totp_last_step from users where id = ${userId} and totp_enabled`;
-  if (!user?.totp_secret) return null;
+  const user = await one`select totp_enabled, totp_secret, totp_last_step, email_mfa_enabled from users where id = ${userId}`;
+  if (!user || (!user.totp_enabled && !user.email_mfa_enabled)) return null;
 
   if (looksLikeRecoveryCode(input)) {
     const used = await one`update users set recovery_codes = array_remove(recovery_codes, ${hashRecoveryCode(input)})
@@ -38,6 +41,9 @@ async function checkSecondFactor(userId: number, input: string): Promise<"code" 
     return used ? "recovery" : null;
   }
 
+  if (!user.totp_enabled) return (await checkEmailCode(userId, "login", input)) ? "code" : null;
+
+  if (!user.totp_secret) return null;
   const step = verifyCode(openSecret(user.totp_secret, masterSecret()), input, user.totp_last_step === null ? null : Number(user.totp_last_step));
   if (step === null) return null;
   const claimed = await one`update users set totp_last_step = ${step}
@@ -80,6 +86,18 @@ export async function verifyLoginCode(form: FormData) {
   redirect(user!.role === "master" ? "/master" : "/painel");
 }
 
+/** "Reenviar código" on the code page, for accounts that use the e-mail factor. */
+export async function resendLoginCode() {
+  const userId = await challengeUserId();
+  if (!userId) redirect(`/entrar?erro=${encodeURIComponent("O tempo para o código acabou. Entre de novo.")}`);
+  const user = await one`select email_mfa_enabled, totp_enabled from users where id = ${userId}`;
+  if (!user?.email_mfa_enabled || user.totp_enabled) back("Esta conta usa o aplicativo autenticador.");
+  const result = await issueEmailCode(userId!, "login");
+  if (!result.ok) back(result.error);
+  await audit(userId!, "mfa_email_reenviado");
+  redirect(`/entrar/codigo?msg=${encodeURIComponent("Enviamos um novo código. O anterior deixou de valer.")}`);
+}
+
 // ---------------------------------------------------------------- setup
 
 export type MfaFormState = { error?: string; codes?: string[] };
@@ -96,9 +114,10 @@ export async function confirmMfaSetup(_: MfaFormState, form: FormData): Promise<
 
   const codes = newRecoveryCodes();
   await sql`update users set totp_secret = ${row.totp_pending}, totp_pending = null, totp_enabled = true,
-              totp_last_step = ${step}, recovery_codes = ${codes.map(hashRecoveryCode)}::text[]
+              totp_last_step = ${step}, email_mfa_enabled = false, recovery_codes = ${codes.map(hashRecoveryCode)}::text[]
             where id = ${user.id}`;
-  await audit(user.id, "mfa_ativado", user.email);
+  await sql`delete from email_codes where user_id = ${user.id}`;
+  await audit(user.id, "mfa_ativado", user.email, user.mfaMethod === "email" ? "trocou e-mail por aplicativo" : "aplicativo");
   revalidatePath("/conta/seguranca");
   return { codes };
 }
@@ -108,12 +127,41 @@ export async function regenerateRecoveryCodes(_: MfaFormState, form: FormData): 
   if (!user.mfaEnabled) return { error: "Ative a verificação em duas etapas primeiro." };
   if (!(await rateLimit(`mfa-setup:user:${user.id}`, 10, 15 * 60))) return { error: "Muitas tentativas. Aguarde alguns minutos." };
   const input = field(form, "codigo");
-  if (looksLikeRecoveryCode(input) || (await checkSecondFactor(user.id, input)) !== "code") {
-    return { error: "Código do aplicativo incorreto." };
-  }
+  const ok = user.mfaMethod === "email"
+    ? await checkEmailCode(user.id, "setup", input)
+    : !looksLikeRecoveryCode(input) && (await checkSecondFactor(user.id, input)) === "code";
+  if (!ok) return { error: user.mfaMethod === "email" ? "Código do e-mail incorreto ou vencido." : "Código do aplicativo incorreto." };
   const codes = newRecoveryCodes();
   await sql`update users set recovery_codes = ${codes.map(hashRecoveryCode)}::text[] where id = ${user.id}`;
   await audit(user.id, "mfa_novos_codigos", user.email);
+  return { codes };
+}
+
+// ---------------------------------------------------------------- e-mail as the second factor
+
+/** Sends a confirmation code to the account's e-mail (to turn the e-mail factor on, or for a sensitive change). */
+export async function sendSetupEmailCode(form: FormData) {
+  const user = await requireSignedIn();
+  const next = String(form.get("next") ?? "") === "codigos" ? "codigos" : "email";
+  const result = await issueEmailCode(user.id, "setup");
+  const base = `/conta/seguranca?${next === "email" ? "email=1&" : ""}`;
+  if (!result.ok) redirect(`${base}erro=${encodeURIComponent(result.error)}`);
+  redirect(`${base}msg=${encodeURIComponent(`Enviamos um código para ${user.email}. Ele vale por 10 minutos.`)}`);
+}
+
+/** Turns on the e-mail factor (or switches to it from the app) once the code from the inbox is right. */
+export async function confirmEmailMfa(_: MfaFormState, form: FormData): Promise<MfaFormState> {
+  const user = await requireSignedIn();
+  if (!(await rateLimit(`mfa-setup:user:${user.id}`, 10, 15 * 60))) return { error: "Muitas tentativas. Aguarde alguns minutos." };
+  if (!(await checkEmailCode(user.id, "setup", field(form, "codigo")))) {
+    return { error: "Código incorreto ou vencido. Confira o e-mail mais recente ou peça outro código." };
+  }
+  const codes = newRecoveryCodes();
+  await sql`update users set email_mfa_enabled = true, totp_enabled = false, totp_secret = null, totp_pending = null,
+              totp_last_step = null, recovery_codes = ${codes.map(hashRecoveryCode)}::text[]
+            where id = ${user.id}`;
+  await audit(user.id, "mfa_ativado", user.email, user.mfaMethod === "app" ? "trocou aplicativo por e-mail" : "e-mail");
+  revalidatePath("/conta/seguranca");
   return { codes };
 }
 
@@ -125,8 +173,9 @@ export async function masterResetMfa(form: FormData) {
   const userId = Number(field(form, "id"));
   if (userId === master.id) redirect(`/master/lojas?erro=${encodeURIComponent("Use outra conta master para redefinir a sua.")}`);
   const row = await one`update users set totp_secret = null, totp_pending = null, totp_enabled = false,
-                          totp_last_step = null, recovery_codes = '{}'
+                          totp_last_step = null, email_mfa_enabled = false, recovery_codes = '{}'
                         where id = ${userId} returning email`;
+  await sql`delete from email_codes where user_id = ${userId}`;
   await revokeSessions(userId);
   await audit(master.id, "mfa_redefinido", row?.email ?? String(userId));
   revalidatePath("/master/lojas");
