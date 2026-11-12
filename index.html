@@ -186,6 +186,24 @@ figcaption b { color: var(--ink); font-weight: 600; }
 .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; align-items: start; }
 @media (max-width: 900px) { .shot-main { grid-template-columns: 1fr; } .thumbs { grid-template-columns: 1fr 1fr; } .dash-grid { grid-template-columns: 1fr; } }
 
+/* downloads */
+.dl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.dl { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.dl .os { display: flex; align-items: center; gap: 10px; }
+.dl .os svg { width: 30px; height: 30px; flex: none; }
+.dl p { color: var(--muted); font-size: 15px; }
+.dl .btn { justify-content: center; }
+.dl .meta { font: 500 12px/1.4 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.dl details { font-size: 14.5px; color: var(--muted); }
+.dl summary { cursor: pointer; color: var(--brand); font-weight: 600; }
+.dl ol { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.dl .soon { display: inline-flex; justify-content: center; text-align: center; padding: 14px 22px; border-radius: 999px; border: 2px dashed var(--line); color: var(--muted); font-weight: 600; }
+.trial { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; justify-content: space-between; background: var(--brand-soft); border-radius: 20px; padding: 20px 24px; margin-bottom: 24px; }
+.trial b { color: var(--ink); }
+.trial p { color: var(--muted); margin: 0; max-width: 70ch; }
+@media (max-width: 1000px) { .dl-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .dl-grid { grid-template-columns: 1fr; } }
+
 footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 14px; }
 .foot { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; justify-content: space-between; }
 .foot nav { display: flex; flex-wrap: wrap; gap: 18px; }
@@ -207,20 +225,21 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
       <a class="hide-sm" href="#como-funciona">Como funciona</a>
       <a class="hide-sm" href="#painel">Painel</a>
       <a class="hide-sm" href="#privacidade">Privacidade</a>
+      <a class="hide-sm" href="#baixar">Baixar</a>
       <a class="hide-sm" href="#planos">Planos</a>
-      <a class="login" href="https://quioco.vercel.app/entrar">Entrar</a>
-      <a class="btn btn-sun" href="https://quioco.vercel.app/cadastro">Criar conta</a>
+      <a class="login" href="https://imprime-ai.vercel.app/entrar">Entrar</a>
+      <a class="btn btn-sun" href="https://imprime-ai.vercel.app/cadastro">Criar conta</a>
     </nav>
   </div>
 
   <div class="wrap hero-grid">
     <div>
-      <span class="pill"><b>Novo</b> Lançamento · novembro de 2026</span>
+      <span class="pill"><b>Novo</b> Lançamento · 10 impressões grátis para testar</span>
       <h1>Sua impressora comum vira um <em>autoatendimento com Pix.</em></h1>
       <p class="lead">O imprime.ai transforma a impressora que você já tem num ponto de impressão que funciona sozinho. O cliente envia o arquivo pelo celular, paga com Pix e retira a cópia. Sem balcão, sem fila, sem atendente.</p>
       <div class="cta-row">
-        <a class="btn btn-sun" href="https://quioco.vercel.app/cadastro">Criar conta da loja →</a>
-        <a class="btn btn-ghost" href="https://quioco.vercel.app/entrar">Já tenho conta · Entrar</a>
+        <a class="btn btn-sun" href="#baixar">Baixar e testar grátis →</a>
+        <a class="btn btn-ghost" href="https://imprime-ai.vercel.app/entrar">Já tenho conta · Entrar</a>
       </div>
       <p class="hero-note">10 impressões grátis para testar. Funciona em iPhone, iPad, celular e tablet Android, Windows e Mac. O dinheiro cai direto na sua conta Mercado Pago.</p>
     </div>
@@ -333,6 +352,49 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
     </div>
   </section>
 
+  <section id="baixar" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Baixar o app</span>
+        <h2>Instale direto daqui, sem passar pela loja de aplicativos.</h2>
+        <p class="lead">Baixe e abra: as 10 primeiras impressões são grátis, sem cadastro. Para ligar o quiosque à sua conta e receber os pagamentos, crie a conta da loja no painel e digite o código de ativação no app.</p>
+      </div>
+      <div class="trial">
+        <p><b>Teste grátis: 10 impressões em cada aparelho.</b> Depois, o quiosque continua funcionando na versão gratuita, com a marca d'água imprime.ai nas folhas, até você assinar.</p>
+        <a class="btn btn-brand" href="https://imprime-ai.vercel.app/cadastro">Criar conta da loja</a>
+      </div>
+      <div class="dl-grid">
+        <article class="dl">
+          <div class="os"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#0078D4" d="M3 5.5l7.5-1v7H3zM11.5 4.4L21 3v8.5h-9.5zM3 12.5h7.5v7L3 18.5zM11.5 12.5H21V21l-9.5-1.4z"/></svg><h3>Windows</h3></div>
+          <p>Windows 10 ou 11, com a impressora já instalada no computador.</p>
+          <a class="btn btn-brand" href="https://imprime-ai.vercel.app/download/imprime.ai-windows.exe" download>Baixar para Windows</a>
+          <span class="meta">imprime.ai-windows.exe · 9,6 MB</span>
+          <details><summary>Como instalar</summary><ol><li>Abra o arquivo baixado.</li><li>Se o Windows mostrar "O Windows protegeu o computador", clique em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>.</li></ol></details>
+          <span class="meta">SHA-256 c5383f236960bf8a8d909b61c5f88219b9b7ec0d5c00c1e637179c42d0155008</span>
+        </article>
+        <article class="dl">
+          <div class="os"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.9-.9-3.1-.8-1.6 0-3 .9-3.9 2.3-1.7 2.9-.4 7.2 1.2 9.6.8 1.2 1.7 2.4 3 2.4 1.2-.1 1.6-.8 3.1-.8 1.4 0 1.8.8 3.1.8 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.6-1-2.7-4.1zM14.1 5.6c.7-.8 1.1-1.9 1-3-1 0-2.1.6-2.8 1.4-.6.7-1.1 1.8-1 2.9 1.1.1 2.1-.5 2.8-1.3z"/></svg><h3>Mac</h3></div>
+          <p>macOS 11 ou mais novo, Apple Silicon ou Intel.</p>
+          <a class="btn btn-brand" href="https://imprime-ai.vercel.app/download/imprime.ai-mac.zip" download>Baixar para Mac</a>
+          <span class="meta">imprime.ai-mac.zip · 7,8 MB</span>
+          <details><summary>Como instalar</summary><ol><li>Abra o .zip e arraste <b>imprime.ai</b> para a pasta Aplicativos.</li><li>Na primeira vez, clique no app com o botão direito, escolha <b>Abrir</b> e confirme. Se o Mac não deixar, vá em Ajustes do Sistema › Privacidade e Segurança › <b>Abrir mesmo assim</b>.</li></ol></details>
+          <span class="meta">SHA-256 82d29fbccf06eb1c3b04afab5dd078220778161790ecf1d4c7d59f1e1b05946f</span>
+        </article>
+        <article class="dl">
+          <div class="os"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#3DDC84" d="M6 18c0 .6.4 1 1 1h1v3.5a1.5 1.5 0 003 0V19h2v3.5a1.5 1.5 0 003 0V19h1c.6 0 1-.4 1-1V8H6zM3.5 8A1.5 1.5 0 002 9.5v7a1.5 1.5 0 003 0v-7A1.5 1.5 0 003.5 8zm17 0A1.5 1.5 0 0019 9.5v7a1.5 1.5 0 003 0v-7A1.5 1.5 0 0020.5 8zm-4.97-5.84l1.3-1.3a.5.5 0 00-.7-.7l-1.48 1.47A5.9 5.9 0 0012 1c-.96 0-1.86.23-2.66.63L7.85.15a.5.5 0 00-.7.7l1.31 1.31A5.97 5.97 0 006 7h12a5.97 5.97 0 00-2.47-4.84zM10 5H9V4h1zm5 0h-1V4h1z"/></svg><h3>Android</h3></div>
+          <p>Celular ou tablet com Android 8 ou mais novo.</p>
+          <span class="soon">Download em breve</span>
+          <details><summary>Como vai instalar</summary><ol><li>Baixe o arquivo .apk neste celular ou tablet.</li><li>Ao abrir, permita <b>instalar apps desta fonte</b> (o Android pergunta uma vez).</li><li>Toque em Instalar.</li></ol></details>
+        </article>
+        <article class="dl">
+          <div class="os"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="1.5" width="12" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="19" r="1.1" fill="currentColor"/></svg><h3>iPhone e iPad</h3></div>
+          <p>A Apple só permite instalar apps pela App Store ou pelo TestFlight.</p>
+          <span class="soon">Em breve na App Store</span>
+                  </article>
+      </div>
+    </div>
+  </section>
+
   <section class="needs">
     <div class="wrap needs-grid">
       <div class="section-head" style="margin:0">
@@ -430,7 +492,7 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
             <li>Pix e envio pelo celular</li>
             <li>Renovação automática do código</li>
           </ul>
-          <a class="btn btn-line" href="https://quioco.vercel.app/cadastro">Começar no Básico</a>
+          <a class="btn btn-line" href="https://imprime-ai.vercel.app/cadastro">Começar no Básico</a>
         </div>
         <div class="plan pro">
           <div><h3>Pro</h3><p class="extra">O app e o painel completo da loja.</p></div>
@@ -442,7 +504,7 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
             <li>Histórico de impressões</li>
           </ul>
           <p class="extra">Cada quiosque a mais na mesma conta: R$ 9,99/mês.</p>
-          <a class="btn btn-brand" href="https://quioco.vercel.app/cadastro">Começar no Pro</a>
+          <a class="btn btn-brand" href="https://imprime-ai.vercel.app/cadastro">Começar no Pro</a>
         </div>
       </div>
       <p class="lead" style="margin-top:24px"><b style="color:var(--ink)">Teste antes de assinar:</b> cada aparelho imprime 10 vezes de graça. Depois disso, ele continua funcionando na versão gratuita, com a marca d'água <b style="color:var(--ink)">imprime.ai</b> nas folhas, até você assinar.</p>
@@ -458,8 +520,8 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
           <p>Crie a conta da loja, receba o código de ativação e deixe o quiosque atendendo enquanto você cuida do resto.</p>
         </div>
         <div class="final-actions">
-          <a class="btn btn-sun" href="https://quioco.vercel.app/cadastro">Criar conta da loja →</a>
-          <span class="small">Já é cliente? <a href="https://quioco.vercel.app/entrar">Entrar no painel</a></span>
+          <a class="btn btn-sun" href="https://imprime-ai.vercel.app/cadastro">Criar conta da loja →</a>
+          <span class="small">Já é cliente? <a href="https://imprime-ai.vercel.app/entrar">Entrar no painel</a></span>
         </div>
       </div>
     </div>
@@ -473,8 +535,8 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
       <a href="#como-funciona">Como funciona</a>
       <a href="#privacidade">Privacidade</a>
       <a href="#planos">Planos</a>
-      <a href="https://quioco.vercel.app/entrar">Entrar</a>
-      <a href="https://quioco.vercel.app/cadastro">Criar conta</a>
+      <a href="https://imprime-ai.vercel.app/entrar">Entrar</a>
+      <a href="https://imprime-ai.vercel.app/cadastro">Criar conta</a>
     </nav>
   </div>
 </footer>

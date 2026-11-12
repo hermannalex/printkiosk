@@ -3,8 +3,8 @@ RewriteEngine On
 RewriteCond %{HTTPS} off [OR]
 RewriteCond %{HTTP_HOST} ^www\. [NC]
 RewriteRule ^ https://imprime.ai%{REQUEST_URI} [L,R=301]
-RewriteRule ^entrar/?$ https://quioco.vercel.app/entrar [L,R=302]
-RewriteRule ^cadastro/?$ https://quioco.vercel.app/cadastro [L,R=302]
+RewriteRule ^entrar/?$ https://imprime-ai.vercel.app/entrar [L,R=302]
+RewriteRule ^cadastro/?$ https://imprime-ai.vercel.app/cadastro [L,R=302]
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
