@@ -24,6 +24,14 @@ const nextConfig = {
       { source: "/:path*", headers: securityHeaders },
       // Logged-in pages must never be stored by shared caches or the browser's back-forward cache.
       { source: "/(painel|master)(.*)", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
+      // Kiosk apps for direct download (outside the app stores), linked from imprime.ai.
+      {
+        source: "/download/:file*",
+        headers: [
+          { key: "Content-Disposition", value: "attachment" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+        ],
+      },
     ];
   },
 };
