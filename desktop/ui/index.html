@@ -25,6 +25,15 @@
         <p class="price" id="welcome-price"></p>
         <button class="btn btn-primary btn-xl" id="start" type="button">Toque para começar</button>
         <p class="notice" id="welcome-notice" hidden></p>
+        <div class="ad" data-ad hidden>
+          <div class="ad-qr qr" data-ad-qr></div>
+          <div class="ad-text">
+            <span class="ad-tag">Anúncio · imprime.ai</span>
+            <b class="ad-title" data-ad-title></b>
+            <span class="ad-body" data-ad-body></span>
+            <span class="ad-url">imprime.ai · 10 impressões grátis para testar</span>
+          </div>
+        </div>
       </div>
       <aside class="wifi card" id="wifi" hidden>
         <h2>Wi-Fi grátis da loja</h2>
@@ -159,6 +168,15 @@
       <h1 id="status-title">Preparando…</h1>
       <p class="lead" id="status-text"></p>
       <button class="btn btn-primary btn-lg" data-action="reset" id="status-done" type="button" hidden>Concluir</button>
+      <div class="ad" data-ad hidden>
+          <div class="ad-qr qr" data-ad-qr></div>
+          <div class="ad-text">
+            <span class="ad-tag">Anúncio · imprime.ai</span>
+            <b class="ad-title" data-ad-title></b>
+            <span class="ad-body" data-ad-body></span>
+            <span class="ad-url">imprime.ai · 10 impressões grátis para testar</span>
+          </div>
+        </div>
     </div>
   </section>
 
@@ -182,7 +200,13 @@
       </div>
       <p class="notice ok" id="admin-msg" hidden></p>
       <div class="admin-grid">
-        <section class="card">
+        <section class="card free-only upgrade">
+          <h2>imprime-free</h2>
+          <p>Esta versão imprime de graça, sem limite e sem pagamento, e mostra anúncios do imprime.ai.</p>
+          <p><b>Quer cobrar pelas impressões?</b> O imprime.ai completo recebe por Pix, cartão por aproximação e vouchers, com painel online de faturamento, relatórios e ajustes à distância.</p>
+          <div class="row"><div class="qr upgrade-qr" data-ad-qr></div><p class="small muted">Aponte a câmera ou acesse <b>imprime.ai</b> para baixar. As 10 primeiras impressões são grátis.</p></div>
+        </section>
+        <section class="card full-only">
           <h2>Assinatura</h2>
           <p id="a-license"></p>
           <dl class="kv">
@@ -196,7 +220,7 @@
           <button class="btn" id="a-activate" type="button">Ativar código</button>
         </section>
 
-        <section class="card">
+        <section class="card full-only">
           <h2>Pagamento Pix (Mercado Pago)</h2>
           <label class="field">Preço por página (R$)
             <input id="f-price" inputmode="decimal" placeholder="0,50">
@@ -230,10 +254,10 @@
           </label>
           <label class="field">Wi-Fi dos clientes (nome)<input id="f-wifi" maxlength="32" autocomplete="off"></label>
           <label class="field">Senha do Wi-Fi dos clientes<input id="f-wifipass" maxlength="63" autocomplete="off"></label>
-          <p class="small muted">Estas configurações também podem ser mudadas pelo painel online; o que for salvo lá chega em até 30 minutos.</p>
+          <p class="small muted full-only">Estas configurações também podem ser mudadas pelo painel online; o que for salvo lá chega em até 30 minutos.</p>
         </section>
 
-        <section class="card">
+        <section class="card full-only">
           <h2>Maquininha (cartão e aproximação)</h2>
           <p id="a-point"></p>
           <p class="small muted">Com uma Point Smart ou Point Pro 2 do Mercado Pago, da mesma conta do token, o cliente paga com cartão de crédito ou débito, por aproximação, Apple Pay ou Google Pay. O valor aparece sozinho na maquininha.</p>
@@ -256,7 +280,7 @@
           <button class="btn" id="a-test-page" type="button">Imprimir página de teste</button>
         </section>
 
-        <section class="card">
+        <section class="card full-only">
           <h2>Painel online</h2>
           <p id="a-sync"></p>
           <button class="btn" id="a-sync-now" type="button">Sincronizar agora</button>
@@ -264,9 +288,9 @@
 
         <section class="card">
           <h2>Sistema</h2>
-          <label class="check"><input type="checkbox" id="a-autostart"> Abrir o imprime.ai ao ligar o computador</label>
+          <label class="check"><input type="checkbox" id="a-autostart"> Abrir este app ao ligar o computador</label>
           <button class="btn" id="a-pin-change" type="button">Trocar PIN</button>
-          <button class="btn btn-ghost danger" id="a-quit" type="button">Fechar o imprime.ai</button>
+          <button class="btn btn-ghost danger" id="a-quit" type="button">Fechar o app</button>
           <p class="small muted" id="a-version"></p>
         </section>
       </div>

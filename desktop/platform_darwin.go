@@ -23,7 +23,7 @@ func dataDir() string {
 		return d
 	}
 	home, _ := os.UserHomeDir()
-	return filepath.Join(home, "Library", "Application Support", "Quioco")
+	return filepath.Join(home, "Library", "Application Support", dataDirName())
 }
 
 // ---------------------------------------------------------------- secret at rest: key in the macOS Keychain
@@ -116,9 +116,16 @@ func setDefaultPrinter(name string) error {
 
 // ---------------------------------------------------------------- start at login: LaunchAgent
 
+func launchAgentLabel() string {
+	if freeEdition {
+		return "br.com.somainfo.imprimefree"
+	}
+	return "br.com.somainfo.quioco"
+}
+
 func launchAgentPath() string {
 	home, _ := os.UserHomeDir()
-	return filepath.Join(home, "Library", "LaunchAgents", "br.com.somainfo.quioco.plist")
+	return filepath.Join(home, "Library", "LaunchAgents", launchAgentLabel()+".plist")
 }
 
 func setAutostart(on bool) error {
@@ -135,11 +142,11 @@ func setAutostart(on bool) error {
 	plist := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>Label</key><string>br.com.somainfo.quioco</string>
+<key>Label</key><string>%s</string>
 <key>ProgramArguments</key><array><string>%s</string></array>
 <key>RunAtLoad</key><true/>
 </dict></plist>
-`, esc)
+`, launchAgentLabel(), esc)
 	os.MkdirAll(filepath.Dir(path), 0o755)
 	return os.WriteFile(path, []byte(plist), 0o644)
 }

@@ -18,7 +18,7 @@ func dataDir() string {
 		return d
 	}
 	base, _ := os.UserConfigDir()
-	return filepath.Join(base, "Quioco")
+	return filepath.Join(base, dataDirName())
 }
 
 func sealSecret(plain []byte) ([]byte, error) { return append([]byte("dev:"), plain...), nil }

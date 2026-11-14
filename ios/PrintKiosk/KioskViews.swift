@@ -113,6 +113,7 @@ struct WelcomeView: View {
 
                     Text(store.requiresPayment
                          ? "por página · fotos e PDFs · pagamento via Pix"
+                         : Edition.isFree ? "Grátis e sem limite · fotos e PDFs do seu celular"
                          : "Fotos e PDFs, do seu celular ou deste aparelho")
                         .font(compact ? .title3 : .title2)
                         .foregroundStyle(.secondary)
@@ -132,8 +133,13 @@ struct WelcomeView: View {
                             .padding(.top, 20)
                     }
 
-                    LicenseBanner(license: store.license)
-                        .padding(.top, 20)
+                    if Edition.isFree {
+                        HouseAdView()
+                            .padding(.top, 20)
+                    } else {
+                        LicenseBanner(license: store.license)
+                            .padding(.top, 20)
+                    }
 
                     Spacer(minLength: 32)
 
@@ -844,6 +850,8 @@ struct FinishedView: View {
                 VStack(spacing: 12) { finishButtons }
             }
             .padding(.top, 8)
+
+            if success { HouseAdView() }
         }
         .kioskPadding(48)
         }

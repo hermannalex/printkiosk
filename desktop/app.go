@@ -18,7 +18,6 @@ import (
 )
 
 const appVersion = "1.0.0"
-const uiPort = "47800"
 
 //go:embed ui
 var uiFiles embed.FS
@@ -378,8 +377,16 @@ func (app *App) routes() http.Handler {
 func (app *App) apiState(w http.ResponseWriter, r *http.Request) {
 	st := app.store.Read()
 	lic := app.license()
+	settings := st.Settings
+	edition := map[string]any{"name": appName(), "free": freeEdition}
+	if freeEdition {
+		settings.PricePerPageCents = 0 // always free, whatever was saved
+		edition["adUrl"] = freeAdURL
+		edition["adQr"] = freeAdQR()
+	}
 	writeJSON(w, 200, map[string]any{
-		"settings":   st.Settings,
+		"edition":    edition,
+		"settings":   settings,
 		"license":    lic,
 		"blocked":    blockedMessage(lic),
 		"watermark":  watermarked(lic),
@@ -411,6 +418,8 @@ func (app *App) apiAdminInfo(w http.ResponseWriter, r *http.Request) {
 	}
 	resp := map[string]any{
 		"settings":      st.Settings,
+		"edition":       appName(),
+		"free":          freeEdition,
 		"license":       app.license(),
 		"storeCode":     storeCode(app.store.storeID()),
 		"pairingCode":   pairingCode(st.SyncSecret),

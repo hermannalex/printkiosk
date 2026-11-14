@@ -80,7 +80,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     val storeCode: String = LicenseCodec.storeCode(licenseStore.storeId)
     /** The kiosk always prints; after the free trial (or a lapsed subscription) pages carry the watermark. */
     val canPrint: Boolean get() = true
-    val watermarked: Boolean get() = license is LicenseState.Expired || license is LicenseState.DemoOver
+    val watermarked: Boolean get() = !Edition.FREE && (license is LicenseState.Expired || license is LicenseState.DemoOver)
 
     // Staff PIN (hash only, see AdminLock)
     val adminLock = AdminLock(application)
@@ -125,6 +125,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Sends the print history and applies a newer activation code from the dashboard. */
     suspend fun syncWithDashboard() {
+        if (Edition.FREE) return
         refreshLicense()
         val version = runCatching {
             app.packageManager.getPackageInfo(app.packageName, 0).versionName
@@ -157,6 +158,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun recordPrint(success: Boolean, demo: Boolean) {
+        if (Edition.FREE) return // imprime-free has no dashboard
         val pages = items.sumOf { it.pageCount }
         val payment = paid?.takeIf { success }
         cloud.record(
@@ -184,8 +186,9 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     // region Derived values
 
     val totalPages: Int get() = items.sumOf { it.pageCount } * copies
-    val amountCents: Int get() = totalPages * settings.pricePerPageCents
-    val requiresPayment: Boolean get() = settings.pricePerPageCents > 0
+    val amountCents: Int get() = if (Edition.FREE) 0 else totalPages * settings.pricePerPageCents
+    /** imprime-free never charges, whatever price was saved. */
+    val requiresPayment: Boolean get() = !Edition.FREE && settings.pricePerPageCents > 0
     val remainingSlots: Int get() = (settings.maxItems - items.size).coerceAtLeast(0)
     val isPixConfigured: Boolean get() = settings.payerEmail.contains("@") && tokenSuffix != null
     val isCardConfigured: Boolean get() = tokenSuffix != null && pointTerminal != null
@@ -681,7 +684,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                 when {
                     job.isQueued || job.isStarted || job.isCompleted -> {
                         paidPrinted = true
-                        val demo = license !is LicenseState.Active
+                        val demo = !Edition.FREE && license !is LicenseState.Active
                         if (demo) {
                             licenseStore.recordDemoPrint()
                             refreshLicense()

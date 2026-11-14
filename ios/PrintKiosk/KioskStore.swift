@@ -218,6 +218,7 @@ final class KioskStore: ObservableObject {
 
     /// Sends the print history and applies a newer activation code from the dashboard.
     func syncWithDashboard() async {
+        if Edition.isFree { return } // imprime-free has no dashboard
         refreshLicense()
         guard let response = await cloud.sync(
             storeCode: storeCode, license: license,
@@ -256,6 +257,7 @@ final class KioskStore: ObservableObject {
     }
 
     private func recordPrint(success: Bool, demo: Bool) {
+        if Edition.isFree { return }
         let pages = items.reduce(0) { $0 + $1.pageCount }
         cloud.record(PrintJobRecord(
             id: UUID().uuidString,
@@ -278,8 +280,9 @@ final class KioskStore: ObservableObject {
     // MARK: Derived values
 
     var totalPages: Int { items.reduce(0) { $0 + $1.pageCount } * copies }
-    var amountCents: Int { totalPages * settings.pricePerPageCents }
-    var requiresPayment: Bool { settings.pricePerPageCents > 0 }
+    var amountCents: Int { Edition.isFree ? 0 : totalPages * settings.pricePerPageCents }
+    /// imprime-free never charges, whatever price was saved.
+    var requiresPayment: Bool { !Edition.isFree && settings.pricePerPageCents > 0 }
     var remainingSlots: Int { max(0, settings.maxItems - items.count) }
     var isPrinterConfigured: Bool { settings.printerURL != nil }
     var isPixConfigured: Bool {
@@ -873,7 +876,7 @@ final class KioskStore: ObservableObject {
         step = .printing
         let allPhotos = items.allSatisfy(\.isPhoto)
 
-        let watermark = license.watermarked
+        let watermark = !Edition.isFree && license.watermarked
         printService.print(
             watermark ? Watermark.apply(to: items.map(\.printingItem)) : items.map(\.printingItem),
             copies: copies,
@@ -882,7 +885,7 @@ final class KioskStore: ObservableObject {
         ) { [weak self] success, message in
             Task { @MainActor in
                 guard let self else { return }
-                let demo = !self.isSubscribed
+                let demo = !Edition.isFree && !self.isSubscribed
                 if success { self.paidPrinted = true }
                 if success && demo {
                     License.recordDemoPrint()

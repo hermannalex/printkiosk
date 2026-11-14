@@ -35,6 +35,6 @@ func main() {
 	if os.Getenv("QUIOCO_NO_BROWSER") == "" {
 		go app.runBrowser("http://127.0.0.1:" + uiPort + "/")
 	}
-	log.Print("imprime.ai ", appVersion, " em http://127.0.0.1:", uiPort)
+	log.Print(appName(), " ", appVersion, " em http://127.0.0.1:", uiPort)
 	log.Fatal(server.Serve(ln))
 }

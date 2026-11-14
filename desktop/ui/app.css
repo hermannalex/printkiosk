@@ -103,6 +103,21 @@ h2 { font-size: 26px; margin: 0 0 12px; }
   .welcome, .split { grid-template-columns: 1fr; }
   .wifi { width: auto; }
 }
+/* imprime-free: ads for imprime.ai, and admin sections that only the paid app has */
+.free-only { display: none !important; }
+body.free .free-only { display: block !important; }
+body.free .full-only { display: none !important; }
+.ad { display: flex; align-items: center; gap: 16px; text-align: left; background: #fff; border: 2px solid #c7d2fe; border-radius: 18px; padding: 14px 18px; max-width: 560px; box-shadow: 0 8px 24px rgba(79, 70, 229, .12); }
+.ad-qr { width: 104px; height: 104px; flex: none; }
+.ad-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ad-tag { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #6b7280; }
+.ad-title { font-size: 20px; color: #312e81; }
+.ad-body { font-size: 15px; color: #374151; line-height: 1.35; }
+.ad-url { font-size: 13px; font-weight: 600; color: #4f46e5; }
+.status .ad { margin: 18px auto 0; }
+.upgrade { border: 2px solid #c7d2fe; }
+.upgrade .row { align-items: center; gap: 14px; }
+.upgrade-qr { width: 110px; height: 110px; flex: none; }
 @page { size: A4; margin: 6mm; }
 @media print {
   body { display: block; overflow: visible; background: #fff; }

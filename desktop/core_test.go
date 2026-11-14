@@ -62,3 +62,15 @@ func TestTrialEndsInWatermarkNotBlock(t *testing.T) {
 		}
 	}
 }
+
+func TestFreeEditionNeverCharges(t *testing.T) {
+	if !freeEdition {
+		t.Skip("only in the imprime-free build (go test -tags free)")
+	}
+	if appName() != "imprime-free" || dataDirName() != "imprime-free" || uiPort == "47800" {
+		t.Fatalf("imprime-free must use its own name, folder and port")
+	}
+	if freeAdQR() == "" {
+		t.Fatal("ad QR Code missing")
+	}
+}

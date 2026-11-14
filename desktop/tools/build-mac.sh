@@ -1,13 +1,19 @@
 #!/bin/sh
 # Monta o imprime.ai.app (universal: Apple Silicon e Intel). Precisa de Go 1.24 e Python 3.
-# Uso: tools/build-mac.sh [pasta-de-saída]   (rode dentro de desktop/)
+# Uso: tools/build-mac.sh [pasta-de-saída] [free]   (rode dentro de desktop/)
+#   free: monta o imprime-free.app (impressão grátis, sem pagamentos, com anúncios do imprime.ai)
 set -e
 OUT="${1:-dist}"
-APP="$OUT/imprime.ai.app"
+if [ "$2" = "free" ]; then
+  NAME="imprime-free"; BUNDLE="br.com.somainfo.imprimefree.mac"; TAGS="-tags free"
+else
+  NAME="imprime.ai"; BUNDLE="br.com.somainfo.quioco.mac"; TAGS=""
+fi
+APP="$OUT/$NAME.app"
 VERSION=$(sed -n 's/^const appVersion = "\(.*\)"/\1/p' app.go)
 rm -rf "$APP" && mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o "$OUT/imprime-arm64" .
-GOOS=darwin GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o "$OUT/imprime-amd64" .
+GOOS=darwin GOARCH=arm64 go build $TAGS -trimpath -ldflags "-s -w" -o "$OUT/imprime-arm64" .
+GOOS=darwin GOARCH=amd64 go build $TAGS -trimpath -ldflags "-s -w" -o "$OUT/imprime-amd64" .
 python3 tools/lipo.py "$APP/Contents/MacOS/imprime" "$OUT/imprime-arm64" "$OUT/imprime-amd64"
 rm "$OUT/imprime-arm64" "$OUT/imprime-amd64"
 chmod +x "$APP/Contents/MacOS/imprime"
@@ -16,9 +22,9 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>CFBundleName</key><string>imprime.ai</string>
-  <key>CFBundleDisplayName</key><string>imprime.ai</string>
-  <key>CFBundleIdentifier</key><string>br.com.somainfo.quioco.mac</string>
+  <key>CFBundleName</key><string>$NAME</string>
+  <key>CFBundleDisplayName</key><string>$NAME</string>
+  <key>CFBundleIdentifier</key><string>$BUNDLE</string>
   <key>CFBundleExecutable</key><string>imprime</string>
   <key>CFBundleIconFile</key><string>imprime</string>
   <key>CFBundlePackageType</key><string>APPL</string>

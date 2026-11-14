@@ -42,18 +42,49 @@ for (const type of ["pointerdown", "keydown"]) addEventListener(type, touch, { c
 addEventListener("contextmenu", (e) => e.preventDefault());
 addEventListener("wheel", (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
 
+// ---------------------------------------------------------------- imprime-free ads
+
+/** House ads shown by imprime-free: what the paid imprime.ai adds (payments and the dashboard). */
+const ADS = [
+  { title: "Cobre pelas impressões com Pix", body: "Com o imprime.ai o cliente paga com Pix e o dinheiro cai direto na sua conta." },
+  { title: "Painel online da loja", body: "Faturamento, páginas impressas e horários de pico de cada quiosque, de qualquer lugar." },
+  { title: "Cartão por aproximação", body: "Aceite crédito, débito, Apple Pay e Google Pay na maquininha do Mercado Pago." },
+  { title: "Vouchers de crédito", body: "Crie créditos de impressão para promoções, troco ou clientes fiéis." },
+  { title: "Tem uma loja? Tenha um quiosque assim", body: "Transforme a sua impressora num autoatendimento. Baixe em imprime.ai." },
+];
+let adIndex = Math.floor(Math.random() * ADS.length);
+
+function renderAds() {
+  const ed = S.state && S.state.edition;
+  const free = !!(ed && ed.free);
+  document.body.classList.toggle("free", free);
+  for (const el of document.querySelectorAll("[data-ad]")) {
+    if (!free) { el.hidden = true; continue; }
+    const ad = ADS[adIndex % ADS.length];
+    el.querySelector("[data-ad-title]").textContent = ad.title;
+    el.querySelector("[data-ad-body]").textContent = ad.body;
+    el.hidden = false;
+  }
+  if (free && ed.adQr) for (const q of document.querySelectorAll("[data-ad-qr]")) if (!q.innerHTML) q.innerHTML = ed.adQr;
+}
+setInterval(() => { adIndex++; renderAds(); }, 9000);
+
 async function refreshState() {
   try { S.state = await api("/api/state"); } catch { return; }
+  renderAds();
   const s = S.state.settings;
   $("kiosk-name").textContent = s.kioskName;
   document.title = s.kioskName;
-  $("welcome-price").textContent = s.pricePerPageCents > 0 ? `${money(s.pricePerPageCents)} por página · pagamento com Pix` : "Impressão gratuita";
+  $("welcome-price").textContent = s.pricePerPageCents > 0 ? `${money(s.pricePerPageCents)} por página · pagamento com Pix`
+    : (S.state.edition && S.state.edition.free ? "Impressão grátis, sem limite" : "Impressão gratuita");
   const lic = S.state.license;
   const notice = $("welcome-notice");
   if (S.state.blocked) {
     notice.textContent = S.state.blocked; notice.className = "notice bad"; notice.hidden = false;
   } else if (s.pricePerPageCents > 0 && !S.state.pixReady) {
     notice.textContent = "Pagamento Pix não configurado. Atendente: toque em Configurações."; notice.className = "notice"; notice.hidden = false;
+  } else if (lic.state === "free") {
+    notice.hidden = true;
   } else if (lic.state === "demo") {
     notice.textContent = `Teste grátis: ${lic.remaining} impressão(ões) sem marca d'água restante(s).`; notice.className = "notice"; notice.hidden = false;
   } else if (S.state.watermark) {

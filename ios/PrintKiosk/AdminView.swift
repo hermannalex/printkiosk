@@ -159,6 +159,14 @@ struct AdminView: View {
 
     private var settingsForm: some View {
         Form {
+            if Edition.isFree {
+                Section {
+                    FreeUpgradeCard()
+                } header: {
+                    Text("imprime-free")
+                }
+            }
+            if !Edition.isFree {
             Section {
                 licenseStatus
                 LabeledContent("Código da loja") {
@@ -207,6 +215,7 @@ struct AdminView: View {
             } footer: {
                 Text("Crie sua conta no painel online e adicione este quiosque com o código da loja e o código de vinculação (não mostre esse código a clientes). Ao pagar a assinatura por lá, o quiosque é liberado sozinho na próxima conexão. O painel mostra impressões, cópias e faturamento. Sem assinatura, as \(License.demoPrints) primeiras impressões saem normais e as seguintes com a marca d'água imprime.ai.")
             }
+            }
 
             Section("Impressora") {
                 LabeledContent("Impressora atual", value: store.settings.printerName ?? "Nenhuma")
@@ -226,6 +235,7 @@ struct AdminView: View {
                 Text("Com o nome e a senha preenchidos, a tela inicial e a tela Do celular mostram um QR Code que conecta o celular do cliente ao Wi-Fi sem digitar nada. Para enviar arquivos pelo celular, este aparelho precisa estar nessa mesma rede.")
             }
 
+            if !Edition.isFree {
             Section {
                 Stepper(
                     "Preço por página: \(Money.format(cents: store.settings.pricePerPageCents))",
@@ -285,7 +295,9 @@ struct AdminView: View {
             } footer: {
                 Text("Estas configurações também podem ser mudadas pelo painel online (quioco.vercel.app); o que for salvo lá chega em até 30 minutos. Deixe o preço em R$ 0,00 para impressão gratuita. O Mercado Pago exige um e-mail de pagador em toda cobrança Pix; use o e-mail da loja. O token fica guardado no Keychain deste iPad.")
             }
+            }
 
+            if !Edition.isFree {
             Section {
                 Text(store.pointTerminal.map { "Maquininha em uso: \($0)" } ?? "Nenhuma maquininha ligada. O cliente paga só com Pix ou voucher.")
                 Button(pointBusy ? "Buscando…" : "Buscar maquininhas") {
@@ -322,6 +334,7 @@ struct AdminView: View {
                 Text("Maquininha (cartão e aproximação)")
             } footer: {
                 Text("Com uma Point Smart ou Point Pro 2 do Mercado Pago, da mesma conta do token, o cliente paga com cartão de crédito ou débito, por aproximação, Apple Pay ou Google Pay. O valor aparece sozinho na maquininha.")
+            }
             }
 
             Section("Quiosque") {

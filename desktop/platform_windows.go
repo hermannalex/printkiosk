@@ -25,7 +25,7 @@ func dataDir() string {
 	if base == "" {
 		base, _ = os.UserConfigDir()
 	}
-	return filepath.Join(base, "Quioco")
+	return filepath.Join(base, dataDirName())
 }
 
 // ---------------------------------------------------------------- secret at rest: Windows DPAPI
@@ -111,18 +111,18 @@ const runKey = `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 
 func setAutostart(on bool) error {
 	if !on {
-		hidden(exec.Command("reg", "delete", runKey, "/v", "Quioco", "/f")).Run()
+		hidden(exec.Command("reg", "delete", runKey, "/v", dataDirName(), "/f")).Run()
 		return nil
 	}
 	exe, err := os.Executable()
 	if err != nil {
 		return err
 	}
-	return hidden(exec.Command("reg", "add", runKey, "/v", "Quioco", "/t", "REG_SZ", "/d", `"`+exe+`"`, "/f")).Run()
+	return hidden(exec.Command("reg", "add", runKey, "/v", dataDirName(), "/t", "REG_SZ", "/d", `"`+exe+`"`, "/f")).Run()
 }
 
 func autostartOn() bool {
-	return hidden(exec.Command("reg", "query", runKey, "/v", "Quioco")).Run() == nil
+	return hidden(exec.Command("reg", "query", runKey, "/v", dataDirName())).Run() == nil
 }
 
 // ---------------------------------------------------------------- browser in kiosk mode

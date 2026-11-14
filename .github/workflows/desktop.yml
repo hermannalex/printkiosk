@@ -1,4 +1,4 @@
-# Testa e compila o imprime.ai para Windows e macOS a cada push; os apps ficam nos artefatos da execução.
+# Testa e compila o imprime.ai e o imprime-free para Windows e macOS a cada push; os apps ficam nos artefatos da execução.
 name: desktop
 on:
   push:
@@ -18,10 +18,12 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
-      - run: go vet ./... && GOOS=windows go vet ./... && GOOS=darwin go vet ./...
-      - run: go test ./...
+      - run: go vet ./... && GOOS=windows go vet ./... && GOOS=darwin go vet ./... && go vet -tags free ./...
+      - run: go test ./... && go test -tags free ./...
       - run: GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -s -w" -o dist/imprime.ai.exe .
+      - run: GOOS=windows GOARCH=amd64 go build -tags free -trimpath -ldflags "-H windowsgui -s -w" -o dist/imprime-free.exe .
       - run: tools/build-mac.sh dist && cd dist && zip -qry imprime.ai-mac.zip imprime.ai.app
+      - run: tools/build-mac.sh dist free && cd dist && zip -qry imprime-free-mac.zip imprime-free.app
       - uses: actions/upload-artifact@v4
         with:
           name: imprime.ai-Windows
@@ -30,3 +32,11 @@ jobs:
         with:
           name: imprime.ai-Mac
           path: desktop/dist/imprime.ai-mac.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: imprime-free-Windows
+          path: desktop/dist/imprime-free.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: imprime-free-Mac
+          path: desktop/dist/imprime-free-mac.zip

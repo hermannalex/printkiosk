@@ -70,7 +70,7 @@ func (app *App) apiCheckout(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 200, map[string]any{"action": "blocked", "message": "Nada para imprimir."})
 		return
 	}
-	if st.Settings.PricePerPageCents == 0 {
+	if freeEdition || st.Settings.PricePerPageCents == 0 {
 		writeJSON(w, 200, map[string]any{"action": "print"})
 		return
 	}
@@ -245,7 +245,7 @@ func (app *App) apiPrintDone(w http.ResponseWriter, r *http.Request) {
 		p.done = true
 		app.mu.Unlock()
 	}
-	demo := app.license().State != "active"
+	demo := !freeEdition && app.license().State != "active"
 	if demo && in.Success {
 		app.store.Update(func(s *State) { s.DemoUsed++ })
 	}

@@ -182,7 +182,8 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
             .padding(horizontal = 24.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        Section("Assinatura") {
+        if (Edition.FREE) UpgradeCard()
+        Section("Assinatura", paidOnly = true) {
             val dateFormat = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
             val (status, color) = when (val license = vm.license) {
                 is LicenseState.Active -> "Ativa até ${license.until.format(dateFormat)}" to KioskGreen
@@ -265,7 +266,7 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
             )
         }
 
-        Section("Pagamento Pix (Mercado Pago)") {
+        Section("Pagamento Pix (Mercado Pago)", paidOnly = true) {
             StepperRow(
                 label = "Preço por página: ${Money.format(settings.pricePerPageCents)}",
                 onMinus = { vm.updateSettings { it.copy(pricePerPageCents = (it.pricePerPageCents - 10).coerceAtLeast(0)) } },
@@ -344,7 +345,7 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
             )
         }
 
-        Section("Maquininha (cartão e aproximação)") {
+        Section("Maquininha (cartão e aproximação)", paidOnly = true) {
             Text(
                 vm.pointTerminal?.let { "Maquininha em uso: $it" } ?: "Nenhuma maquininha ligada. O cliente paga só com Pix ou voucher.",
                 style = MaterialTheme.typography.titleMedium,
@@ -480,7 +481,8 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
 }
 
 @Composable
-private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
+private fun Section(title: String, paidOnly: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+    if (paidOnly && Edition.FREE) return // imprime-free has no payments, license or dashboard
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),

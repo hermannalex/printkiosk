@@ -16,6 +16,22 @@ android {
         versionName = "1.0"
     }
 
+    // Two apps from the same code: imprime.ai (payments, dashboard) and imprime-free
+    // (free unlimited printing, no payments, with ads for imprime.ai). Build Variants: fullDebug, freeDebug…
+    flavorDimensions += "edition"
+    productFlavors {
+        create("full") {
+            dimension = "edition"
+            buildConfigField("boolean", "FREE", "false")
+        }
+        create("free") {
+            dimension = "edition"
+            applicationIdSuffix = ".free"
+            versionNameSuffix = "-free"
+            buildConfigField("boolean", "FREE", "true")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -33,6 +49,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

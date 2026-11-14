@@ -188,6 +188,7 @@ private fun WelcomeScreen(vm: KioskViewModel) {
             )
             Text(
                 if (vm.requiresPayment) "por página · fotos e PDFs · pagamento via Pix"
+                else if (Edition.FREE) "Grátis e sem limite · fotos e PDFs do seu celular"
                 else "Fotos e PDFs, do seu celular ou deste aparelho",
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -201,7 +202,7 @@ private fun WelcomeScreen(vm: KioskViewModel) {
             WarningText("Pagamento Pix não configurado. Atendente: toque em Configurações.")
         }
 
-        LicenseBanner(vm.license)
+        if (Edition.FREE) HouseAd() else LicenseBanner(vm.license)
 
         if (wifiName.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
@@ -794,7 +795,7 @@ private fun VoucherScreen(vm: KioskViewModel) {
 
 /** Renders any text (a Pix payload, a link, a Wi-Fi network) as a QR Code on the tablet. */
 @Composable
-private fun QrImage(payload: String, modifier: Modifier = Modifier) {
+internal fun QrImage(payload: String, modifier: Modifier = Modifier) {
     val bitmap: ImageBitmap? = remember(payload) { renderQrCode(payload) }
     Box(
         modifier = modifier
@@ -883,6 +884,7 @@ private fun FinishedScreen(vm: KioskViewModel, result: KioskStep.Finished) {
                 result.message ?: "Algo deu errado. Tente de novo."
             },
             footer = {
+                if (result.success) HouseAd()
                 val paidId = vm.paidPaymentId
                 if (!result.success && paidId != null) {
                     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {

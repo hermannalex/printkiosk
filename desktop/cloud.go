@@ -92,6 +92,9 @@ func (app *App) syncOnce() *syncResult {
 
 // Sync sends prints, applies newer dashboard settings and a newer activation code.
 func (app *App) Sync() {
+	if freeEdition {
+		return // imprime-free has no dashboard
+	}
 	r := app.syncOnce()
 	if r == nil {
 		return
@@ -131,6 +134,9 @@ func (app *App) Sync() {
 }
 
 func (app *App) syncLoop() {
+	if freeEdition {
+		return
+	}
 	for {
 		app.Sync()
 		time.Sleep(30 * time.Minute)

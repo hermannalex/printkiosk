@@ -102,6 +102,9 @@ type License struct {
 
 func (app *App) license() License {
 	var lic License
+	if freeEdition {
+		return License{State: "free"}
+	}
 	app.store.Update(func(s *State) {
 		real := dayNumber(time.Now())
 		if s.MaxDay < real {
