@@ -204,6 +204,15 @@ figcaption b { color: var(--ink); font-weight: 600; }
 @media (max-width: 1000px) { .dl-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 560px) { .dl-grid { grid-template-columns: 1fr; } }
 
+.free-box { margin-top: 24px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: center; background: var(--surface); border: 2px dashed var(--line); border-radius: 20px; padding: 24px; }
+.free-box > * { min-width: 0; }
+.free-box h3 { margin: 8px 0; }
+.free-box p { color: var(--muted); }
+.free-dl { display: grid; gap: 10px; }
+.free-dl .btn { justify-content: center; }
+.free-dl .meta { font-size: 14px; color: var(--muted); }
+@media (max-width: 800px) { .free-box { grid-template-columns: 1fr; } }
+
 footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 14px; }
 .foot { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; justify-content: space-between; }
 .foot nav { display: flex; flex-wrap: wrap; gap: 18px; }
@@ -370,7 +379,7 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
           <a class="btn btn-brand" href="https://imprime-ai.vercel.app/download/imprime.ai-windows.exe" download>Baixar para Windows</a>
           <span class="meta">imprime.ai-windows.exe · 9,6 MB</span>
           <details><summary>Como instalar</summary><ol><li>Abra o arquivo baixado.</li><li>Se o Windows mostrar "O Windows protegeu o computador", clique em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>.</li></ol></details>
-          <span class="meta">SHA-256 c5383f236960bf8a8d909b61c5f88219b9b7ec0d5c00c1e637179c42d0155008</span>
+          <span class="meta">SHA-256 87e57552aeca1472efaa72cf6bd1278cb1eb05d8402f5da4aad94626b07acc55</span>
         </article>
         <article class="dl">
           <div class="os"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.9-.9-3.1-.8-1.6 0-3 .9-3.9 2.3-1.7 2.9-.4 7.2 1.2 9.6.8 1.2 1.7 2.4 3 2.4 1.2-.1 1.6-.8 3.1-.8 1.4 0 1.8.8 3.1.8 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.6-1-2.7-4.1zM14.1 5.6c.7-.8 1.1-1.9 1-3-1 0-2.1.6-2.8 1.4-.6.7-1.1 1.8-1 2.9 1.1.1 2.1-.5 2.8-1.3z"/></svg><h3>Mac</h3></div>
@@ -378,7 +387,7 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
           <a class="btn btn-brand" href="https://imprime-ai.vercel.app/download/imprime.ai-mac.zip" download>Baixar para Mac</a>
           <span class="meta">imprime.ai-mac.zip · 7,8 MB</span>
           <details><summary>Como instalar</summary><ol><li>Abra o .zip e arraste <b>imprime.ai</b> para a pasta Aplicativos.</li><li>Na primeira vez, clique no app com o botão direito, escolha <b>Abrir</b> e confirme. Se o Mac não deixar, vá em Ajustes do Sistema › Privacidade e Segurança › <b>Abrir mesmo assim</b>.</li></ol></details>
-          <span class="meta">SHA-256 82d29fbccf06eb1c3b04afab5dd078220778161790ecf1d4c7d59f1e1b05946f</span>
+          <span class="meta">SHA-256 2df4465024d90dc2de1cad7af38fdc299ba83a072f9a959acad5b59f669b757f</span>
         </article>
         <article class="dl">
           <div class="os"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#3DDC84" d="M6 18c0 .6.4 1 1 1h1v3.5a1.5 1.5 0 003 0V19h2v3.5a1.5 1.5 0 003 0V19h1c.6 0 1-.4 1-1V8H6zM3.5 8A1.5 1.5 0 002 9.5v7a1.5 1.5 0 003 0v-7A1.5 1.5 0 003.5 8zm17 0A1.5 1.5 0 0019 9.5v7a1.5 1.5 0 003 0v-7A1.5 1.5 0 0020.5 8zm-4.97-5.84l1.3-1.3a.5.5 0 00-.7-.7l-1.48 1.47A5.9 5.9 0 0012 1c-.96 0-1.86.23-2.66.63L7.85.15a.5.5 0 00-.7.7l1.31 1.31A5.97 5.97 0 006 7h12a5.97 5.97 0 00-2.47-4.84zM10 5H9V4h1zm5 0h-1V4h1z"/></svg><h3>Android</h3></div>
@@ -391,6 +400,19 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
           <p>A Apple só permite instalar apps pela App Store ou pelo TestFlight.</p>
           <span class="soon">Em breve na App Store</span>
                   </article>
+      </div>
+
+      <div class="free-box">
+        <div>
+          <span class="eyebrow">imprime-free</span>
+          <h3>Só quer deixar a impressora livre para os clientes?</h3>
+          <p>O <b>imprime-free</b> imprime de graça, sem limite de impressões e sem pagamento. Ele não tem painel nem cobrança e mostra anúncios do imprime.ai na tela. Quando quiser cobrar, é só trocar pelo imprime.ai.</p>
+        </div>
+        <div class="free-dl">
+          <a class="btn btn-line" href="https://imprime-ai.vercel.app/download/imprime-free-windows.exe" download>imprime-free para Windows</a>
+          <a class="btn btn-line" href="https://imprime-ai.vercel.app/download/imprime-free-mac.zip" download>imprime-free para Mac</a>
+          <span class="meta">Android e iPhone/iPad: em breve, junto com o imprime.ai.</span>
+        </div>
       </div>
     </div>
   </section>
