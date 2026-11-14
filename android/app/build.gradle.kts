@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -26,15 +28,32 @@ android {
         }
         create("free") {
             dimension = "edition"
-            applicationIdSuffix = ".free"
+            // Package name on Google Play (permanent once published); same as the iOS bundle ID.
+            applicationId = "br.com.somainfo.imprimefree"
             versionNameSuffix = "-free"
             buildConfigField("boolean", "FREE", "true")
+        }
+    }
+
+    // Release signing for Google Play: keystore.properties (never committed) next to settings.gradle.kts:
+    //   storeFile=/caminho/imprime-upload.jks  storePassword=…  keyAlias=upload  keyPassword=…
+    val keystoreFile = rootProject.file("keystore.properties")
+    if (keystoreFile.exists()) {
+        val props = Properties().apply { keystoreFile.inputStream().use { load(it) } }
+        signingConfigs {
+            create("upload") {
+                storeFile = file(props.getProperty("storeFile"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+            }
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (keystoreFile.exists()) signingConfig = signingConfigs.getByName("upload")
         }
     }
 

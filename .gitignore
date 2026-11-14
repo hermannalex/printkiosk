@@ -24,3 +24,9 @@ captures/
 
 desktop/dist/
 desktop/quioco
+
+# Assinatura do Google Play (nunca no repositório)
+keystore.properties
+*.jks
+*.keystore
+*.aab
