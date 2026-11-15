@@ -213,6 +213,18 @@ figcaption b { color: var(--ink); font-weight: 600; }
 .free-dl .meta { font-size: 14px; color: var(--muted); }
 @media (max-width: 800px) { .free-box { grid-template-columns: 1fr; } }
 
+.pix0 { margin-top: 32px; background: var(--surface); border: 2px solid var(--brand); border-radius: 22px; padding: 26px; max-width: 880px; }
+.pix0-head { display: flex; gap: 20px; align-items: center; margin-bottom: 18px; }
+.pix0-head p { color: var(--muted); margin-top: 6px; }
+.pix0-badge { flex: none; display: grid; place-items: center; width: 92px; height: 92px; border-radius: 24px; background: var(--brand); color: #fff; font: 800 34px/1 var(--display); }
+.table-wrap { overflow-x: auto; }
+.pix-table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 560px; }
+.pix-table th, .pix-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.pix-table th { font-weight: 600; }
+.pix-table small { color: var(--muted); font-weight: 400; }
+.pix-table td.zero { color: var(--ok); font-weight: 700; }
+@media (max-width: 560px) { .pix0-head { flex-direction: column; align-items: flex-start; } .pix0-badge { width: 72px; height: 72px; font-size: 28px; } }
+
 footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 14px; }
 .foot { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; justify-content: space-between; }
 .foot nav { display: flex; flex-wrap: wrap; gap: 18px; }
@@ -243,7 +255,7 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
 
   <div class="wrap hero-grid">
     <div>
-      <span class="pill"><b>Novo</b> Lançamento · 10 impressões grátis para testar</span>
+      <span class="pill"><b>Novo</b> Taxa 0% no Pix · 10 impressões grátis para testar</span>
       <h1>Sua impressora comum vira um <em>autoatendimento com Pix.</em></h1>
       <p class="lead">O imprime.ai transforma a impressora que você já tem num ponto de impressão que funciona sozinho. O cliente envia o arquivo pelo celular, paga com Pix e retira a cópia. Sem balcão, sem fila, sem atendente.</p>
       <div class="cta-row">
@@ -505,7 +517,7 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
       <div class="section-head">
         <span class="eyebrow">Planos</span>
         <h2>Uma mensalidade fixa. As impressões são suas.</h2>
-        <p class="lead">Não cobramos porcentagem sobre as impressões: o valor de cada página vai inteiro para a sua conta Mercado Pago.</p>
+        <p class="lead">Taxa 0% do imprime.ai no Pix: não cobramos porcentagem sobre as impressões, e o valor de cada página vai inteiro para a sua conta Mercado Pago.</p>
       </div>
       <div class="plans">
         <div class="plan">
@@ -532,6 +544,27 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
         </div>
       </div>
       <p class="lead" style="margin-top:24px"><b style="color:var(--ink)">Teste antes de assinar:</b> cada aparelho imprime 10 vezes de graça. Depois disso, ele continua funcionando na versão gratuita, com a marca d'água <b style="color:var(--ink)">imprime.ai</b> nas folhas, até você assinar.</p>
+      <div class="pix0">
+        <div class="pix0-head">
+          <span class="pix0-badge">0%</span>
+          <div>
+            <h3>Taxa 0% do imprime.ai no Pix</h3>
+            <p>Não ficamos com nenhuma parte do Pix: o valor vai direto para a sua conta Mercado Pago. Em impressão, onde cada pagamento é de poucos reais, taxa mínima por Pix come o lucro.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="pix-table">
+            <thead><tr><th>Valor do Pix</th><th>imprime.ai<br><small>taxa da plataforma</small></th><th>OpenPix · plano %<br><small>0,80%, mínimo R$ 0,50</small></th><th>OpenPix · plano fixo<br><small>R$ 0,85 por Pix</small></th></tr></thead>
+            <tbody>
+              <tr><td>R$ 1,00 <small>(2 páginas)</small></td><td class="zero">R$ 0,00</td><td>R$ 0,50 <small>(50%)</small></td><td>R$ 0,85 <small>(85%)</small></td></tr>
+              <tr><td>R$ 3,00 <small>(6 páginas)</small></td><td class="zero">R$ 0,00</td><td>R$ 0,50 <small>(16,7%)</small></td><td>R$ 0,85 <small>(28,3%)</small></td></tr>
+              <tr><td>R$ 10,00 <small>(20 páginas)</small></td><td class="zero">R$ 0,00</td><td>R$ 0,50 <small>(5%)</small></td><td>R$ 0,85 <small>(8,5%)</small></td></tr>
+              <tr><td>300 Pix de R$ 2,00 no mês</td><td class="zero">R$ 0,00</td><td>R$ 150,00</td><td>R$ 255,00</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="fine" style="margin-top:12px">Preços da OpenPix conforme <a href="https://openpix.com.br/pricing/">openpix.com.br/pricing</a> em 15/11/2026. Com o imprime.ai, o Pix é recebido na sua conta Mercado Pago e segue a tarifa do seu contrato com eles: o Mercado Pago anuncia 0% para Pix na maioria das contas e 0,49% para novas contas CNPJ que faturam a partir de R$ 15 mil por mês (<a href="https://www.mercadopago.com.br/ferramentas-para-vender/aceitar-pix">mercadopago.com.br</a>).</p>
+      </div>
       <p class="fine">As taxas do Mercado Pago sobre Pix e cartão seguem o seu contrato com eles. A assinatura é feita pelo Mercado Pago e pode ser cancelada a qualquer momento no painel.</p>
     </div>
   </section>
