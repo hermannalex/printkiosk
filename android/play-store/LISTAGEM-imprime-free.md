@@ -1,6 +1,6 @@
 # imprime-free · ficha da Google Play
 
-Pacote: `br.com.somainfo.imprimefree` (variante **freeRelease**). Categoria: Ferramentas. Gratuito. Contém anúncios: sim (só do próprio imprime.ai).
+Pacote: `imprime.ai.imprimefree` (variante **freeRelease**). Categoria: Ferramentas. Gratuito. Contém anúncios: sim (só do próprio imprime.ai).
 
 ## Nome (até 30)
 imprime-free: impressão grátis

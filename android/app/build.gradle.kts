@@ -29,7 +29,7 @@ android {
         create("free") {
             dimension = "edition"
             // Package name on Google Play (permanent once published); same as the iOS bundle ID.
-            applicationId = "br.com.somainfo.imprimefree"
+            applicationId = "imprime.ai.imprimefree"
             versionNameSuffix = "-free"
             buildConfigField("boolean", "FREE", "true")
         }
