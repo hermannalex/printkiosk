@@ -86,7 +86,7 @@ struct WelcomeView: View {
 
                     Text(store.requiresPayment
                          ? "por página · fotos e PDFs · pagamento via Pix"
-                         : Edition.isFree ? "Grátis e sem limite · fotos e PDFs do seu celular"
+                         : Edition.isFree ? "Grátis · até \(FreeQuota.dailyLimit) cópias por dia · restam \(store.freeLeft) hoje"
                          : "Fotos e PDFs, do seu celular ou deste aparelho")
                         .font(compact ? .title3 : .title2)
                         .foregroundStyle(.secondary)
@@ -366,7 +366,7 @@ struct ReviewView: View {
             Button { store.copies += 1 } label: {
                 Image(systemName: "plus.circle.fill").kioskFont(44)
             }
-            .disabled(store.copies >= store.settings.maxCopies)
+            .disabled(!store.canAddCopy)
             .accessibilityLabel("Mais cópias")
         }
     }
@@ -380,6 +380,14 @@ struct ReviewView: View {
                 Text(Money.format(cents: store.amountCents))
                     .kioskFont(34, weight: .bold, design: .rounded)
                     .monospacedDigit()
+            }
+            if Edition.isFree {
+                Text(store.overFreeLimit
+                     ? "Hoje ainda dá para imprimir \(store.freeLeft) de \(FreeQuota.dailyLimit) cópias grátis: diminua as páginas ou as cópias."
+                     : "Cópias grátis que ainda restam hoje: \(store.freeLeft) de \(FreeQuota.dailyLimit).")
+                    .font(.subheadline)
+                    .foregroundStyle(store.overFreeLimit ? Color.red : Color.secondary)
+                    .multilineTextAlignment(alignment == .trailing ? .trailing : .leading)
             }
         }
     }
@@ -426,6 +434,7 @@ struct ReviewView: View {
                     }
                 }
                 .buttonStyle(PrimaryButtonStyle())
+                .disabled(store.overFreeLimit)
             }
         }
         .kioskPadding(40)

@@ -74,3 +74,26 @@ func TestFreeEditionNeverCharges(t *testing.T) {
 		t.Fatal("ad QR Code missing")
 	}
 }
+
+func TestFreeDailyLimit(t *testing.T) {
+	var s State
+	if freeLeft(s) != freeDailyCopies {
+		t.Fatalf("a new day starts with %d copies", freeDailyCopies)
+	}
+	countFreeCopies(&s, 15)
+	if freeLeft(s) != 5 {
+		t.Fatalf("left = %d, want 5", freeLeft(s))
+	}
+	countFreeCopies(&s, 10)
+	if freeLeft(s) != 0 {
+		t.Fatalf("left = %d, want 0 (never negative)", freeLeft(s))
+	}
+	s.FreeDay = "2000-01-01" // yesterday's count does not carry over
+	if freeLeft(s) != freeDailyCopies {
+		t.Fatal("the count must restart each day")
+	}
+	countFreeCopies(&s, 3)
+	if s.FreeDay != today() || s.FreeUsed != 3 {
+		t.Fatalf("counting on a new day restarts from zero: %+v", s)
+	}
+}

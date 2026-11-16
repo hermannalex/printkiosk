@@ -61,6 +61,8 @@ type State struct {
 	SealedToken          string     `json:"sealedToken,omitempty"`
 	Printer              string     `json:"printer,omitempty"`
 	PointTerminal        string     `json:"pointTerminal,omitempty"` // Mercado Pago Point in PDV mode
+	FreeDay              string     `json:"freeDay,omitempty"`       // imprime-free: the day FreeUsed counts (local date)
+	FreeUsed             int        `json:"freeUsed,omitempty"`      // imprime-free: copies printed on FreeDay
 }
 
 type Store struct {

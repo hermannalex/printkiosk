@@ -76,7 +76,8 @@ async function refreshState() {
   $("kiosk-name").textContent = s.kioskName;
   document.title = s.kioskName;
   const priceLine = s.pricePerPageCents > 0 ? `${money(s.pricePerPageCents)} por página · pagamento com Pix`
-    : (S.state.edition && S.state.edition.free ? "Impressão grátis, sem limite" : "");
+    : (S.state.edition && S.state.edition.free
+      ? `Grátis · até ${S.state.edition.dailyLimit} cópias por dia · restam ${S.state.edition.left} hoje` : "");
   $("welcome-price").textContent = priceLine;
   $("welcome-price").hidden = !priceLine;
   const lic = S.state.license;
@@ -237,6 +238,18 @@ function renderReview() {
   const cents = total * s.pricePerPageCents;
   $("r-total").textContent = s.pricePerPageCents > 0 ? money(cents) : "Grátis";
   $("checkout").textContent = s.pricePerPageCents > 0 ? `Pagar ${money(cents)}` : "Imprimir";
+  // imprime-free: up to edition.dailyLimit copies a day.
+  const ed = S.state.edition || {};
+  const over = ed.free && total > ed.left;
+  if (ed.free) {
+    $("copy-plus").disabled = $("copy-plus").disabled || pages * (S.copies + 1) > ed.left;
+    $("r-free-left").textContent = over
+      ? `A versão grátis imprime até ${ed.dailyLimit} cópias por dia. Hoje ainda dá para imprimir ${ed.left}: diminua as páginas ou as cópias.`
+      : `Cópias grátis que ainda restam hoje: ${ed.left} de ${ed.dailyLimit}.`;
+    $("r-free-left").className = over ? "notice bad" : "small muted";
+  }
+  $("r-free-left").hidden = !ed.free;
+  $("checkout").disabled = !!over;
 }
 
 $("to-review").onclick = async () => { await api("/api/upload/close", {}); await refreshState(); show("review"); renderReview(); };

@@ -2,8 +2,8 @@ import SwiftUI
 
 /// The same code builds two apps:
 /// - imprime.ai (PrintKiosk.xcodeproj): payments, license and the online dashboard.
-/// - imprime-free (ImprimeFree.xcodeproj, compiled with the FREE flag): prints for free with no
-///   limit, has no payments, license or dashboard, and shows house ads for imprime.ai.
+/// - imprime-free (ImprimeFree.xcodeproj, compiled with the FREE flag): prints for free, up to
+///   FreeQuota.dailyLimit copies a day, has no payments, license or dashboard, and shows house ads for imprime.ai.
 enum Edition {
     #if FREE
     static let isFree = true
@@ -12,6 +12,39 @@ enum Edition {
     #endif
 
     static let adURL = "https://imprime.ai/?origem=imprime-free"
+}
+
+/// imprime-free prints up to `dailyLimit` copies (pages x copies) a day. The count restarts each
+/// day (the device's local date) and is kept in UserDefaults.
+enum FreeQuota {
+    static let dailyLimit = 20
+    static let limitMessage = "O limite de \(dailyLimit) cópias grátis de hoje acabou. Volte amanhã! Para imprimir sem limite, conheça o imprime.ai."
+
+    private static let dayKey = "free.day"
+    private static let usedKey = "free.used"
+
+    private static var today: String {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: Date())
+    }
+
+    private static var usedToday: Int {
+        let d = UserDefaults.standard
+        return d.string(forKey: dayKey) == today ? d.integer(forKey: usedKey) : 0
+    }
+
+    /// Copies imprime-free may still print today.
+    static var left: Int { max(0, dailyLimit - usedToday) }
+
+    /// Adds printed copies to today's count.
+    static func add(_ copies: Int) {
+        let used = usedToday
+        UserDefaults.standard.set(today, forKey: dayKey)
+        UserDefaults.standard.set(used + copies, forKey: usedKey)
+    }
 }
 
 private struct HouseAdText {
@@ -72,7 +105,7 @@ struct HouseAdView: View {
 struct FreeUpgradeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Esta versão imprime de graça, sem limite e sem pagamento, e mostra anúncios do imprime.ai.")
+            Text("Esta versão imprime de graça, até 20 cópias por dia, sem pagamento, e mostra anúncios do imprime.ai.")
             Text("Quer cobrar pelas impressões? O imprime.ai completo recebe por Pix, cartão por aproximação e vouchers, com painel online de faturamento, relatórios e ajustes à distância.")
             HStack(spacing: 14) {
                 QRCodeView(payload: Edition.adURL)

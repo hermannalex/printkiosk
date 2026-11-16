@@ -379,16 +379,22 @@ func (app *App) apiState(w http.ResponseWriter, r *http.Request) {
 	lic := app.license()
 	settings := st.Settings
 	edition := map[string]any{"name": appName(), "free": freeEdition}
+	blocked := blockedMessage(lic)
 	if freeEdition {
 		settings.PricePerPageCents = 0 // always free, whatever was saved
 		edition["adUrl"] = freeAdURL
 		edition["adQr"] = freeAdQR()
+		edition["dailyLimit"] = freeDailyCopies
+		edition["left"] = freeLeft(st)
+		if freeLeft(st) == 0 {
+			blocked = freeLimitMessage()
+		}
 	}
 	writeJSON(w, 200, map[string]any{
 		"edition":    edition,
 		"settings":   settings,
 		"license":    lic,
-		"blocked":    blockedMessage(lic),
+		"blocked":    blocked,
 		"watermark":  watermarked(lic),
 		"pixReady":   app.pixReady(),
 		"pinSet":     st.PinHash != "",

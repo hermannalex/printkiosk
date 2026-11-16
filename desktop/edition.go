@@ -1,8 +1,13 @@
 package main
 
+import (
+	"fmt"
+	"time"
+)
+
 // The same source builds two apps:
 //   - imprime.ai (default): payments, license, dashboard sync.
-//   - imprime-free (`go build -tags free`): prints for free with no limit, no payments, no license
+//   - imprime-free (`go build -tags free`): prints for free (up to freeDailyCopies a day), no payments, no license
 //     and no dashboard, and shows ads for imprime.ai. It keeps its own data folder and port, so both
 //     can be installed on the same computer.
 
@@ -38,4 +43,30 @@ func freeAdQR() string {
 		}
 	}
 	return adQR
+}
+
+// imprime-free prints up to this many copies (pages x copies) a day; imprime.ai has no such limit.
+const freeDailyCopies = 20
+
+func today() string { return time.Now().Format("2006-01-02") }
+
+// freeLeft is how many copies imprime-free may still print today.
+func freeLeft(s State) int {
+	used := 0
+	if s.FreeDay == today() {
+		used = s.FreeUsed
+	}
+	return max(0, freeDailyCopies-used)
+}
+
+// countFreeCopies adds printed copies to today's imprime-free count.
+func countFreeCopies(s *State, n int) {
+	if s.FreeDay != today() {
+		s.FreeDay, s.FreeUsed = today(), 0
+	}
+	s.FreeUsed += n
+}
+
+func freeLimitMessage() string {
+	return fmt.Sprintf("O limite de %d cópias grátis de hoje acabou. Volte amanhã! Para imprimir sem limite, conheça o imprime.ai.", freeDailyCopies)
 }

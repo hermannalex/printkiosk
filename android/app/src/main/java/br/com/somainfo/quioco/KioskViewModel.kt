@@ -62,6 +62,12 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     /** Mercado Pago Point terminal in PDV mode, or null. */
     var pointTerminal by mutableStateOf(pointPrefs.getString("terminal", null))
         private set
+    private val freeQuota = FreeQuota(application)
+    /** imprime-free: copies that can still be printed today. */
+    var freeLeft by mutableIntStateOf(freeQuota.left())
+        private set
+    /** imprime-free: this job would go over today's free copies. */
+    val overFreeLimit: Boolean get() = Edition.FREE && totalPages > freeLeft
     private var activeOrder: String? = null
     private var lastMethod = "pix"
     var tokenSuffix by mutableStateOf(SecureStore.getToken(application)?.takeLast(4))
@@ -209,13 +215,24 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
             notice = blockedMessage()
             return
         }
+        if (Edition.FREE) {
+            freeLeft = freeQuota.left()
+            if (freeLeft == 0) {
+                notice = FreeQuota.LIMIT_MESSAGE
+                return
+            }
+        }
         step = KioskStep.Select
     }
 
     fun goToSelect() { step = KioskStep.Select }
     fun goToReview() { step = KioskStep.Review }
 
-    fun addCopy() { if (copies < settings.maxCopies) copies++ }
+    fun addCopy() {
+        if (copies >= settings.maxCopies) return
+        if (Edition.FREE && items.sumOf { it.pageCount } * (copies + 1) > freeLeft) return
+        copies++
+    }
     fun removeCopy() { if (copies > 1) copies-- }
 
     fun reset() {
@@ -249,6 +266,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
 
         items.clear()
         copies = 1
+        if (Edition.FREE) freeLeft = freeQuota.left()
         notice = null
         step = KioskStep.Welcome
         ItemLoader.jobsDir(app).deleteRecursively()
@@ -430,6 +448,14 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
         if (!canPrint && paid == null) {
             step = KioskStep.Finished(false, blockedMessage())
             return
+        }
+        if (Edition.FREE) {
+            freeLeft = freeQuota.left()
+            if (overFreeLimit) {
+                notice = if (freeLeft == 0) FreeQuota.LIMIT_MESSAGE
+                else "A versão grátis imprime até ${FreeQuota.DAILY_LIMIT} cópias por dia. Hoje ainda dá para imprimir $freeLeft: diminua as páginas ou as cópias."
+                return
+            }
         }
         if (!requiresPayment || paid != null) {
             sendToPrinter()
@@ -690,6 +716,10 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                             refreshLicense()
                         }
                         recordPrint(success = true, demo = demo)
+                        if (Edition.FREE) {
+                            freeQuota.add(totalPages)
+                            freeLeft = freeQuota.left()
+                        }
                         step = KioskStep.Finished(true, null)
                         return@launch
                     }

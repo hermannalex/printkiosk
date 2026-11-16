@@ -9,7 +9,7 @@ imprime-free: impressão grátis
 Sua impressora vira autoatendimento: o cliente envia do celular e imprime grátis.
 
 ## Descrição completa
-O imprime-free transforma a impressora da sua loja num ponto de impressão em autoatendimento, grátis e sem limite.
+O imprime-free transforma a impressora da sua loja num ponto de impressão em autoatendimento, grátis: até 20 cópias por dia.
 
 Como funciona:
 • O cliente aponta a câmera para o QR Code na tela e envia fotos ou PDFs do próprio celular, sem instalar nada.
@@ -19,7 +19,7 @@ Como funciona:
 Ideal para papelarias, lotéricas, bibliotecas, escolas, coworkings e recepções que querem oferecer impressão sem ocupar um atendente.
 
 • Sem cadastro do cliente e sem pagamento.
-• Sem limite de impressões e sem marca d'água.
+• Até 20 cópias grátis por dia, sem marca d'água. Para imprimir sem limite e cobrar com Pix, use o imprime.ai.
 • Funciona em celular e tablet Android com qualquer impressora que o Android já consiga usar.
 • O arquivo vai do celular do cliente direto para o quiosque, na rede da loja, sem passar pelo WhatsApp de ninguém.
 

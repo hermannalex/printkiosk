@@ -25,12 +25,40 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
 /**
- * imprime-free: the "free" product flavor. It prints for free with no limit, has no payments,
+ * imprime-free: the "free" product flavor. It prints for free (up to [FreeQuota.DAILY_LIMIT] copies a day), has no payments,
  * license or dashboard, and shows house ads for the paid imprime.ai app.
  */
 object Edition {
     val FREE: Boolean = BuildConfig.FREE
     const val AD_URL = "https://imprime.ai/?origem=imprime-free"
+}
+
+/**
+ * imprime-free prints up to [DAILY_LIMIT] copies (pages x copies) a day. The count restarts each
+ * day (device's local date) and is kept in private app storage.
+ */
+class FreeQuota(context: android.content.Context) {
+    private val prefs = context.getSharedPreferences("kiosk_free", android.content.Context.MODE_PRIVATE)
+
+    private fun today(): String = java.time.LocalDate.now().toString()
+
+    /** Copies imprime-free may still print today. */
+    fun left(): Int {
+        val used = if (prefs.getString("day", null) == today()) prefs.getInt("used", 0) else 0
+        return maxOf(0, DAILY_LIMIT - used)
+    }
+
+    /** Adds printed copies to today's count. */
+    fun add(copies: Int) {
+        val day = today()
+        val used = if (prefs.getString("day", null) == day) prefs.getInt("used", 0) else 0
+        prefs.edit().putString("day", day).putInt("used", used + copies).apply()
+    }
+
+    companion object {
+        const val DAILY_LIMIT = 20
+        val LIMIT_MESSAGE = "O limite de $DAILY_LIMIT cópias grátis de hoje acabou. Volte amanhã! Para imprimir sem limite, conheça o imprime.ai."
+    }
 }
 
 private data class HouseAdText(val title: String, val body: String)
@@ -85,7 +113,7 @@ fun UpgradeCard() {
     Card(border = BorderStroke(2.dp, Color(0xFFC7D2FE))) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("imprime-free", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text("Esta versão imprime de graça, sem limite e sem pagamento, e mostra anúncios do imprime.ai.")
+            Text("Esta versão imprime de graça, até 20 cópias por dia, sem pagamento, e mostra anúncios do imprime.ai.")
             Text(
                 "Quer cobrar pelas impressões? O imprime.ai completo recebe por Pix, cartão por aproximação e vouchers, " +
                     "com painel online de faturamento, relatórios e ajustes à distância.",

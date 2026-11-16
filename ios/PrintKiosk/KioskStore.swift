@@ -158,6 +158,8 @@ final class KioskStore: ObservableObject {
     @Published var isLoading = false
     @Published var notice: String?
     @Published var showAdmin = false
+    /// imprime-free: copies that can still be printed today.
+    @Published private(set) var freeLeft = FreeQuota.left
     @Published var settings = KioskSettings.load() {
         didSet { settings.save() }
     }
@@ -283,6 +285,13 @@ final class KioskStore: ObservableObject {
     var amountCents: Int { Edition.isFree ? 0 : totalPages * settings.pricePerPageCents }
     /// imprime-free never charges, whatever price was saved.
     var requiresPayment: Bool { !Edition.isFree && settings.pricePerPageCents > 0 }
+    /// imprime-free: this job would go over today's free copies.
+    var overFreeLimit: Bool { Edition.isFree && totalPages > freeLeft }
+    /// imprime-free: one more copy would go over today's free copies.
+    var canAddCopy: Bool {
+        copies < settings.maxCopies
+            && !(Edition.isFree && items.reduce(0) { $0 + $1.pageCount } * (copies + 1) > freeLeft)
+    }
     var remainingSlots: Int { max(0, settings.maxItems - items.count) }
     var isPrinterConfigured: Bool { settings.printerURL != nil }
     var isPixConfigured: Bool {
@@ -304,6 +313,13 @@ final class KioskStore: ObservableObject {
         guard license.canPrint else {
             notice = blockedMessage
             return
+        }
+        if Edition.isFree {
+            freeLeft = FreeQuota.left
+            guard freeLeft > 0 else {
+                notice = FreeQuota.limitMessage
+                return
+            }
         }
         step = .select
     }
@@ -334,6 +350,7 @@ final class KioskStore: ObservableObject {
 
         items.removeAll()
         copies = 1
+        if Edition.isFree { freeLeft = FreeQuota.left }
         notice = nil
         step = .welcome
         clearJobFiles()
@@ -582,6 +599,14 @@ final class KioskStore: ObservableObject {
         guard settings.printerURL != nil else {
             step = .finished(success: false, message: "Nenhuma impressora está configurada. Peça ajuda a um atendente.")
             return
+        }
+        if Edition.isFree {
+            freeLeft = FreeQuota.left
+            guard !overFreeLimit else {
+                notice = freeLeft == 0 ? FreeQuota.limitMessage
+                    : "A versão grátis imprime até \(FreeQuota.dailyLimit) cópias por dia. Hoje ainda dá para imprimir \(freeLeft): diminua as páginas ou as cópias."
+                return
+            }
         }
         guard requiresPayment, paid == nil else {
             sendToPrinter()
@@ -890,6 +915,10 @@ final class KioskStore: ObservableObject {
                 if success && demo {
                     License.recordDemoPrint()
                     self.refreshLicense()
+                }
+                if success && Edition.isFree {
+                    FreeQuota.add(self.totalPages)
+                    self.freeLeft = FreeQuota.left
                 }
                 self.recordPrint(success: success, demo: demo)
                 self.step = .finished(success: success, message: message)

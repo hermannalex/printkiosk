@@ -160,7 +160,7 @@ private fun WelcomeScreen(vm: KioskViewModel) {
             )
             Text(
                 if (vm.requiresPayment) "por página · fotos e PDFs · pagamento via Pix"
-                else if (Edition.FREE) "Grátis e sem limite · fotos e PDFs do seu celular"
+                else if (Edition.FREE) "Grátis · até ${FreeQuota.DAILY_LIMIT} cópias por dia · restam ${vm.freeLeft} hoje"
                 else "Fotos e PDFs, do seu celular ou deste aparelho",
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -502,7 +502,8 @@ private fun ReviewScreen(vm: KioskViewModel) {
                 )
                 FilledIconButton(
                     onClick = { vm.addCopy() },
-                    enabled = vm.copies < vm.settings.maxCopies,
+                    enabled = vm.copies < vm.settings.maxCopies &&
+                        !(Edition.FREE && vm.items.sumOf { it.pageCount } * (vm.copies + 1) > vm.freeLeft),
                     modifier = Modifier.size(56.dp),
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = "Mais cópias")
@@ -525,13 +526,22 @@ private fun ReviewScreen(vm: KioskViewModel) {
             }
         }
 
+        if (Edition.FREE) {
+            Text(
+                if (vm.overFreeLimit) "A versão grátis imprime até ${FreeQuota.DAILY_LIMIT} cópias por dia. Hoje ainda dá para imprimir ${vm.freeLeft}: diminua as páginas ou as cópias."
+                else "Cópias grátis que ainda restam hoje: ${vm.freeLeft} de ${FreeQuota.DAILY_LIMIT}.",
+                style = MaterialTheme.typography.titleMedium,
+                color = if (vm.overFreeLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
         Row(verticalAlignment = Alignment.CenterVertically) {
             SecondaryButton(text = "Voltar", onClick = { vm.goToSelect() })
             Spacer(Modifier.weight(1f))
             if (vm.requiresPayment && vm.paidPaymentId == null) {
                 PrimaryButton(text = "Pagar ${Money.format(vm.amountCents)}", icon = Icons.Filled.Payments, onClick = { vm.checkout() })
             } else {
-                PrimaryButton(text = "Imprimir", icon = Icons.Filled.Print, onClick = { vm.checkout() })
+                PrimaryButton(text = "Imprimir", icon = Icons.Filled.Print, enabled = !vm.overFreeLimit, onClick = { vm.checkout() })
             }
         }
     }

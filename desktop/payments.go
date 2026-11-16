@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -69,6 +70,17 @@ func (app *App) apiCheckout(w http.ResponseWriter, r *http.Request) {
 	if in.Pages < 1 || in.Copies < 1 || in.Copies > st.Settings.MaxCopies || app.itemCount() == 0 {
 		writeJSON(w, 200, map[string]any{"action": "blocked", "message": "Nada para imprimir."})
 		return
+	}
+	if freeEdition {
+		left := freeLeft(st)
+		if left == 0 {
+			writeJSON(w, 200, map[string]any{"action": "blocked", "message": freeLimitMessage()})
+			return
+		}
+		if in.Pages*in.Copies > left {
+			writeJSON(w, 200, map[string]any{"action": "blocked", "message": fmt.Sprintf("A versão grátis imprime até %d cópias por dia. Hoje ainda dá para imprimir %d. Diminua as páginas ou as cópias.", freeDailyCopies, left)})
+			return
+		}
 	}
 	if freeEdition || st.Settings.PricePerPageCents == 0 {
 		writeJSON(w, 200, map[string]any{"action": "print"})
@@ -248,6 +260,9 @@ func (app *App) apiPrintDone(w http.ResponseWriter, r *http.Request) {
 	demo := !freeEdition && app.license().State != "active"
 	if demo && in.Success {
 		app.store.Update(func(s *State) { s.DemoUsed++ })
+	}
+	if freeEdition && in.Success {
+		app.store.Update(func(s *State) { countFreeCopies(s, in.Pages*in.Copies) })
 	}
 	job := PrintJob{
 		ID: newUUID(), PrintedAt: time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
