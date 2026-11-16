@@ -79,7 +79,11 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -144,39 +148,7 @@ private fun WelcomeScreen(vm: KioskViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
     ) {
-        Icon(
-            imageVector = Icons.Filled.Print,
-            contentDescription = null,
-            modifier = Modifier.size(kd(80)),
-            tint = MaterialTheme.colorScheme.primary,
-        )
-
-        // Staff settings (Pix, Wi-Fi, limits, test print). Protected by the staff PIN.
-        FilledTonalButton(onClick = { vm.showAdmin = true }) {
-            Icon(Icons.Filled.Settings, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("Configurações", style = MaterialTheme.typography.titleMedium)
-        }
-
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                "XEROX",
-                fontSize = ks(120),
-                lineHeight = ks(124),
-                fontWeight = FontWeight.Black,
-                letterSpacing = 6.sp,
-                maxLines = 1,
-            )
-            Text(
-                "AUTO SERVIÇO",
-                fontSize = ks(56),
-                lineHeight = ks(60),
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 2.sp,
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
-            )
-        }
+        BrandLogo()
 
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
@@ -196,7 +168,7 @@ private fun WelcomeScreen(vm: KioskViewModel) {
             )
         }
 
-        PrimaryButton(text = "Toque para começar", onClick = { vm.start() })
+        PrimaryButton(text = "Toque para imprimir", onClick = { vm.start() })
 
         if (vm.requiresPayment && !vm.isPixConfigured) {
             WarningText("Pagamento Pix não configurado. Atendente: toque em Configurações.")
@@ -208,6 +180,37 @@ private fun WelcomeScreen(vm: KioskViewModel) {
             Spacer(Modifier.height(8.dp))
             WifiCard(name = wifiName, password = vm.settings.wifiPassword)
         }
+
+        // Staff settings (Pix, Wi-Fi, limits, test print), small at the bottom. Protected by the staff PIN.
+        TextButton(onClick = { vm.showAdmin = true }) {
+            Icon(Icons.Filled.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("Configurações", style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+/** The imprime.ai logo, big, at the top of the welcome screen: the app icon beside the wordmark. */
+@Composable
+private fun BrandLogo() {
+    val compact = LocalCompact.current
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 24.dp)) {
+        Image(
+            painter = painterResource(R.drawable.brand_logo),
+            contentDescription = null,
+            modifier = Modifier.size(if (compact) 60.dp else 140.dp),
+        )
+        Text(
+            buildAnnotatedString {
+                append("imprime")
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(".ai") }
+            },
+            fontSize = if (compact) 40.sp else 110.sp,
+            lineHeight = if (compact) 44.sp else 114.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = (-1).sp,
+            maxLines = 1,
+        )
     }
 }
 

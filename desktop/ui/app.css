@@ -40,6 +40,14 @@ h2 { font-size: 26px; margin: 0 0 12px; }
 
 .welcome { flex: 1; display: grid; grid-template-columns: 1fr auto; gap: 28px; align-items: center; }
 .hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 18px; }
+.logo-big { display: flex; align-items: center; gap: 22px; }
+.logo-big img { width: clamp(84px, 14vh, 140px); height: auto; }
+.wordmark { font-size: clamp(64px, 11vh, 120px); font-weight: 800; letter-spacing: -.03em; line-height: 1; color: var(--ink); }
+.wordmark span { color: var(--accent); }
+.welcome-title { font-size: 34px; }
+.settings-link { align-self: center; flex: none; background: none; border: 0; color: var(--muted); font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 8px; cursor: pointer; opacity: .8; }
+.settings-link:active { background: var(--card); }
+@media (max-width: 600px) { .logo-big { gap: 12px; } .logo-big img { width: 60px; } .wordmark { font-size: 46px; } .welcome-title { font-size: 26px; } }
 .price { font-size: 24px; font-weight: 600; margin: 0; }
 .wifi { width: 340px; text-align: center; }
 .wifi p { margin: 6px 0; }

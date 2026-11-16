@@ -76,40 +76,13 @@ struct WelcomeView: View {
                 VStack(spacing: 0) {
                     Spacer(minLength: 16)
 
-                    Image(systemName: "printer.fill")
-                        .kioskFont(64)
-                        .foregroundStyle(.tint)
-
-                    // Staff settings (printer, Pix, Wi-Fi, limits). Protected by the staff PIN.
-                    Button {
-                        store.showAdmin = true
-                    } label: {
-                        Label("Configurações", systemImage: "gearshape.fill")
-                            .font(.headline)
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 10)
-                            .background(Color(uiColor: .systemBackground), in: Capsule())
-                    }
-                    .padding(.top, 14)
-
-                    VStack(spacing: 0) {
-                        Text("XEROX")
-                            .kioskFont(132, weight: .black, design: .rounded)
-                            .tracking(6)
-                        Text("AUTO SERVIÇO")
-                            .kioskFont(60, weight: .heavy, design: .rounded)
-                            .tracking(2)
-                            .foregroundStyle(.tint)
-                    }
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.4)
-                    .padding(.top, compact ? 16 : 28)
+                    BrandLogo(compact: compact)
 
                     Text(priceLine)
                         .kioskFont(44, weight: .bold, design: .rounded)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.5)
-                        .padding(.top, 20)
+                        .padding(.top, compact ? 20 : 32)
 
                     Text(store.requiresPayment
                          ? "por página · fotos e PDFs · pagamento via Pix"
@@ -120,7 +93,7 @@ struct WelcomeView: View {
                         .multilineTextAlignment(.center)
                         .padding(.top, 6)
 
-                    Button("Toque para começar") { store.start() }
+                    Button("Toque para imprimir") { store.start() }
                         .buttonStyle(PrimaryButtonStyle())
                         .padding(.top, 32)
 
@@ -147,12 +120,46 @@ struct WelcomeView: View {
                         WiFiCard(name: wifiName, password: store.settings.wifiPassword)
                     }
 
-                    Spacer(minLength: 16)
+                    // Staff settings (printer, Pix, Wi-Fi, limits), small at the bottom. Protected by the staff PIN.
+                    Button {
+                        store.showAdmin = true
+                    } label: {
+                        Label("Configurações", systemImage: "gearshape.fill")
+                            .font(.footnote.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                    }
+                    .padding(.top, 20)
+
+                    Spacer(minLength: 8)
                 }
                 .kioskPadding(32)
                 .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
         }
+    }
+}
+
+/// The imprime.ai logo, big, at the top of the welcome screen: the app icon beside the wordmark.
+struct BrandLogo: View {
+    let compact: Bool
+
+    var body: some View {
+        HStack(spacing: compact ? 12 : 24) {
+            Image("BrandLogo")
+                .resizable()
+                .interpolation(.high)
+                .frame(width: compact ? 60 : 140, height: compact ? 60 : 140)
+                .accessibilityHidden(true)
+            (Text("imprime") + Text(".ai").foregroundColor(Color(red: 79 / 255, green: 70 / 255, blue: 229 / 255)))
+                .font(.system(size: compact ? 44 : 112, weight: .heavy, design: .rounded))
+                .tracking(-1)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("imprime.ai")
     }
 }
 

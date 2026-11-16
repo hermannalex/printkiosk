@@ -2,7 +2,7 @@
 
 A versão Android da estação de impressão self-service. O fluxo é o mesmo do app para iPad e iPhone:
 
-1. O cliente toca em **Toque para começar** e escolhe fotos ou PDFs.
+1. O cliente toca em **Toque para imprimir** e escolhe fotos ou PDFs.
 2. Ele escolhe quantas cópias quer e vê o valor total.
 3. Ele paga com **Pix** lendo o QR Code gerado pelo Mercado Pago.
 4. Assim que o pagamento é confirmado, abre a janela de impressão do Android.

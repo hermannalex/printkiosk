@@ -75,8 +75,10 @@ async function refreshState() {
   const s = S.state.settings;
   $("kiosk-name").textContent = s.kioskName;
   document.title = s.kioskName;
-  $("welcome-price").textContent = s.pricePerPageCents > 0 ? `${money(s.pricePerPageCents)} por página · pagamento com Pix`
-    : (S.state.edition && S.state.edition.free ? "Impressão grátis, sem limite" : "Impressão gratuita");
+  const priceLine = s.pricePerPageCents > 0 ? `${money(s.pricePerPageCents)} por página · pagamento com Pix`
+    : (S.state.edition && S.state.edition.free ? "Impressão grátis, sem limite" : "");
+  $("welcome-price").textContent = priceLine;
+  $("welcome-price").hidden = !priceLine;
   const lic = S.state.license;
   const notice = $("welcome-notice");
   if (S.state.blocked) {
