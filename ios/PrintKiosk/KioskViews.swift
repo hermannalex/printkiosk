@@ -64,11 +64,7 @@ struct WelcomeView: View {
         store.settings.wifiName.trimmingCharacters(in: .whitespaces)
     }
 
-    private var priceLine: String {
-        store.requiresPayment
-            ? "Imprima aqui por \(Money.format(cents: store.settings.pricePerPageCents))"
-            : "Imprima aqui"
-    }
+    private let priceLine = "Imprima aqui do seu celular"
 
     var body: some View {
         GeometryReader { geometry in
@@ -85,8 +81,8 @@ struct WelcomeView: View {
                         .padding(.top, compact ? 20 : 32)
 
                     Text(store.requiresPayment
-                         ? "por página · fotos e PDFs · pagamento via Pix"
-                         : Edition.isFree ? "Grátis · até \(FreeQuota.dailyLimit) cópias por dia · restam \(store.freeLeft) hoje"
+                         ? "\(Money.format(cents: store.settings.pricePerPageCents)) por página · fotos e PDFs · pagamento via Pix"
+                         : Edition.isFree ? "Fotos e PDFs, direto para a impressora"
                          : "Fotos e PDFs, do seu celular ou deste aparelho")
                         .font(compact ? .title3 : .title2)
                         .foregroundStyle(.secondary)
@@ -109,6 +105,11 @@ struct WelcomeView: View {
                     if Edition.isFree {
                         HouseAdView()
                             .padding(.top, 20)
+                        Text("\(store.freeLeft) cópias de \(FreeQuota.dailyLimit) permitidas")
+                            .kioskFont(30, weight: .bold, design: .rounded)
+                            .foregroundStyle(Color(red: 79 / 255, green: 70 / 255, blue: 229 / 255))
+                            .multilineTextAlignment(.center)
+                            .padding(.top, 14)
                     } else {
                         LicenseBanner(license: store.license)
                             .padding(.top, 20)
@@ -383,8 +384,8 @@ struct ReviewView: View {
             }
             if Edition.isFree {
                 Text(store.overFreeLimit
-                     ? "Hoje ainda dá para imprimir \(store.freeLeft) de \(FreeQuota.dailyLimit) cópias grátis: diminua as páginas ou as cópias."
-                     : "Cópias grátis que ainda restam hoje: \(store.freeLeft) de \(FreeQuota.dailyLimit).")
+                     ? "Hoje restam \(store.freeLeft) cópias de \(FreeQuota.dailyLimit) permitidas: diminua as páginas ou as cópias."
+                     : "\(store.freeLeft) cópias de \(FreeQuota.dailyLimit) permitidas")
                     .font(.subheadline)
                     .foregroundStyle(store.overFreeLimit ? Color.red : Color.secondary)
                     .multilineTextAlignment(alignment == .trailing ? .trailing : .leading)

@@ -604,7 +604,7 @@ final class KioskStore: ObservableObject {
             freeLeft = FreeQuota.left
             guard !overFreeLimit else {
                 notice = freeLeft == 0 ? FreeQuota.limitMessage
-                    : "A versão grátis imprime até \(FreeQuota.dailyLimit) cópias por dia. Hoje ainda dá para imprimir \(freeLeft): diminua as páginas ou as cópias."
+                    : "Hoje restam \(freeLeft) cópias de \(FreeQuota.dailyLimit) permitidas: diminua as páginas ou as cópias."
                 return
             }
         }

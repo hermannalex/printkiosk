@@ -45,6 +45,7 @@ h2 { font-size: 26px; margin: 0 0 12px; }
 .wordmark { font-size: clamp(64px, 11vh, 120px); font-weight: 800; letter-spacing: -.03em; line-height: 1; color: var(--ink); }
 .wordmark span { color: var(--accent); }
 .welcome-title { font-size: 34px; }
+.free-left { margin: 0; font-size: 22px; font-weight: 700; color: var(--accent); }
 .settings-link { align-self: center; flex: none; background: none; border: 0; color: var(--muted); font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 8px; cursor: pointer; opacity: .8; }
 .settings-link:active { background: var(--card); }
 @media (max-width: 600px) { .logo-big { gap: 12px; } .logo-big img { width: 60px; } .wordmark { font-size: 46px; } .welcome-title { font-size: 26px; } }

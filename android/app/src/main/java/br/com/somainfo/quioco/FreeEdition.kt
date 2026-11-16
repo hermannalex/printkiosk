@@ -57,7 +57,7 @@ class FreeQuota(context: android.content.Context) {
 
     companion object {
         const val DAILY_LIMIT = 20
-        val LIMIT_MESSAGE = "O limite de $DAILY_LIMIT cópias grátis de hoje acabou. Volte amanhã! Para imprimir sem limite, conheça o imprime.ai."
+        val LIMIT_MESSAGE = "Hoje restam 0 cópias de $DAILY_LIMIT permitidas. Volte amanhã! Para imprimir sem limite, conheça o imprime.ai."
     }
 }
 

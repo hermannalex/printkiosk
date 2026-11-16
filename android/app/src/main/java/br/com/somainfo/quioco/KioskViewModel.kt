@@ -453,7 +453,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
             freeLeft = freeQuota.left()
             if (overFreeLimit) {
                 notice = if (freeLeft == 0) FreeQuota.LIMIT_MESSAGE
-                else "A versão grátis imprime até ${FreeQuota.DAILY_LIMIT} cópias por dia. Hoje ainda dá para imprimir $freeLeft: diminua as páginas ou as cópias."
+                else "Hoje restam $freeLeft cópias de ${FreeQuota.DAILY_LIMIT} permitidas: diminua as páginas ou as cópias."
                 return
             }
         }

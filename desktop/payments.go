@@ -78,7 +78,7 @@ func (app *App) apiCheckout(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if in.Pages*in.Copies > left {
-			writeJSON(w, 200, map[string]any{"action": "blocked", "message": fmt.Sprintf("A versão grátis imprime até %d cópias por dia. Hoje ainda dá para imprimir %d. Diminua as páginas ou as cópias.", freeDailyCopies, left)})
+			writeJSON(w, 200, map[string]any{"action": "blocked", "message": fmt.Sprintf("Hoje restam %d cópias de %d permitidas. Diminua as páginas ou as cópias.", left, freeDailyCopies)})
 			return
 		}
 	}

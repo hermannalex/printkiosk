@@ -152,15 +152,15 @@ private fun WelcomeScreen(vm: KioskViewModel) {
 
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                if (vm.requiresPayment) "Imprima aqui por ${Money.format(vm.settings.pricePerPageCents)}" else "Imprima aqui",
+                "Imprima aqui do seu celular",
                 fontSize = ks(42),
                 lineHeight = ks(48),
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
             Text(
-                if (vm.requiresPayment) "por página · fotos e PDFs · pagamento via Pix"
-                else if (Edition.FREE) "Grátis · até ${FreeQuota.DAILY_LIMIT} cópias por dia · restam ${vm.freeLeft} hoje"
+                if (vm.requiresPayment) "${Money.format(vm.settings.pricePerPageCents)} por página · fotos e PDFs · pagamento via Pix"
+                else if (Edition.FREE) "Fotos e PDFs, direto para a impressora"
                 else "Fotos e PDFs, do seu celular ou deste aparelho",
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -174,7 +174,18 @@ private fun WelcomeScreen(vm: KioskViewModel) {
             WarningText("Pagamento Pix não configurado. Atendente: toque em Configurações.")
         }
 
-        if (Edition.FREE) HouseAd() else LicenseBanner(vm.license)
+        if (Edition.FREE) {
+            HouseAd()
+            Text(
+                "${vm.freeLeft} cópias de ${FreeQuota.DAILY_LIMIT} permitidas",
+                fontSize = ks(30),
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+            )
+        } else {
+            LicenseBanner(vm.license)
+        }
 
         if (wifiName.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
@@ -528,8 +539,8 @@ private fun ReviewScreen(vm: KioskViewModel) {
 
         if (Edition.FREE) {
             Text(
-                if (vm.overFreeLimit) "A versão grátis imprime até ${FreeQuota.DAILY_LIMIT} cópias por dia. Hoje ainda dá para imprimir ${vm.freeLeft}: diminua as páginas ou as cópias."
-                else "Cópias grátis que ainda restam hoje: ${vm.freeLeft} de ${FreeQuota.DAILY_LIMIT}.",
+                if (vm.overFreeLimit) "Hoje restam ${vm.freeLeft} cópias de ${FreeQuota.DAILY_LIMIT} permitidas: diminua as páginas ou as cópias."
+                else "${vm.freeLeft} cópias de ${FreeQuota.DAILY_LIMIT} permitidas",
                 style = MaterialTheme.typography.titleMedium,
                 color = if (vm.overFreeLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             )

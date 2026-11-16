@@ -68,5 +68,5 @@ func countFreeCopies(s *State, n int) {
 }
 
 func freeLimitMessage() string {
-	return fmt.Sprintf("O limite de %d cópias grátis de hoje acabou. Volte amanhã! Para imprimir sem limite, conheça o imprime.ai.", freeDailyCopies)
+	return fmt.Sprintf("Hoje restam 0 cópias de %d permitidas. Volte amanhã! Para imprimir sem limite, conheça o imprime.ai.", freeDailyCopies)
 }

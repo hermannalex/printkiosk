@@ -76,10 +76,12 @@ async function refreshState() {
   $("kiosk-name").textContent = s.kioskName;
   document.title = s.kioskName;
   const priceLine = s.pricePerPageCents > 0 ? `${money(s.pricePerPageCents)} por página · pagamento com Pix`
-    : (S.state.edition && S.state.edition.free
-      ? `Grátis · até ${S.state.edition.dailyLimit} cópias por dia · restam ${S.state.edition.left} hoje` : "");
+    : "";
   $("welcome-price").textContent = priceLine;
   $("welcome-price").hidden = !priceLine;
+  const fe = S.state.edition || {};
+  $("free-left").hidden = !fe.free;
+  if (fe.free) $("free-left").textContent = `${fe.left} cópias de ${fe.dailyLimit} permitidas`;
   const lic = S.state.license;
   const notice = $("welcome-notice");
   if (S.state.blocked) {
@@ -236,7 +238,7 @@ function renderReview() {
   const total = pages * S.copies;
   $("r-total-pages").textContent = `${total} página(s) no total`;
   const cents = total * s.pricePerPageCents;
-  $("r-total").textContent = s.pricePerPageCents > 0 ? money(cents) : "Grátis";
+  $("r-total").textContent = s.pricePerPageCents > 0 ? money(cents) : ((S.state.edition || {}).free ? "" : "Grátis");
   $("checkout").textContent = s.pricePerPageCents > 0 ? `Pagar ${money(cents)}` : "Imprimir";
   // imprime-free: up to edition.dailyLimit copies a day.
   const ed = S.state.edition || {};
@@ -244,8 +246,8 @@ function renderReview() {
   if (ed.free) {
     $("copy-plus").disabled = $("copy-plus").disabled || pages * (S.copies + 1) > ed.left;
     $("r-free-left").textContent = over
-      ? `A versão grátis imprime até ${ed.dailyLimit} cópias por dia. Hoje ainda dá para imprimir ${ed.left}: diminua as páginas ou as cópias.`
-      : `Cópias grátis que ainda restam hoje: ${ed.left} de ${ed.dailyLimit}.`;
+      ? `Hoje restam ${ed.left} cópias de ${ed.dailyLimit} permitidas: diminua as páginas ou as cópias.`
+      : `${ed.left} cópias de ${ed.dailyLimit} permitidas`;
     $("r-free-left").className = over ? "notice bad" : "small muted";
   }
   $("r-free-left").hidden = !ed.free;

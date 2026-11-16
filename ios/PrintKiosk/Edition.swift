@@ -18,7 +18,7 @@ enum Edition {
 /// day (the device's local date) and is kept in UserDefaults.
 enum FreeQuota {
     static let dailyLimit = 20
-    static let limitMessage = "O limite de \(dailyLimit) cópias grátis de hoje acabou. Volte amanhã! Para imprimir sem limite, conheça o imprime.ai."
+    static let limitMessage = "Hoje restam 0 cópias de \(dailyLimit) permitidas. Volte amanhã! Para imprimir sem limite, conheça o imprime.ai."
 
     private static let dayKey = "free.day"
     private static let usedKey = "free.used"
