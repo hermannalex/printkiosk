@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token do Mercado Pago · imprime.ai</title>
+<meta name="description" content="Passo a passo para gerar o Access Token de produção do Mercado Pago e ligar o Pix e a maquininha no quiosque imprime.ai.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+:root { --bg: #F7F7FB; --surface: #fff; --ink: #15142B; --muted: #5A5A73; --brand: #4F46E5; --line: #E1E1EE; --soft: #EEF0FF; --warn: #FFF7E0; --warnline: #F2D27A; }
+@media (prefers-color-scheme: dark) { :root { --bg: #0E0D1C; --surface: #17162B; --ink: #EEEDF9; --muted: #A4A3C2; --brand: #8B86FF; --line: #2D2C4A; --soft: #1F1D3D; --warn: #2A2414; --warnline: #6B5A22; color-scheme: dark; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.65 "Segoe UI", system-ui, -apple-system, sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 40px max(20px, env(safe-area-inset-right, 0px)) 80px max(20px, env(safe-area-inset-left, 0px)); }
+a { color: var(--brand); overflow-wrap: anywhere; }
+li, p { overflow-wrap: anywhere; }
+h1 { font-size: clamp(30px, 5vw, 42px); line-height: 1.1; letter-spacing: -0.02em; margin: 24px 0 8px; text-wrap: balance; }
+h2 { font-size: 22px; margin: 40px 0 10px; }
+p, li { color: var(--muted); }
+b, strong { color: var(--ink); }
+code { overflow-wrap: anywhere; font: 15px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--soft); color: var(--ink); padding: 2px 6px; border-radius: 6px; }
+.brand { font-weight: 800; font-size: 22px; text-decoration: none; color: var(--ink); }
+.brand span { color: #FACC15; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px; margin: 20px 0; }
+.box.warn { background: var(--warn); border-color: var(--warnline); }
+.box p { margin: 6px 0; }
+ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 16px 0; display: grid; gap: 12px; }
+ol.steps > li { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px 16px 64px; position: relative; }
+ol.steps > li::before { content: counter(s); position: absolute; left: 18px; top: 14px; width: 32px; height: 32px; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 16px; }
+ol.steps > li b:first-child { display: block; margin-bottom: 2px; }
+.path { font-weight: 600; color: var(--ink); }
+ul.tight li { margin: 4px 0; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+.toc a { display: inline-block; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; font-size: 15px; background: var(--surface); }
+footer { margin-top: 48px; font-size: 15px; }
+</style>
+</head>
+<body>
+<main>
+  <a class="brand" href="/">imprime<span>.ai</span></a>
+  <h1>Como gerar o token do Mercado Pago</h1>
+  <p>Para receber pagamentos com Pix e com a maquininha, o quiosque imprime.ai usa a <b>sua própria conta do Mercado Pago</b>. O dinheiro cai direto nela. O app só precisa de uma chave de acesso, o <b>Access Token de produção</b>. Leva uns 10 minutos.</p>
+  <ul class="toc">
+    <li><a href="#antes">Antes de começar</a></li>
+    <li><a href="#gerar">Gerar o token</a></li>
+    <li><a href="#app">Colocar no app</a></li>
+    <li><a href="#maquininha">Maquininha</a></li>
+    <li><a href="#problemas">Problemas comuns</a></li>
+  </ul>
+
+  <h2 id="antes">Antes de começar</h2>
+  <ul class="tight">
+    <li>Uma conta no <b>Mercado Pago</b>, de preferência a conta da loja (CNPJ). É nela que o dinheiro vai cair.</li>
+    <li>Uma <b>chave Pix cadastrada</b> nessa conta (no app do Mercado Pago: <span class="path">Pix › Minhas chaves</span>). Sem chave Pix, o Mercado Pago não gera o QR Code.</li>
+    <li>Um computador com navegador. O painel de desenvolvedores funciona melhor no computador do que no celular.</li>
+  </ul>
+  <div class="box">
+    <p><b>Não é preciso saber programar.</b> Você só vai criar uma "aplicação" no painel do Mercado Pago, que é o nome que eles dão para a ligação entre a sua conta e um sistema como o imprime.ai.</p>
+  </div>
+
+  <h2 id="gerar">Gerar o Access Token</h2>
+  <ol class="steps">
+    <li><b>Entre no painel de desenvolvedores</b>Acesse <a href="https://www.mercadopago.com.br/developers/panel/app" target="_blank" rel="noopener">mercadopago.com.br/developers/panel/app</a> e faça login com a conta da loja.</li>
+    <li><b>Crie uma aplicação</b>Em <span class="path">Suas integrações</span>, clique em <span class="path">Criar aplicação</span>. Dê um nome fácil de reconhecer, como <code>imprime.ai quiosque</code>. Quando o Mercado Pago perguntar o tipo de solução, escolha <b>pagamentos online</b> com integração própria (Checkout Transparente / API de pagamentos). Se você também vai usar maquininha, pode criar a aplicação a partir da documentação do <b>Point</b>. O token serve para os dois.</li>
+    <li><b>Ative as credenciais de produção</b>Dentro da aplicação, no menu da esquerda, abra <span class="path">Credenciais de produção</span>. Escolha a <b>Indústria</b> da sua loja, informe o <b>site</b> (pode ser o seu site ou o Instagram da loja), aceite os termos e clique em <span class="path">Ativar credenciais de produção</span>.</li>
+    <li><b>Copie o Access Token</b>Na mesma página aparecem a <i>Public Key</i> e o <b>Access Token</b>. Copie o <b>Access Token</b>. Ele começa com <code>APP_USR-</code>. A Public Key, o Client ID e o Client Secret não são usados.</li>
+  </ol>
+  <div class="box warn">
+    <p><b>Guarde o token como uma senha.</b> Quem tem o token consegue criar cobranças e consultar pagamentos da sua conta. Não mande por WhatsApp ou e-mail e não poste em lugar nenhum. Cole direto no app.</p>
+    <p>Se o token vazar, entre na aplicação no painel do Mercado Pago, <b>renove as credenciais</b> e cole o token novo no app.</p>
+  </div>
+
+  <h2 id="app">Colocar o token no app</h2>
+  <ol class="steps">
+    <li><b>Abra as configurações do quiosque</b>Na tela inicial do app, toque em <span class="path">Configurações</span> (embaixo) e digite o PIN do atendente.</li>
+    <li><b>Cole o token</b>Na seção <span class="path">Pagamento Pix (Mercado Pago)</span>, cole o token no campo <span class="path">Access Token de produção</span> e toque em <span class="path">Salvar token</span>. Aproveite e confira o <b>preço por página</b> e o <b>e-mail do pagador</b> (use o e-mail da loja).</li>
+    <li><b>Teste a conexão</b>Toque em <span class="path">Testar conexão</span>. Se aparecer <b>"Conectado à conta …"</b> com o nome da sua conta, está pronto: na próxima impressão o cliente já paga com Pix.</li>
+  </ol>
+  <p>O token fica guardado <b>criptografado no próprio aparelho do quiosque</b> e não é enviado ao painel online do imprime.ai. Se você trocar de aparelho, é preciso colar o token de novo.</p>
+
+  <h2 id="maquininha">Maquininha (cartão e aproximação)</h2>
+  <p>Com uma <b>Point Smart</b> ou <b>Point Pro 2</b> do Mercado Pago, o cliente também pode pagar com crédito, débito, aproximação, Apple Pay ou Google Pay. O valor aparece sozinho na maquininha.</p>
+  <ol class="steps">
+    <li><b>Use a mesma conta</b>A maquininha precisa estar vinculada à <b>mesma conta</b> do token.</li>
+    <li><b>Busque a maquininha no app</b>Em <span class="path">Configurações › Maquininha</span>, toque em <span class="path">Buscar maquininhas</span>, escolha a sua na lista e toque em <span class="path">Usar esta</span>.</li>
+    <li><b>Confirme na maquininha</b>O app coloca a maquininha no modo de integração (PDV) e avisa na tela. Se a maquininha ainda não receber o valor, reinicie-a para o modo novo valer.</li>
+  </ol>
+
+  <h2 id="problemas">Problemas comuns</h2>
+  <div class="box">
+    <p><b>"Token inválido" ao testar.</b> Confira se você copiou o <b>Access Token de produção</b> (começa com <code>APP_USR-</code>), e não o de teste (<code>TEST-</code>) nem a Public Key. Copie de novo, sem espaços no começo ou no fim.</p>
+  </div>
+  <div class="box">
+    <p><b>O QR Code do Pix não aparece.</b> Normalmente falta cadastrar uma <b>chave Pix</b> na conta do Mercado Pago, ou as credenciais de produção ainda não foram ativadas (passo 3).</p>
+  </div>
+  <div class="box">
+    <p><b>A maquininha não aparece na busca.</b> Ela precisa estar ligada, com internet e vinculada à mesma conta do token. Atualize a maquininha e tente de novo.</p>
+  </div>
+  <div class="box">
+    <p><b>Quanto o Mercado Pago cobra?</b> O imprime.ai não cobra nada por transação. As tarifas do Pix e do cartão são as do seu contrato com o Mercado Pago e aparecem na sua conta do Mercado Pago.</p>
+  </div>
+
+  <p>Ainda com dúvida? Escreva para <b>dev@imprime.ai</b>.</p>
+
+  <footer>
+    <a href="/">Voltar para imprime.ai</a> · <a href="/privacidade.html">Política de privacidade</a>
+  </footer>
+</main>
+</body>
+</html>
