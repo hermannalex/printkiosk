@@ -86,7 +86,7 @@ struct HouseAdView: View {
                         .font(.subheadline)
                         .foregroundStyle(Color(white: 0.25))
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("imprime.ai · 10 impressões grátis para testar")
+                    Text("imprime.ai · 10 impressões de teste")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(adIndigo)
                 }

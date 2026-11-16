@@ -101,7 +101,7 @@ fun HouseAd(modifier: Modifier = Modifier) {
                 Text("ANÚNCIO · IMPRIME.AI", style = MaterialTheme.typography.labelSmall, color = Color(0xFF6B7280))
                 Text(ad.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = AdInk)
                 Text(ad.body, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF374151))
-                Text("imprime.ai · 10 impressões grátis para testar", style = MaterialTheme.typography.labelMedium, color = AdIndigo)
+                Text("imprime.ai · 10 impressões de teste", style = MaterialTheme.typography.labelMedium, color = AdIndigo)
             }
         }
     }
