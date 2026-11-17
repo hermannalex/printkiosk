@@ -57,6 +57,7 @@ private let houseAds = [
     HouseAdText(title: "Painel online da loja", body: "Faturamento, páginas impressas e horários de pico de cada quiosque, de qualquer lugar."),
     HouseAdText(title: "Cartão por aproximação", body: "Aceite crédito, débito, Apple Pay e Google Pay na maquininha do Mercado Pago."),
     HouseAdText(title: "Vouchers de crédito", body: "Crie créditos de impressão para promoções, troco ou clientes fiéis."),
+    HouseAdText(title: "Envio pelo 4G/5G", body: "No imprime.ai o cliente manda os arquivos mesmo sem Wi-Fi, pela internet do celular."),
     HouseAdText(title: "Tem uma loja? Tenha um quiosque assim", body: "Transforme a sua impressora num autoatendimento. Baixe em imprime.ai."),
 ]
 

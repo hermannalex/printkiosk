@@ -958,7 +958,8 @@ private fun PhoneUploadDialog(vm: KioskViewModel) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("Envie do seu celular", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
                     Text(
-                        "Fotos e PDFs chegam aqui pela rede Wi-Fi da loja, sem cabo e sem aplicativo.",
+                        if (vm.relayUpload != null) "Fotos e PDFs chegam aqui pelo Wi-Fi da loja ou pelo 4G/5G do celular, sem cabo e sem aplicativo."
+                        else "Fotos e PDFs chegam aqui pela rede Wi-Fi da loja, sem cabo e sem aplicativo.",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -976,6 +977,9 @@ private fun PhoneUploadDialog(vm: KioskViewModel) {
                     is PhoneUploadState.Unavailable -> WarningText(state.message)
 
                     is PhoneUploadState.Ready -> {
+                        if (vm.relayUpload != null) {
+                            Text("No Wi-Fi da loja", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                             if (wifiName.isNotEmpty()) {
                                 QrStep(
@@ -1013,6 +1017,9 @@ private fun PhoneUploadDialog(vm: KioskViewModel) {
                     }
                 }
 
+                // imprime.ai only: the phone can also send over its own internet (4G/5G), without the store Wi-Fi.
+                vm.relayUpload?.let { relayState -> RelayOption(relayState) }
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val count = vm.phoneReceivedCount
                     if (count > 0) {
@@ -1034,6 +1041,34 @@ private fun PhoneUploadDialog(vm: KioskViewModel) {
                     Spacer(Modifier.weight(1f))
                     PrimaryButton(text = "Concluir", onClick = { vm.closePhoneUpload() })
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RelayOption(state: PhoneUploadState) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("No 4G/5G", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        when (state) {
+            PhoneUploadState.Starting -> Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                CircularProgressIndicator()
+                Text("Preparando…", style = MaterialTheme.typography.titleMedium)
+            }
+            is PhoneUploadState.Unavailable -> WarningText(state.message)
+            is PhoneUploadState.Ready -> Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                QrImage(payload = state.url, modifier = Modifier.size(kd(220)))
+                Text(
+                    "Sem Wi-Fi? Aponte a câmera para este código: o envio vai pela internet do celular.",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }

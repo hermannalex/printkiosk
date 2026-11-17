@@ -79,6 +79,11 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     var phoneReceivedCount by mutableIntStateOf(0)
         private set
     private var uploadServer: UploadServer? = null
+    /** "No 4G/5G" option (imprime.ai only): null in imprime-free and while closed. */
+    var relayUpload by mutableStateOf<PhoneUploadState?>(null)
+        private set
+    private var relay: RelayClient? = null
+    private var relayJob: Job? = null
 
     // Subscription / demo
     var license by mutableStateOf(licenseStore.state())
@@ -350,6 +355,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
         closePhoneUpload()
         phoneReceivedCount = 0
         phoneUpload = PhoneUploadState.Starting
+        if (!Edition.FREE) openRelay()
 
         viewModelScope.launch {
             val ip = withContext(Dispatchers.IO) { UploadServer.localIpAddress() }
@@ -381,12 +387,58 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
         uploadServer?.stop()
         uploadServer = null
         phoneUpload = null
+        relayJob?.cancel()
+        relayJob = null
+        relayUpload = null
+        relay?.let { old -> viewModelScope.launch(Dispatchers.IO) { old.close() } }
+        relay = null
+    }
+
+    /** Opens the 4G/5G session and fetches what the phone sends until the panel closes. */
+    private fun openRelay() {
+        relayUpload = PhoneUploadState.Starting
+        relayJob = viewModelScope.launch {
+            val client = withContext(Dispatchers.IO) { RelayClient.open(settings.kioskName) }
+            if (client == null) {
+                relayUpload = PhoneUploadState.Unavailable("Sem internet neste aparelho: o envio pelo 4G/5G não está disponível agora.")
+                return@launch
+            }
+            relay = client
+            relayUpload = PhoneUploadState.Ready(client.url)
+            val seen = mutableSetOf<String>()
+            while (isActive && relay === client) {
+                delay(2_000)
+                val files = try {
+                    withContext(Dispatchers.IO) { client.list() }
+                } catch (e: RelayClient.SessionGone) {
+                    relayUpload = PhoneUploadState.Unavailable("O link do 4G/5G expirou. Feche e toque em Do celular de novo.")
+                    break
+                } catch (e: Exception) {
+                    continue // offline for a moment
+                }
+                for (remote in files) {
+                    if (!isActive || relay !== client || remote.pathname in seen) continue
+                    seen += remote.pathname
+                    val target = File(ItemLoader.jobsDir(app), randomToken())
+                    val mimeType = try {
+                        withContext(Dispatchers.IO) { client.download(remote, target) }
+                    } catch (e: Exception) {
+                        seen -= remote.pathname // try again on the next round
+                        continue
+                    }
+                    withContext(Dispatchers.IO) {
+                        receiveUpload(target, remote.name, mimeType)
+                        client.delete(remote)
+                    }
+                }
+            }
+        }
     }
 
     /** Called on the server's thread for each file the phone sends. */
     private fun receiveUpload(file: File, name: String, mimeType: String): UploadResult = runBlocking(Dispatchers.Main) {
         registerInteraction()
-        if (uploadServer == null) {
+        if (uploadServer == null && relay == null) {
             file.delete()
             return@runBlocking UploadResult(false, "O recebimento foi encerrado no quiosque.")
         }

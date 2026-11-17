@@ -50,6 +50,7 @@ const ADS = [
   { title: "Painel online da loja", body: "Faturamento, páginas impressas e horários de pico de cada quiosque, de qualquer lugar." },
   { title: "Cartão por aproximação", body: "Aceite crédito, débito, Apple Pay e Google Pay na maquininha do Mercado Pago." },
   { title: "Vouchers de crédito", body: "Crie créditos de impressão para promoções, troco ou clientes fiéis." },
+  { title: "Envio pelo 4G/5G", body: "No imprime.ai o cliente manda os arquivos mesmo sem Wi-Fi, pela internet do celular." },
   { title: "Tem uma loja? Tenha um quiosque assim", body: "Transforme a sua impressora num autoatendimento. Baixe em imprime.ai." },
 ];
 let adIndex = Math.floor(Math.random() * ADS.length);

@@ -891,12 +891,17 @@ struct PhoneUploadView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    Text("Fotos e PDFs chegam aqui pela rede Wi-Fi da loja, sem cabo e sem aplicativo.")
+                    Text(store.relayUpload != nil
+                         ? "Fotos e PDFs chegam aqui pelo Wi-Fi da loja ou pelo 4G/5G do celular, sem cabo e sem aplicativo."
+                         : "Fotos e PDFs chegam aqui pela rede Wi-Fi da loja, sem cabo e sem aplicativo.")
                         .font(.title3)
                         .foregroundStyle(.secondary)
 
                     switch store.phoneUpload {
                     case .ready(let url):
+                        if store.relayUpload != nil {
+                            Text("No Wi-Fi da loja").font(.title2.weight(.bold))
+                        }
                         readyContent(url: url)
                     case .unavailable(let message):
                         Label(message, systemImage: "wifi.exclamationmark")
@@ -906,6 +911,10 @@ struct PhoneUploadView: View {
                         ProgressView("Preparando…")
                             .font(.title3)
                             .frame(maxWidth: .infinity)
+                    }
+
+                    if let relayState = store.relayUpload {
+                        relayContent(relayState)
                     }
 
                     receivedRow
@@ -921,6 +930,38 @@ struct PhoneUploadView: View {
 
     private var wifiName: String {
         store.settings.wifiName.trimmingCharacters(in: .whitespaces)
+    }
+
+    /// imprime.ai only: the phone can also send over its own internet (4G/5G), without the store Wi-Fi.
+    @ViewBuilder
+    private func relayContent(_ state: PhoneUploadState) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("No 4G/5G").font(.title2.weight(.bold))
+            switch state {
+            case .ready(let url):
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .center, spacing: 24) { relayQR(url) }
+                    VStack(alignment: .leading, spacing: 16) { relayQR(url) }
+                }
+            case .unavailable(let message):
+                Label(message, systemImage: "antenna.radiowaves.left.and.right.slash")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.orange)
+            case .starting:
+                ProgressView("Preparando…").font(.title3)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func relayQR(_ url: String) -> some View {
+        QRCodeView(payload: url)
+            .frame(width: 220, height: 220)
+            .padding(12)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 20))
+        Text("Sem Wi-Fi? Aponte a câmera para este código: o envio vai pela internet do celular.")
+            .font(.title3)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     @ViewBuilder

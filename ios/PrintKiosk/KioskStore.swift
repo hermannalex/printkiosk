@@ -194,6 +194,10 @@ final class KioskStore: ObservableObject {
     @Published private(set) var phoneUpload: PhoneUploadState?
     @Published private(set) var phoneReceivedCount = 0
     private var uploadServer: UploadServer?
+    /// "No 4G/5G" option (imprime.ai only): nil in imprime-free and while closed.
+    @Published private(set) var relayUpload: PhoneUploadState?
+    private var relay: RelayClient?
+    private var relayTask: Task<Void, Never>?
 
     private var activeCharge: PixCharge?
     private var paymentTask: Task<Void, Never>?
@@ -476,6 +480,7 @@ final class KioskStore: ObservableObject {
         registerInteraction()
         closePhoneUpload()
         phoneReceivedCount = 0
+        if !Edition.isFree { openRelay() }
 
         guard let ip = UploadServer.localIPAddress() else {
             phoneUpload = .unavailable("Este aparelho não está conectado a uma rede Wi-Fi. Conecte-o ao Wi-Fi da loja e tente de novo.")
@@ -516,6 +521,64 @@ final class KioskStore: ObservableObject {
         uploadServer?.stop()
         uploadServer = nil
         phoneUpload = nil
+        relayTask?.cancel()
+        relayTask = nil
+        relayUpload = nil
+        if let old = relay { Task { await old.close() } }
+        relay = nil
+    }
+
+    /// Opens the 4G/5G session and fetches what the phone sends until the panel closes.
+    private func openRelay() {
+        relayUpload = .starting
+        let name = settings.kioskName
+        let directory = jobDirectory
+        relayTask = Task { [weak self] in
+            guard let client = await RelayClient.open(kioskName: name) else {
+                await MainActor.run {
+                    guard let self, self.relayUpload == .starting else { return }
+                    self.relayUpload = .unavailable("Sem internet neste aparelho: o envio pelo 4G/5G não está disponível agora.")
+                }
+                return
+            }
+            let stillOpen = await MainActor.run { () -> Bool in
+                guard let self, !Task.isCancelled, self.relayUpload == .starting else { return false }
+                self.relay = client
+                self.relayUpload = .ready(client.url)
+                return true
+            }
+            guard stillOpen else {
+                await client.close()
+                return
+            }
+            var seen = Set<String>()
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                if Task.isCancelled { break }
+                let files: [RelayClient.RemoteFile]
+                do {
+                    files = try await client.list()
+                } catch RelayClient.RelayError.sessionGone {
+                    await MainActor.run { self?.relayUpload = .unavailable("O link do 4G/5G expirou. Toque em Concluir e em Do celular de novo.") }
+                    break
+                } catch {
+                    continue // offline for a moment
+                }
+                for remote in files where !seen.contains(remote.pathname) {
+                    if Task.isCancelled { break }
+                    seen.insert(remote.pathname)
+                    try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                    let target = directory.appendingPathComponent(UUID().uuidString + "-" + (remote.name as NSString).lastPathComponent)
+                    guard let mimeType = try? await client.download(remote, to: target) else {
+                        seen.remove(remote.pathname) // try again on the next round
+                        continue
+                    }
+                    guard let self else { return }
+                    _ = await self.receiveUpload(file: target, name: remote.name, mimeType: mimeType)
+                    await client.delete(remote)
+                }
+            }
+        }
     }
 
     /// Adds a file the phone sent. The result goes back to the phone's page.
@@ -527,7 +590,7 @@ final class KioskStore: ObservableObject {
             return UploadResult(ok: false, message: message)
         }
 
-        guard uploadServer != nil else { return reject("O recebimento foi encerrado no quiosque.") }
+        guard uploadServer != nil || relay != nil else { return reject("O recebimento foi encerrado no quiosque.") }
         guard remainingSlots > 0 else { return reject("Limite de \(settings.maxItems) itens atingido no quiosque.") }
 
         let fileExtension = (name as NSString).pathExtension.lowercased()

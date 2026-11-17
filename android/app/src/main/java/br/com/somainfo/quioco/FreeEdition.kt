@@ -68,6 +68,7 @@ private val HOUSE_ADS = listOf(
     HouseAdText("Painel online da loja", "Faturamento, páginas impressas e horários de pico de cada quiosque, de qualquer lugar."),
     HouseAdText("Cartão por aproximação", "Aceite crédito, débito, Apple Pay e Google Pay na maquininha do Mercado Pago."),
     HouseAdText("Vouchers de crédito", "Crie créditos de impressão para promoções, troco ou clientes fiéis."),
+    HouseAdText("Envio pelo 4G/5G", "No imprime.ai o cliente manda os arquivos mesmo sem Wi-Fi, pela internet do celular."),
     HouseAdText("Tem uma loja? Tenha um quiosque assim", "Transforme a sua impressora num autoatendimento. Baixe em imprime.ai."),
 )
 
