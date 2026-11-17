@@ -206,3 +206,16 @@ create table if not exists email_codes (
   sent_at    timestamptz not null default now(),
   primary key (user_id, purpose)
 );
+
+-- Envio de arquivos pela internet (Wi-Fi ou 4G/5G): o quiosque abre uma sessão, o celular do cliente
+-- envia para o Vercel Blob (privado, em relay/<código>/) e o quiosque baixa e apaga. Sessões valem 30 minutos.
+create table if not exists relay_sessions (
+  code        text primary key,
+  secret_hash text not null,
+  kiosk_name  text not null default '',
+  created_at  timestamptz not null default now(),
+  expires_at  timestamptz not null,
+  closed_at   timestamptz
+);
+create index if not exists relay_sessions_expires_idx on relay_sessions(expires_at);
+grant select, insert, update, delete on relay_sessions to printkiosk_app;

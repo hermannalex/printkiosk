@@ -1,0 +1,37 @@
+.main {
+  --blue: #4f46e5;
+  --blue-dark: #4338ca;
+  --bg: #f7f7fb;
+  --card: #ffffff;
+  --ink: #15142b;
+  --muted: #5a5a73;
+  --ok: #2e9e5b;
+  --err: #c0392b;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 28px 18px 40px;
+  color: var(--ink);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.badge { font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--blue); }
+.h1 { font-size: 26px; line-height: 1.2; margin: 6px 0; }
+.sub { color: var(--muted); margin: 0 0 24px; }
+.pick {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--blue); color: #fff; font-weight: 600; font-size: 19px;
+  border-radius: 999px; padding: 18px 20px; cursor: pointer; user-select: none;
+}
+.pick:active { background: var(--blue-dark); }
+.file { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.list { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 10px; }
+.list li { background: var(--card); border-radius: 14px; padding: 12px 14px; display: grid; gap: 8px; }
+.row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; min-width: 0; }
+.state, .stateOk, .stateErr { flex: none; max-width: 60%; text-align: right; font-size: 14px; color: var(--muted); }
+.stateOk { color: var(--ok); font-weight: 600; }
+.stateErr { color: var(--err); }
+.bar { height: 6px; border-radius: 3px; background: #e3e7ee; overflow: hidden; }
+.bar span { display: block; height: 100%; width: 0; background: var(--blue); transition: width 0.2s; }
+.done .bar span { background: var(--ok); }
+.summary { margin-top: 20px; font-weight: 600; color: var(--ok); }
+.note { margin-top: 28px; color: var(--muted); font-size: 14px; }

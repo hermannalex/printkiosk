@@ -14,7 +14,10 @@ export function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
-    "connect-src 'self'",
+    // The phone upload page (/e/<code>) sends files straight to Vercel Blob.
+    request.nextUrl.pathname.startsWith("/e/")
+      ? "connect-src 'self' https://vercel.com https://*.vercel-storage.com"
+      : "connect-src 'self'",
     "object-src 'none'",
     "base-uri 'none'",
     "frame-ancestors 'none'",
