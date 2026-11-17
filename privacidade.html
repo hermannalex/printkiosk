@@ -30,14 +30,16 @@ td { color: var(--muted); }
 <main>
   <a class="brand" href="/">imprime<span>.ai</span></a>
   <h1>Política de privacidade</h1>
-  <p>Vale para os apps <b>imprime.ai</b> e <b>imprime-free</b> (Android, iPhone e iPad, Windows e Mac) e para o painel online do imprime.ai. Atualizada em 14 de novembro de 2026.</p>
+  <p>Vale para os apps <b>imprime.ai</b> e <b>imprime-free</b> (Android, iPhone e iPad, Windows e Mac) e para o painel online do imprime.ai. Atualizada em 17 de novembro de 2026.</p>
 
   <div class="box">
-    <p><b>Resumo:</b> os arquivos que o cliente imprime vão do celular dele direto para o aparelho da loja, pela rede Wi-Fi local, e são apagados do aparelho quando a impressão termina. Eles nunca são enviados para os nossos servidores. O <b>imprime-free</b> não envia dado nenhum para a internet.</p>
+    <p><b>Resumo:</b> pelo Wi-Fi da loja, os arquivos que o cliente imprime vão do celular dele direto para o aparelho da loja, sem passar pelos nossos servidores. No imprime.ai o cliente também pode enviar pelo 4G/5G: aí o arquivo passa pelo servidor do imprime.ai, fica guardado no máximo 30 minutos e é apagado assim que o quiosque o recebe. No aparelho, tudo é apagado quando a impressão termina. O <b>imprime-free</b> só recebe pelo Wi-Fi da loja e não envia dado nenhum para a internet.</p>
   </div>
 
   <h2>1. Arquivos dos clientes</h2>
-  <p>Fotos e PDFs enviados pelo celular do cliente, ou escolhidos no próprio aparelho, ficam só no aparelho do quiosque enquanto a impressão é preparada. Ao terminar, cancelar ou voltar ao início, eles são apagados. Não guardamos cópia, nome do arquivo nem conteúdo em servidor algum. O cliente não precisa se cadastrar nem informar nome, telefone ou e-mail.</p>
+  <p>Fotos e PDFs enviados pelo celular do cliente, ou escolhidos no próprio aparelho, ficam só no aparelho do quiosque enquanto a impressão é preparada. Ao terminar, cancelar ou voltar ao início, eles são apagados. O cliente não precisa se cadastrar nem informar nome, telefone ou e-mail.</p>
+  <p><b>Envio pelo Wi-Fi da loja:</b> o arquivo vai do celular direto para o quiosque, pela rede local, sem passar por servidor algum.</p>
+  <p><b>Envio pelo 4G/5G (só no imprime.ai):</b> o arquivo vai do celular para um armazenamento privado do imprime.ai (Vercel Blob) e de lá para o quiosque, que o apaga do servidor logo depois de recebê-lo. O que não for recebido é apagado quando o atendimento termina ou, no máximo, 30 minutos depois de o QR Code ser mostrado. O link de cada atendimento é aleatório e só o quiosque que o criou consegue baixar os arquivos. Não usamos esses arquivos para nada além de levá-los até o quiosque.</p>
 
   <h2>2. imprime-free</h2>
   <p>O imprime-free imprime de graça, sem pagamento, sem conta e sem painel online. Ele não coleta, não armazena fora do aparelho e não compartilha dados pessoais. Os anúncios exibidos são do próprio imprime.ai: um texto e um QR Code que leva a este site. Não usamos redes de anúncios, rastreamento ou identificadores de publicidade.</p>
@@ -54,10 +56,10 @@ td { color: var(--muted); }
   <p>Os pagamentos por Pix e cartão são processados pelo <b>Mercado Pago</b>, na conta da própria loja; não recebemos nem guardamos dados de cartão. O token do Mercado Pago fica guardado criptografado no aparelho do quiosque.</p>
 
   <h2>4. Com quem compartilhamos</h2>
-  <p>Somente com os fornecedores necessários para o serviço funcionar: Mercado Pago (pagamentos), Vercel e Neon (hospedagem do painel e banco de dados), Resend (envio dos códigos de verificação por e-mail) e Google (entrar com Google). Não vendemos dados.</p>
+  <p>Somente com os fornecedores necessários para o serviço funcionar: Mercado Pago (pagamentos), Vercel e Neon (hospedagem do painel, banco de dados e passagem temporária dos arquivos enviados pelo 4G/5G), Resend (envio dos códigos de verificação por e-mail) e Google (entrar com Google). Não vendemos dados.</p>
 
   <h2>5. Por quanto tempo</h2>
-  <p>Os arquivos dos clientes são apagados ao fim de cada impressão. Os dados da conta e o histórico de impressões ficam enquanto a conta existir; cópias de segurança criptografadas são mantidas por até 35 dias.</p>
+  <p>Os arquivos dos clientes são apagados ao fim de cada impressão; os enviados pelo 4G/5G saem do servidor assim que chegam ao quiosque, e no máximo em 30 minutos. Os dados da conta e o histórico de impressões ficam enquanto a conta existir; cópias de segurança criptografadas são mantidas por até 35 dias.</p>
 
   <h2>6. Seus direitos (LGPD)</h2>
   <p>O dono da conta pode pedir acesso, correção ou exclusão dos seus dados escrevendo para <b>privacidade@imprime.ai</b>. Responderemos em até 15 dias.</p>
