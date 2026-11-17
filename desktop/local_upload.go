@@ -110,7 +110,12 @@ func uploadReply(w http.ResponseWriter, status int, ok bool, message string) {
 }
 
 func (up *PhoneUpload) receive(w http.ResponseWriter, r *http.Request) {
-	app := up.app
+	up.app.receiveFile(w, r)
+}
+
+// receiveFile saves one photo or PDF sent in the request body (?name=<file name>) and adds it
+// to the screen: from the phone over the store Wi-Fi, or picked on this computer.
+func (app *App) receiveFile(w http.ResponseWriter, r *http.Request) {
 	app.touch()
 	if r.ContentLength <= 0 {
 		uploadReply(w, 411, false, "Envio inválido. Tente de novo.")
@@ -136,9 +141,7 @@ func (up *PhoneUpload) receive(w http.ResponseWriter, r *http.Request) {
 		uploadReply(w, 422, false, "Envie apenas fotos ou arquivos PDF.")
 		return
 	}
-	up.mu.Lock()
 	full := app.itemCount()+1 > app.store.Read().Settings.MaxItems
-	up.mu.Unlock()
 	if full {
 		uploadReply(w, 422, false, "Limite de itens atingido no quiosque.")
 		return

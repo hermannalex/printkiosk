@@ -196,7 +196,7 @@ struct AdminView: View {
                         .font(.callout)
                 }
                 LabeledContent("Painel online") {
-                    Link(store.cloud.dashboardURL.host() ?? "Abrir", destination: store.cloud.dashboardURL)
+                    Link("imprime-ai.vercel.app", destination: URL(string: "https://imprime-ai.vercel.app")!)
                 }
                 LabeledContent("Última sincronização") {
                     if let error = store.syncError {
@@ -254,6 +254,8 @@ struct AdminView: View {
                     value: tokenSuffix.map { "Salvo (termina em \($0))" } ?? "Não configurado"
                 )
 
+                Link("Como gerar o Access Token do Mercado Pago", destination: URL(string: "https://imprime.ai/mercado-pago.html")!)
+
                 SecureField("Cole aqui o Access Token de produção", text: $tokenEntry)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
@@ -293,7 +295,7 @@ struct AdminView: View {
             } header: {
                 Text("Pagamento Pix (Mercado Pago)")
             } footer: {
-                Text("Estas configurações também podem ser mudadas pelo painel online (quioco.vercel.app); o que for salvo lá chega em até 30 minutos. Deixe o preço em R$ 0,00 para impressão gratuita. O Mercado Pago exige um e-mail de pagador em toda cobrança Pix; use o e-mail da loja. O token fica guardado no Keychain deste iPad.")
+                Text("Estas configurações também podem ser mudadas pelo painel online ([imprime-ai.vercel.app](https://imprime-ai.vercel.app)); o que for salvo lá chega em até 30 minutos. Deixe o preço em R$ 0,00 para impressão gratuita. O Mercado Pago exige um e-mail de pagador em toda cobrança Pix; use o e-mail da loja. O token fica guardado no Keychain deste iPad.")
             }
             }
 

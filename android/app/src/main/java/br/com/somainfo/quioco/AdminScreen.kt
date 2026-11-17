@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -222,7 +223,7 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
                 enabled = activationCode.isNotBlank(),
             ) { Text("Ativar") }
             activationMessage?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
-            Text("Painel online: ${vm.cloud.dashboardUrl.removePrefix("https://")}", style = MaterialTheme.typography.titleMedium)
+            LinkText("Painel online: imprime-ai.vercel.app", DASHBOARD_URL)
             val syncText = vm.syncError ?: vm.lastSync?.let {
                 "Última sincronização: " + android.text.format.DateUtils.getRelativeTimeSpanString(it).toString().lowercase()
             } ?: "Ainda não conectou ao painel"
@@ -275,10 +276,11 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
                 plusEnabled = settings.pricePerPageCents < 5_000,
             )
             Text(
-                "Deixe em R$ 0,00 para impressão gratuita. Estas configurações também podem ser mudadas pelo painel online (quioco.vercel.app); o que for salvo lá chega em até 30 minutos.",
+                "Deixe em R$ 0,00 para impressão gratuita. Estas configurações também podem ser mudadas pelo painel online; o que for salvo lá chega em até 30 minutos.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            LinkText("Abrir o painel online: imprime-ai.vercel.app", DASHBOARD_URL)
 
             OutlinedTextField(
                 value = settings.payerEmail,
@@ -293,6 +295,7 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
                 vm.tokenSuffix?.let { "Access Token: salvo (termina em $it)" } ?: "Access Token: não configurado",
                 style = MaterialTheme.typography.titleMedium,
             )
+            LinkText("Como gerar o Access Token do Mercado Pago", TOKEN_HELP_URL)
             OutlinedTextField(
                 value = tokenEntry,
                 onValueChange = { tokenEntry = it },
@@ -523,5 +526,24 @@ private fun ChoiceRow(options: List<Pair<Int, String>>, selected: Int, onSelect:
                 label = { Text(label) },
             )
         }
+    }
+}
+
+private const val DASHBOARD_URL = "https://imprime-ai.vercel.app"
+private const val TOKEN_HELP_URL = "https://imprime.ai/mercado-pago.html"
+
+/** A tappable link that opens in the browser (staff settings only). */
+@Composable
+private fun LinkText(text: String, url: String) {
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+    TextButton(
+        onClick = { runCatching { uriHandler.openUri(url) } },
+        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.titleMedium.copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline),
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }

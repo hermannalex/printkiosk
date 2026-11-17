@@ -245,17 +245,12 @@ struct SelectView: View {
             maxSelectionCount: max(1, store.remainingSlots),
             matching: .images
         ) {
-            SourceTile(title: "Fotos", systemImage: "photo.on.rectangle.angled")
+            SourceTile(title: "Fotos deste aparelho", systemImage: "photo.on.rectangle.angled")
         }
         .disabled(store.remainingSlots == 0)
 
         Button { showFileImporter = true } label: {
-            SourceTile(title: "Arquivos PDF", systemImage: "doc.richtext")
-        }
-        .disabled(store.remainingSlots == 0)
-
-        Button { store.openPhoneUpload() } label: {
-            SourceTile(title: "Do celular", systemImage: "iphone.and.arrow.forward")
+            SourceTile(title: "PDF deste aparelho", systemImage: "doc.richtext")
         }
         .disabled(store.remainingSlots == 0)
     }
@@ -267,17 +262,21 @@ struct SelectView: View {
                 subtitle: "\(store.items.count) de \(store.settings.maxItems) itens adicionados"
             )
 
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 20) { sourceButtons }
-                VStack(spacing: 12) { sourceButtons }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // The QR Code to send from the phone is the first thing on this screen.
+                    PhoneUploadPanel()
+                    HStack(spacing: 16) { sourceButtons }
+                }
             }
+            .frame(maxHeight: store.items.isEmpty ? .infinity : 520)
 
             if store.items.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "tray")
                         .kioskFont(48)
                         .foregroundStyle(.secondary)
-                    Text("Nada adicionado ainda. Escolha fotos ou arquivos PDF acima.")
+                    Text("Nada adicionado ainda. Envie do celular pelo QR Code ou escolha fotos e PDFs deste aparelho.")
                         .font(.title3)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -318,12 +317,8 @@ struct SelectView: View {
                 photoSelection = []
             }
         }
-        .fullScreenCover(isPresented: Binding(
-            get: { store.phoneUpload != nil },
-            set: { if !$0 { store.closePhoneUpload() } }
-        )) {
-            PhoneUploadView().environmentObject(store)
-        }
+        .onAppear { if store.phoneUpload == nil { store.openPhoneUpload() } }
+        .onDisappear { store.closePhoneUpload() }
         .fileImporter(
             isPresented: $showFileImporter,
             allowedContentTypes: [.pdf],
@@ -882,50 +877,55 @@ struct FinishedView: View {
 
 // MARK: - Files from the phone
 
-struct PhoneUploadView: View {
+/// "Envie do seu celular", shown right on the "Escolha o que imprimir" screen.
+struct PhoneUploadPanel: View {
     @EnvironmentObject private var store: KioskStore
 
     init() {}
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    Text(store.relayUpload != nil
-                         ? "Fotos e PDFs chegam aqui pelo Wi-Fi da loja ou pelo 4G/5G do celular, sem cabo e sem aplicativo."
-                         : "Fotos e PDFs chegam aqui pela rede Wi-Fi da loja, sem cabo e sem aplicativo.")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-
-                    switch store.phoneUpload {
-                    case .ready(let url):
-                        if store.relayUpload != nil {
-                            Text("No Wi-Fi da loja").font(.title2.weight(.bold))
-                        }
-                        readyContent(url: url)
-                    case .unavailable(let message):
-                        Label(message, systemImage: "wifi.exclamationmark")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(.orange)
-                    default:
-                        ProgressView("Preparando…")
-                            .font(.title3)
-                            .frame(maxWidth: .infinity)
-                    }
-
-                    if let relayState = store.relayUpload {
-                        relayContent(relayState)
-                    }
-
-                    receivedRow
-                }
-                .kioskPadding(32)
+        VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Envie do seu celular").font(.title2.weight(.bold))
+                Text(store.relayUpload != nil
+                     ? "Aponte a câmera para o QR Code: pelo Wi-Fi da loja ou pelo 4G/5G, sem aplicativo."
+                     : "Aponte a câmera para o QR Code: pelo Wi-Fi da loja, sem aplicativo.")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
             }
-            .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Envie do seu celular")
-            .navigationBarTitleDisplayMode(.inline)
+
+            switch store.phoneUpload {
+            case .ready(let url):
+                if store.relayUpload != nil {
+                    Text("No Wi-Fi da loja").font(.title3.weight(.bold))
+                }
+                readyContent(url: url)
+            case .unavailable(let message):
+                Label(message, systemImage: "wifi.exclamationmark")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.orange)
+            default:
+                ProgressView("Preparando…")
+                    .font(.title3)
+                    .frame(maxWidth: .infinity)
+            }
+
+            if let relayState = store.relayUpload {
+                relayContent(relayState)
+            }
+
+            if store.phoneReceivedCount > 0 {
+                Label(
+                    store.phoneReceivedCount == 1 ? "1 arquivo recebido do celular" : "\(store.phoneReceivedCount) arquivos recebidos do celular",
+                    systemImage: "checkmark.circle.fill"
+                )
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.green)
+            }
         }
-        .interactiveDismissDisabled()
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
     }
 
     private var wifiName: String {
@@ -936,7 +936,7 @@ struct PhoneUploadView: View {
     @ViewBuilder
     private func relayContent(_ state: PhoneUploadState) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("No 4G/5G").font(.title2.weight(.bold))
+            Text("No 4G/5G").font(.title3.weight(.bold))
             switch state {
             case .ready(let url):
                 ViewThatFits(in: .horizontal) {
@@ -1001,26 +1001,6 @@ struct PhoneUploadView: View {
             caption: "Aponte a câmera do celular para o código",
             payload: url
         )
-    }
-
-    private var receivedRow: some View {
-        HStack {
-            if store.phoneReceivedCount > 0 {
-                Label(
-                    store.phoneReceivedCount == 1 ? "1 arquivo recebido" : "\(store.phoneReceivedCount) arquivos recebidos",
-                    systemImage: "checkmark.circle.fill"
-                )
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.green)
-            } else if case .ready = store.phoneUpload {
-                Label("Aguardando arquivos…", systemImage: "hourglass")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 12)
-            Button("Concluir") { store.closePhoneUpload() }
-                .buttonStyle(PrimaryButtonStyle())
-        }
     }
 }
 

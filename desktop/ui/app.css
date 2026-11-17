@@ -59,6 +59,8 @@ h2 { font-size: 26px; margin: 0 0 12px; }
 .qr-pair { display: grid; grid-template-columns: 1fr; gap: 16px; width: 100%; justify-items: center; align-items: start; }
 .qr-pair.two { grid-template-columns: 1fr 1fr; }
 .qr-pair.two .qr-big { width: min(26vh, 100%, 260px); height: auto; aspect-ratio: 1; }
+.local-pick { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.local-pick .btn { cursor: pointer; display: inline-flex; align-items: center; min-height: 44px; padding: 10px 16px; font-size: 15px; }
 .qr-opt { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
 .qr-opt h3 { margin: 0; font-size: 20px; }
 .qr-opt p { margin: 0; }

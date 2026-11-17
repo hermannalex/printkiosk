@@ -73,6 +73,13 @@
           <li>Toque no link e escolha as fotos ou PDFs</li>
           <li>Aguarde os arquivos aparecerem aqui</li>
         </ol>
+        <div class="local-pick">
+          <label class="btn" for="pick-photos">Fotos deste computador</label>
+          <input type="file" id="pick-photos" accept="image/*" multiple hidden>
+          <label class="btn" for="pick-pdfs">PDF deste computador</label>
+          <input type="file" id="pick-pdfs" accept="application/pdf,.pdf" multiple hidden>
+        </div>
+        <p class="notice" id="local-error" hidden></p>
       </div>
       <div class="card items-card">
         <div class="items-head">
@@ -229,7 +236,7 @@
             <dt>Código da loja</dt><dd class="mono" id="a-store"></dd>
             <dt>Código de vínculo</dt><dd class="mono" id="a-pair"></dd>
           </dl>
-          <p class="small muted">Para usar o painel online, cadastre este quiosque em <span class="mono" id="a-dash"></span> com o código da loja e o código de vínculo. A assinatura paga no painel chega aqui sozinha.</p>
+          <p class="small muted">Para usar o painel online, cadastre este quiosque em <a class="mono" id="a-dash" href="https://imprime-ai.vercel.app" target="_blank" rel="noopener">imprime-ai.vercel.app</a> com o código da loja e o código de vínculo. A assinatura paga no painel chega aqui sozinha.</p>
           <label class="field">Código de ativação (se recebeu por e-mail)
             <input id="a-code" autocomplete="off" spellcheck="false" placeholder="PK1-…">
           </label>
@@ -249,6 +256,7 @@
             <select id="f-paytime"><option value="120">2 minutos</option><option value="180">3 minutos</option><option value="300">5 minutos</option><option value="600">10 minutos</option></select>
           </label>
           <p id="a-token"></p>
+          <p class="small"><a href="https://imprime.ai/mercado-pago.html" target="_blank" rel="noopener">Como gerar o Access Token do Mercado Pago</a></p>
           <label class="field">Access Token de produção
             <input id="a-token-input" type="password" autocomplete="off" spellcheck="false" placeholder="APP_USR-…">
           </label>
@@ -270,7 +278,7 @@
           </label>
           <label class="field">Wi-Fi dos clientes (nome)<input id="f-wifi" maxlength="32" autocomplete="off"></label>
           <label class="field">Senha do Wi-Fi dos clientes<input id="f-wifipass" maxlength="63" autocomplete="off"></label>
-          <p class="small muted full-only">Estas configurações também podem ser mudadas pelo painel online; o que for salvo lá chega em até 30 minutos.</p>
+          <p class="small muted full-only">Estas configurações também podem ser mudadas pelo <a href="https://imprime-ai.vercel.app" target="_blank" rel="noopener">painel online (imprime-ai.vercel.app)</a>; o que for salvo lá chega em até 30 minutos.</p>
         </section>
 
         <section class="card full-only">
@@ -298,6 +306,7 @@
 
         <section class="card full-only">
           <h2>Painel online</h2>
+          <p><a href="https://imprime-ai.vercel.app" target="_blank" rel="noopener">Abrir o painel: imprime-ai.vercel.app</a></p>
           <p id="a-sync"></p>
           <button class="btn" id="a-sync-now" type="button">Sincronizar agora</button>
         </section>

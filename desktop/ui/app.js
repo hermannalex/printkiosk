@@ -632,7 +632,7 @@ function fillPanel(info) {
   $("a-license").textContent = `${t} Planos ${info.priceLabel}. Contato: ${info.vendor}`;
   $("a-store").textContent = info.storeCode;
   $("a-pair").textContent = info.pairingCode;
-  $("a-dash").textContent = info.dashboard.replace(/^https?:\/\//, "");
+  // The dashboard moved to imprime-ai.vercel.app (the old address still works).
   $("f-price").value = (s.pricePerPageCents / 100).toFixed(2).replace(".", ",");
   $("f-email").value = s.payerEmail;
   $("f-paytime").value = String(s.paymentTimeoutSeconds);
@@ -731,3 +731,26 @@ $("a-test-page").onclick = () => {
 
 refreshState().then(() => show("welcome"));
 setInterval(() => { if (S.screen === "welcome") refreshState(); }, 60000);
+
+// ---------------------------------------------------------------- files on this computer
+
+async function addLocalFiles(input) {
+  const files = Array.from(input.files || []);
+  input.value = "";
+  $("local-error").hidden = true;
+  for (const file of files) {
+    const res = await fetch("/api/local/add?name=" + encodeURIComponent(file.name), {
+      method: "POST",
+      headers: { "X-Kiosk-Key": KEY, "Content-Type": file.type || "application/octet-stream" },
+      body: file,
+    }).catch(() => null);
+    const data = res ? await res.json().catch(() => ({})) : {};
+    if (!res || !data.ok) {
+      $("local-error").textContent = `${file.name}: ${data.message || "não foi possível adicionar."}`;
+      $("local-error").hidden = false;
+    }
+  }
+  pollItems();
+}
+$("pick-photos").addEventListener("change", (e) => addLocalFiles(e.target));
+$("pick-pdfs").addEventListener("change", (e) => addLocalFiles(e.target));

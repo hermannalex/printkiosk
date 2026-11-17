@@ -64,6 +64,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -114,10 +115,6 @@ fun KioskApp(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScreen: () -> U
             KioskStep.Printing -> PrintingScreen(vm)
             is KioskStep.Finished -> FinishedScreen(vm, step)
         }
-    }
-
-    if (vm.phoneUpload != null) {
-        PhoneUploadDialog(vm)
     }
 
     if (vm.showAdmin) {
@@ -292,6 +289,40 @@ private fun SelectScreen(vm: KioskViewModel) {
         vm.addPdfs(uris)
     }
     val canAdd = vm.remainingSlots > 0
+    val compact = LocalCompact.current
+
+    // The QR Code to send from the phone is the first thing on this screen; it stays open while here.
+    LaunchedEffect(Unit) { if (vm.phoneUpload == null) vm.openPhoneUpload() }
+    DisposableEffect(Unit) { onDispose { vm.closePhoneUpload() } }
+
+    val sources: @Composable () -> Unit = {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                Box(Modifier.padding(kd(24))) { PhoneUploadPanel(vm) }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                SourceTile(
+                    title = "Fotos deste aparelho",
+                    icon = Icons.Filled.PhotoLibrary,
+                    enabled = canAdd,
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                )
+                SourceTile(
+                    title = "PDF deste aparelho",
+                    icon = Icons.Filled.PictureAsPdf,
+                    enabled = canAdd,
+                    modifier = Modifier.weight(1f),
+                    onClick = { pdfPicker.launch(arrayOf("application/pdf")) },
+                )
+            }
+        }
+    }
 
     ScreenColumn {
         Header(
@@ -299,80 +330,45 @@ private fun SelectScreen(vm: KioskViewModel) {
             subtitle = "${vm.items.size} de ${vm.settings.maxItems} itens adicionados",
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            SourceTile(
-                title = "Fotos",
-                icon = Icons.Filled.PhotoLibrary,
-                enabled = canAdd,
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                },
-            )
-            SourceTile(
-                title = "Arquivos PDF",
-                icon = Icons.Filled.PictureAsPdf,
-                enabled = canAdd,
-                modifier = Modifier.weight(1f),
-                onClick = { pdfPicker.launch(arrayOf("application/pdf")) },
-            )
-            SourceTile(
-                title = "Do celular",
-                icon = Icons.Filled.Smartphone,
-                enabled = canAdd,
-                modifier = Modifier.weight(1f),
-                onClick = { vm.openPhoneUpload() },
-            )
-        }
-
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            if (vm.items.isEmpty()) {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Icon(
-                        Icons.Filled.Inbox,
-                        contentDescription = null,
-                        modifier = Modifier.size(56.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        "Nada adicionado ainda. Escolha fotos ou arquivos PDF acima.",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(170.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(vertical = 8.dp),
-                ) {
-                    items(vm.items, key = { it.id }) { item ->
-                        ItemTile(item = item, onRemove = { vm.remove(item) })
+        if (compact) {
+            Column(
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                sources()
+                if (vm.items.isEmpty()) {
+                    EmptyItems()
+                } else {
+                    vm.items.chunked(2).forEach { pair ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            pair.forEach { item ->
+                                Box(Modifier.weight(1f)) { ItemTile(item = item, onRemove = { vm.remove(item) }) }
+                            }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                        }
                     }
                 }
+                if (vm.isLoading) LoadingRow()
             }
-
-            if (vm.isLoading) {
-                Surface(
-                    modifier = Modifier.align(Alignment.Center),
-                    shape = RoundedCornerShape(16.dp),
-                    tonalElevation = 6.dp,
-                    shadowElevation = 6.dp,
-                ) {
-                    Row(
-                        modifier = Modifier.padding(kd(28)),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
-                        CircularProgressIndicator()
-                        Text("Carregando…", style = MaterialTheme.typography.titleLarge)
+        } else {
+            Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) { sources() }
+                Box(modifier = Modifier.weight(1.2f).fillMaxSize()) {
+                    if (vm.items.isEmpty()) {
+                        Box(Modifier.align(Alignment.Center)) { EmptyItems() }
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(170.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(vertical = 8.dp),
+                        ) {
+                            items(vm.items, key = { it.id }) { item ->
+                                ItemTile(item = item, onRemove = { vm.remove(item) })
+                            }
+                        }
                     }
+                    if (vm.isLoading) Box(Modifier.align(Alignment.Center)) { LoadingRow() }
                 }
             }
         }
@@ -381,6 +377,42 @@ private fun SelectScreen(vm: KioskViewModel) {
             SecondaryButton(text = "Recomeçar", onClick = { vm.reset() })
             Spacer(Modifier.weight(1f))
             PrimaryButton(text = "Continuar", enabled = vm.items.isNotEmpty() && !vm.isLoading, onClick = { vm.goToReview() })
+        }
+    }
+}
+
+@Composable
+private fun EmptyItems() {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(
+            Icons.Filled.Inbox,
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            "Nada adicionado ainda. Envie do celular pelo QR Code ou escolha fotos e PDFs deste aparelho.",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun LoadingRow() {
+    Surface(shape = RoundedCornerShape(16.dp), tonalElevation = 6.dp, shadowElevation = 6.dp) {
+        Row(
+            modifier = Modifier.padding(kd(28)),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            CircularProgressIndicator()
+            Text("Carregando…", style = MaterialTheme.typography.titleLarge)
         }
     }
 }
@@ -938,109 +970,87 @@ private fun FinishedScreen(vm: KioskViewModel, result: KioskStep.Finished) {
 // region Files from the phone
 
 @Composable
-private fun PhoneUploadDialog(vm: KioskViewModel) {
-    val state = vm.phoneUpload ?: return
+private fun PhoneUploadPanel(vm: KioskViewModel) {
+    val state = vm.phoneUpload ?: PhoneUploadState.Starting
     val wifiName = vm.settings.wifiName.trim()
 
-    Dialog(
-        onDismissRequest = { vm.closePhoneUpload() },
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-    ) {
-        Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.background,
-            modifier = Modifier.padding(kd(32)).widthIn(max = 880.dp),
-        ) {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()).padding(kd(32)),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Envie do seu celular", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                if (vm.relayUpload != null) "Aponte a câmera para o QR Code: pelo Wi-Fi da loja ou pelo 4G/5G, sem aplicativo."
+                else "Aponte a câmera para o QR Code: pelo Wi-Fi da loja, sem aplicativo.",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        when (state) {
+            PhoneUploadState.Starting -> Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Envie do seu celular", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                CircularProgressIndicator()
+                Text("Preparando…", style = MaterialTheme.typography.titleLarge)
+            }
+
+            is PhoneUploadState.Unavailable -> WarningText(state.message)
+
+            is PhoneUploadState.Ready -> {
+                if (vm.relayUpload != null) {
+                    Text("No Wi-Fi da loja", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                    if (wifiName.isNotEmpty()) {
+                        QrStep(
+                            number = 1,
+                            title = "Entre no Wi-Fi",
+                            caption = "Rede $wifiName",
+                            payload = wifiQrPayload(wifiName, vm.settings.wifiPassword),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    QrStep(
+                        number = if (wifiName.isNotEmpty()) 2 else 1,
+                        title = "Abra a página de envio",
+                        caption = "Aponte a câmera do celular para o código",
+                        payload = state.url,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (wifiName.isEmpty()) {
                     Text(
-                        if (vm.relayUpload != null) "Fotos e PDFs chegam aqui pelo Wi-Fi da loja ou pelo 4G/5G do celular, sem cabo e sem aplicativo."
-                        else "Fotos e PDFs chegam aqui pela rede Wi-Fi da loja, sem cabo e sem aplicativo.",
+                        "O celular precisa estar no mesmo Wi-Fi deste aparelho.",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                Text(
+                    "No celular, toque em Escolher fotos ou PDF. Os arquivos aparecem aqui na hora.",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    "Endereço: ${state.url}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
 
-                when (state) {
-                    PhoneUploadState.Starting -> Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
-                        CircularProgressIndicator()
-                        Text("Preparando…", style = MaterialTheme.typography.titleLarge)
-                    }
+        // imprime.ai only: the phone can also send over its own internet (4G/5G), without the store Wi-Fi.
+        vm.relayUpload?.let { relayState -> RelayOption(relayState) }
 
-                    is PhoneUploadState.Unavailable -> WarningText(state.message)
-
-                    is PhoneUploadState.Ready -> {
-                        if (vm.relayUpload != null) {
-                            Text("No Wi-Fi da loja", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                            if (wifiName.isNotEmpty()) {
-                                QrStep(
-                                    number = 1,
-                                    title = "Entre no Wi-Fi",
-                                    caption = "Rede $wifiName",
-                                    payload = wifiQrPayload(wifiName, vm.settings.wifiPassword),
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                            QrStep(
-                                number = if (wifiName.isNotEmpty()) 2 else 1,
-                                title = "Abra a página de envio",
-                                caption = "Aponte a câmera do celular para o código",
-                                payload = state.url,
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                        if (wifiName.isEmpty()) {
-                            Text(
-                                "O celular precisa estar no mesmo Wi-Fi deste aparelho.",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Text(
-                            "No celular, toque em Escolher fotos ou PDF. Os arquivos aparecem aqui na hora.",
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        Text(
-                            "Endereço: ${state.url}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                // imprime.ai only: the phone can also send over its own internet (4G/5G), without the store Wi-Fi.
-                vm.relayUpload?.let { relayState -> RelayOption(relayState) }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val count = vm.phoneReceivedCount
-                    if (count > 0) {
-                        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = KioskGreen)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            if (count == 1) "1 arquivo recebido" else "$count arquivos recebidos",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = KioskGreen,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    } else if (state is PhoneUploadState.Ready) {
-                        Text(
-                            "Aguardando arquivos…",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    PrimaryButton(text = "Concluir", onClick = { vm.closePhoneUpload() })
-                }
+        val count = vm.phoneReceivedCount
+        if (count > 0) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = KioskGreen)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (count == 1) "1 arquivo recebido do celular" else "$count arquivos recebidos do celular",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = KioskGreen,
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
         }
     }

@@ -222,6 +222,14 @@ func (app *App) routes() http.Handler {
 		}
 		writeJSON(w, 200, out)
 	})
+	// Photos and PDFs picked on this computer (buttons under the QR Codes).
+	api("/api/local/add", false, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			uploadReply(w, 405, false, "Envio inválido.")
+			return
+		}
+		app.receiveFile(w, r)
+	})
 	api("/api/upload/close", false, func(w http.ResponseWriter, r *http.Request) {
 		app.closeUpload()
 		writeJSON(w, 200, map[string]any{"ok": true})
