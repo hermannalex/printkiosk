@@ -213,6 +213,13 @@ figcaption b { color: var(--ink); font-weight: 600; }
 .free-dl .meta { font-size: 14px; color: var(--muted); }
 @media (max-width: 800px) { .free-box { grid-template-columns: 1fr; } }
 
+.net2 { margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.net2 > div { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px 22px; min-width: 0; }
+.net2 > div.pro { border: 2px solid var(--brand); }
+.net2 h3 { font-family: var(--display); font-size: 20px; margin: 6px 0 6px; }
+.net2 p { color: var(--muted); margin: 0; }
+.net2 .k { font: 500 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--brand); }
+@media (max-width: 700px) { .net2 { grid-template-columns: 1fr; } }
 .pix0 { margin-top: 32px; background: var(--surface); border: 2px solid var(--brand); border-radius: 22px; padding: 26px; max-width: 880px; }
 .pix0-head { display: flex; gap: 20px; align-items: center; margin-bottom: 18px; }
 .pix0-head p { color: var(--muted); margin-top: 6px; }
@@ -255,7 +262,7 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
 
   <div class="wrap hero-grid">
     <div>
-      <span class="pill"><b>Novo</b> Taxa 0% no Pix · 10 impressões grátis para testar</span>
+      <span class="pill"><b>Novo</b> Envio pelo 4G/5G · Taxa 0% no Pix · 10 impressões grátis para testar</span>
       <h1>Sua impressora comum vira um <em>autoatendimento com Pix.</em></h1>
       <p class="lead">O imprime.ai transforma a impressora que você já tem num ponto de impressão que funciona sozinho. O cliente envia o arquivo pelo celular, paga com Pix e retira a cópia. Sem balcão, sem fila, sem atendente.</p>
       <div class="cta-row">
@@ -340,6 +347,10 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
           <span class="tag">arquivo apagado após imprimir</span>
         </article>
       </div>
+      <div class="net2">
+        <div><span class="k">Wi-Fi da loja</span><h3>Direto para o quiosque</h3><p>O celular manda pela rede da loja e o arquivo não sai da loja. Disponível no imprime.ai e no imprime-free.</p></div>
+        <div class="pro"><span class="k">Novo · 4G/5G</span><h3>Sem Wi-Fi, pela internet do celular</h3><p>Um segundo QR Code na tela: o cliente envia pelo 4G/5G, sem precisar da senha do Wi-Fi. O arquivo passa pelo nosso servidor e é apagado assim que chega ao quiosque. Só no imprime.ai.</p></div>
+      </div>
     </div>
   </section>
 
@@ -420,7 +431,7 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
         <div>
           <span class="eyebrow">imprime-free</span>
           <h3>Só quer deixar a impressora livre para os clientes?</h3>
-          <p>O <b>imprime-free</b> imprime de graça, até 20 cópias por dia, sem pagamento. Ele não tem painel nem cobrança e mostra anúncios do imprime.ai na tela. Quando quiser cobrar, é só trocar pelo imprime.ai.</p>
+          <p>O <b>imprime-free</b> imprime de graça, até 20 cópias por dia, sem pagamento. O cliente envia pelo Wi-Fi da loja. Ele não tem painel, cobrança nem envio pelo 4G/5G e mostra anúncios do imprime.ai na tela. Quando quiser cobrar, é só trocar pelo imprime.ai.</p>
         </div>
         <div class="free-dl">
           <a class="btn btn-line" href="https://imprime-ai.vercel.app/download/imprime-free-windows.exe" download>imprime-free para Windows</a>
