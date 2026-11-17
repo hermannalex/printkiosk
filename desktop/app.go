@@ -31,6 +31,7 @@ type App struct {
 	mu         sync.Mutex
 	items      []Item
 	upload     *PhoneUpload
+	relay      *RelayUpload
 	syncError  string
 	lastTouch  time.Time
 	adminUntil time.Time
@@ -199,13 +200,27 @@ func (app *App) routes() http.Handler {
 
 	// Customer flow
 	api("/api/upload/open", false, func(w http.ResponseWriter, r *http.Request) {
-		up, msg := app.openUpload()
-		if up == nil {
-			writeJSON(w, 200, map[string]any{"error": msg})
-			return
+		local, localErr, relay, relayErr := app.openUpload()
+		out := map[string]any{}
+		if local != nil {
+			q, _ := EncodeQR(local.URL)
+			out["url"], out["svg"] = local.URL, q.SVG()
+		} else {
+			out["localError"] = localErr
 		}
-		q, _ := EncodeQR(up.URL)
-		writeJSON(w, 200, map[string]any{"url": up.URL, "svg": q.SVG()})
+		if relay != nil {
+			q, _ := EncodeQR(relay.URL)
+			out["relayUrl"], out["relaySvg"] = relay.URL, q.SVG()
+		} else if !freeEdition {
+			out["relayError"] = relayErr
+		}
+		if local == nil && relay == nil {
+			out["error"] = localErr
+			if !freeEdition {
+				out["error"] = "Não foi possível receber arquivos do celular: este aparelho está sem Wi-Fi e sem internet."
+			}
+		}
+		writeJSON(w, 200, out)
 	})
 	api("/api/upload/close", false, func(w http.ResponseWriter, r *http.Request) {
 		app.closeUpload()

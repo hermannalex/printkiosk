@@ -115,13 +115,21 @@ $("start").onclick = async () => {
   show("select");
   renderItems();
   const up = await api("/api/upload/open", {});
-  if (up.error) {
-    $("upload-qr").innerHTML = "";
-    $("upload-error").textContent = up.error; $("upload-error").hidden = false;
-  } else {
-    $("upload-error").hidden = true;
-    $("upload-qr").innerHTML = up.svg;
-  }
+  // Store Wi-Fi: straight to this device. 4G/5G (imprime.ai only): over the internet.
+  $("upload-qr").innerHTML = up.svg || "";
+  $("upload-qr").hidden = !up.svg;
+  $("upload-error").textContent = up.svg ? "" : (up.localError || up.error || "");
+  $("upload-error").hidden = !!up.svg;
+  const relay = !!(up.relaySvg || up.relayError);
+  $("opt-relay").hidden = !relay;
+  $("qr-pair").classList.toggle("two", relay);
+  $("step-qr").textContent = relay && up.relaySvg && up.svg
+    ? "Abra a câmera do celular e aponte para um dos QR Codes"
+    : "Abra a câmera do celular e aponte para o QR Code";
+  $("relay-qr").innerHTML = up.relaySvg || "";
+  $("relay-qr").hidden = !up.relaySvg;
+  $("relay-error").textContent = up.relaySvg ? "" : (up.relayError || "");
+  $("relay-error").hidden = !!up.relaySvg;
 };
 
 for (const b of document.querySelectorAll('[data-action="reset"]')) b.onclick = reset;
@@ -131,6 +139,8 @@ async function reset() {
   $("print-root").innerHTML = "";
   await api("/api/reset", {}).catch(() => {});
   $("upload-qr").innerHTML = '<p class="muted">Preparando…</p>';
+  $("upload-qr").hidden = false;
+  $("opt-relay").hidden = true;
   await refreshState();
   show("welcome");
 }

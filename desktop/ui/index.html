@@ -54,14 +54,25 @@
     <div class="split">
       <div class="card phone">
         <h2>Envie do seu celular</h2>
-        <div class="qr qr-big" id="upload-qr"><p class="muted">Preparando…</p></div>
+        <div class="qr-pair" id="qr-pair">
+          <div class="qr-opt">
+            <h3>No Wi-Fi da loja</h3>
+            <div class="qr qr-big" id="upload-qr"><p class="muted">Preparando…</p></div>
+            <p class="small muted">Celular conectado ao Wi-Fi da loja</p>
+            <p class="notice" id="upload-error" hidden></p>
+          </div>
+          <div class="qr-opt" id="opt-relay" hidden>
+            <h3>No 4G/5G</h3>
+            <div class="qr qr-big" id="relay-qr"></div>
+            <p class="small muted">Pela internet do celular, sem Wi-Fi</p>
+            <p class="notice" id="relay-error" hidden></p>
+          </div>
+        </div>
         <ol class="steps">
-          <li>Abra a câmera do celular e aponte para o QR Code</li>
+          <li id="step-qr">Abra a câmera do celular e aponte para o QR Code</li>
           <li>Toque no link e escolha as fotos ou PDFs</li>
-          <li>Toque em <b>Enviar</b> e aguarde aparecer aqui</li>
+          <li>Aguarde os arquivos aparecerem aqui</li>
         </ol>
-        <p class="small muted">O celular precisa estar no mesmo Wi-Fi da loja.</p>
-        <p class="notice" id="upload-error" hidden></p>
       </div>
       <div class="card items-card">
         <div class="items-head">
