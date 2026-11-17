@@ -262,36 +262,29 @@ struct SelectView: View {
                 subtitle: "\(store.items.count) de \(store.settings.maxItems) itens adicionados"
             )
 
+            // One scrolling page: QR Codes to send from the phone, local buttons, then the files.
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    // The QR Code to send from the phone is the first thing on this screen.
                     PhoneUploadPanel()
                     HStack(spacing: 16) { sourceButtons }
-                }
-            }
-            .frame(maxHeight: store.items.isEmpty ? .infinity : 520)
 
-            if store.items.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "tray")
-                        .kioskFont(48)
-                        .foregroundStyle(.secondary)
-                    Text("Nada adicionado ainda. Envie do celular pelo QR Code ou escolha fotos e PDFs deste aparelho.")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    LazyVGrid(columns: columns, spacing: 20) {
-                        ForEach(store.items) { item in
-                            ItemTile(item: item) { store.remove(item) }
+                    if store.items.isEmpty {
+                        Text("Nada adicionado ainda.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        LazyVGrid(columns: columns, spacing: 20) {
+                            ForEach(store.items) { item in
+                                ItemTile(item: item) { store.remove(item) }
+                            }
                         }
+                        .padding(.vertical, 8)
                     }
-                    .padding(.vertical, 8)
                 }
             }
+            .frame(maxHeight: .infinity)
+
             HStack {
                 Button("Recomeçar") { store.reset() }
                     .buttonStyle(SecondaryButtonStyle())
