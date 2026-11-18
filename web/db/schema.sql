@@ -297,3 +297,14 @@ create index if not exists store_order_items_order_idx on store_order_items(orde
 
 grant select, insert, update, delete on stores, store_customers, customer_sessions, store_orders, store_order_items to printkiosk_app;
 grant usage, select on sequence stores_id_seq, store_customers_id_seq, store_orders_id_seq, store_order_items_id_seq to printkiosk_app;
+
+-- Online store: "esqueci minha senha" links for store customers (only the hash of the token is kept).
+create table if not exists customer_password_resets (
+  token_hash  text primary key,
+  customer_id bigint not null references store_customers(id) on delete cascade,
+  expires_at  timestamptz not null,
+  used_at     timestamptz,
+  created_at  timestamptz not null default now()
+);
+create index if not exists customer_password_resets_customer_idx on customer_password_resets(customer_id);
+grant select, insert, update, delete on customer_password_resets to printkiosk_app;

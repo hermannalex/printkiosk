@@ -110,7 +110,7 @@ export async function syncOrderPayment(orderId: number): Promise<string> {
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-function simpleEmail(title: string, lines: string[], link: { href: string; label: string }) {
+export function simpleEmail(title: string, lines: string[], link: { href: string; label: string }) {
   const html = `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;padding:24px;color:#16202c">
 <h2 style="margin:0 0 12px">${escapeHtml(title)}</h2>
 ${lines.map((l) => `<p style="margin:0 0 10px">${escapeHtml(l)}</p>`).join("\n")}

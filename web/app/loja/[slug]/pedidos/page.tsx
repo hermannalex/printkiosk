@@ -4,9 +4,11 @@ import { sql } from "@/lib/db";
 import { brl, dateTimeBR } from "@/lib/format";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_PILL, openStore } from "@/lib/store";
 import { currentCustomer } from "@/lib/store-auth";
+import { Flash, param, type SearchParams } from "@/components/ui";
 
-export default async function MyOrders({ params }: { params: Promise<{ slug: string }> }) {
+export default async function MyOrders({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: SearchParams }) {
   const { slug } = await params;
+  const query = await searchParams;
   const store = await openStore(slug);
   if (!store) notFound();
   const customer = await currentCustomer(store.id);
@@ -21,6 +23,7 @@ export default async function MyOrders({ params }: { params: Promise<{ slug: str
         <div><h1>Meus pedidos</h1></div>
         <Link className="btn btn-primary" href={`/loja/${store.slug}/pedido/novo`}>Novo pedido</Link>
       </div>
+      <Flash msg={param(query, "msg")} />
       <section className="card">
         {orders.length === 0 ? <p className="empty">Você ainda não fez pedidos nesta loja.</p> : (
           <div className="table-wrap">

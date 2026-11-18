@@ -26,6 +26,7 @@ export default async function CustomerSignIn({ params, searchParams }: { params:
         </div>
         <button className="btn btn-primary" type="submit">Entrar</button>
       </form>
+      <p className="small"><Link href={`/loja/${slug}/esqueci`}>Esqueci minha senha</Link></p>
       <p className="small muted">
         Primeira vez? <Link href={`/loja/${slug}/cadastro${next ? `?next=${encodeURIComponent(next)}` : ""}`}>Criar cadastro</Link>
       </p>
