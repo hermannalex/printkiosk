@@ -1,6 +1,6 @@
 import { one } from "./db";
 
-export type PlanId = "basic" | "pro";
+export type PlanId = "basic" | "pro" | "enterprise";
 
 /** Monthly prices, per kiosk. Pro: the first kiosk of an account pays `cents`, each extra one `extraCents`. */
 export const PLANS: Record<PlanId, { name: string; cents: number; extraCents?: number; summary: string; features: string[] }> = {
@@ -22,10 +22,29 @@ export const PLANS: Record<PlanId, { name: string; cents: number; extraCents?: n
       "Histórico de impressões",
     ],
   },
+  enterprise: {
+    name: "Enterprise",
+    cents: 19900,
+    summary: "Tudo do Pro + loja online de impressão.",
+    features: [
+      "Tudo do Pro",
+      "Página da loja para pedidos pela internet",
+      "Cliente com cadastro, envio de arquivos e Pix online",
+      "Preços por tamanho, cor e adicionais",
+      "Pedidos no painel, com visualização e download",
+    ],
+  },
 };
 
+/** Plans that include the dashboard (Pro features). */
+export const DASHBOARD_PLANS = ["pro", "enterprise"];
+
+export function parsePlan(value: string | null | undefined): PlanId {
+  return value === "pro" || value === "enterprise" ? value : "basic";
+}
+
 export function planName(plan: string | null | undefined): string {
-  return plan === "pro" ? PLANS.pro.name : PLANS.basic.name;
+  return PLANS[parsePlan(plan)].name;
 }
 
 /**

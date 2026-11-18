@@ -51,6 +51,8 @@ export function Shell({
           ["/painel", "Visão geral"],
           ["/painel/quiosques", "Quiosques e assinatura"],
           ["/painel/vouchers", "Vouchers"],
+          ["/painel/loja", "Loja online"],
+          ["/painel/loja/pedidos", "Pedidos online"],
         ];
   return (
     <>
@@ -96,6 +98,7 @@ export function StatusPill({ status }: { status: KioskStatus }) {
 }
 
 export function PlanPill({ plan }: { plan: string }) {
+  if (plan === "enterprise") return <span className="pill pill-pro">Enterprise</span>;
   return plan === "pro" ? <span className="pill pill-pro">Pro</span> : <span className="pill pill-never">Básico</span>;
 }
 

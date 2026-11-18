@@ -41,11 +41,11 @@ export default async function OwnerKiosk({
     sql`select * from subscriptions where kiosk_id = ${kiosk.id} order by created_at desc limit 5`,
   ]);
   const status = kioskStatus(kiosk);
-  const proActive = kiosk.plan === "pro" && (isoOf(kiosk.paid_until) ?? "") >= todayIso();
+  const proActive = (kiosk.plan === "pro" || kiosk.plan === "enterprise") && (isoOf(kiosk.paid_until) ?? "") >= todayIso();
   const activeSub = subscriptions.find((s) => s.status === "authorized" || s.status === "pending");
   const latest = codes[0];
   const proPrice = await monthlyPrice("pro", user.id, Number(kiosk.id));
-  const price = (plan: PlanId) => (plan === "pro" ? proPrice.cents : PLANS.basic.cents);
+  const price = (plan: PlanId) => (plan === "pro" ? proPrice.cents : PLANS[plan].cents);
 
   return (
     <Shell user={user} area="owner" current="/painel/quiosques">

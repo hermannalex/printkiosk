@@ -22,7 +22,7 @@ import { extendKiosk } from "@/lib/kiosks";
 import { normalizePairingCode, normalizeStoreCode, pairingCode } from "@/lib/license";
 import { cancelPreapproval, createPreapproval, mercadoPagoConfigured } from "@/lib/mercadopago";
 import { DEFAULT_CONFIG, sanitizeConfig } from "@/lib/kiosk-config";
-import { PLANS, monthlyPrice, type PlanId } from "@/lib/plans";
+import { PLANS, monthlyPrice, parsePlan } from "@/lib/plans";
 import { audit, clientIp, rateLimit, safeEqual } from "@/lib/security";
 import { sendLoginEmailCode } from "@/lib/mfa";
 
@@ -189,7 +189,7 @@ export async function saveKioskConfig(form: FormData) {
 export async function subscribe(form: FormData) {
   const user = await requireUser();
   const kioskId = Number(text(form, "id", 20));
-  const plan = (text(form, "plano", 10) === "pro" ? "pro" : "basic") as PlanId;
+  const plan = parsePlan(text(form, "plano", 12));
   const back = `/painel/quiosques/${kioskId}`;
 
   const kiosk = await one`select id, name, store_code from kiosks where id = ${kioskId} and owner_id = ${user.id}`;
@@ -273,7 +273,7 @@ export async function masterManualPayment(form: FormData) {
   const back = `/master/quiosques/${kioskId}`;
   const kiosk = await one`select id, owner_id, plan from kiosks where id = ${kioskId}`;
   if (!kiosk) go("/master/quiosques", "erro", "Quiosque não encontrado.");
-  const plan = (kiosk!.plan === "pro" ? "pro" : "basic") as PlanId;
+  const plan = parsePlan(kiosk!.plan);
   const amount = (await monthlyPrice(plan, kiosk!.owner_id ? Number(kiosk!.owner_id) : null, kioskId)).cents * months;
   const result = await extendKiosk(kioskId, { months, source: "manual", byUserId: master.id });
   await sql`insert into payments (kiosk_id, owner_id, amount_cents, status, note)
@@ -286,7 +286,7 @@ export async function masterManualPayment(form: FormData) {
 export async function masterSetPlan(form: FormData) {
   const master = await requireMaster();
   const kioskId = Number(text(form, "id", 20));
-  const plan = text(form, "plano", 10) === "pro" ? "pro" : "basic";
+  const plan = parsePlan(text(form, "plano", 12));
   await sql`update kiosks set plan = ${plan} where id = ${kioskId}`;
   await audit(master.id, "plano_alterado", String(kioskId), plan);
   revalidatePath(`/master/quiosques/${kioskId}`);

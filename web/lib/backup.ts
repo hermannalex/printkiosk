@@ -15,9 +15,9 @@ const KEEP_AT_LEAST = 7;
 const NAME = /^backups\/quioco-[0-9TZ-]+\.qbk$/;
 
 // Short-lived tables, rebuilt by themselves: not worth keeping (and sessions are better lost).
-const SKIP = new Set(["sessions", "login_challenges", "rate_limits", "email_codes", "relay_sessions"]);
+const SKIP = new Set(["sessions", "login_challenges", "rate_limits", "email_codes", "relay_sessions", "customer_sessions"]);
 // Restore order: parents before children (foreign keys). Tables not listed go last.
-const ORDER = ["users", "kiosks", "subscriptions", "payments", "activation_codes", "print_jobs", "audit_log"];
+const ORDER = ["users", "kiosks", "subscriptions", "payments", "activation_codes", "print_jobs", "audit_log", "stores", "store_customers", "store_orders", "store_order_items"];
 
 export type BackupTable = { columns: string[]; rows: unknown[][] };
 export type BackupExport = { format: "quioco-backup"; version: 1; created_at: string; tables: Record<string, BackupTable> };

@@ -16,7 +16,7 @@ export default async function MasterStores({ searchParams }: { searchParams: Sea
     select u.id, u.name, u.email, u.phone, u.role, u.blocked, u.created_at, u.totp_enabled, u.email_mfa_enabled,
            count(k.id)::int as kiosks,
            (count(k.id) filter (where k.paid_until >= ${today}))::int as paying,
-           (count(k.id) filter (where k.paid_until >= ${today} and k.plan = 'pro'))::int as pro,
+           (count(k.id) filter (where k.paid_until >= ${today} and k.plan in ('pro', 'enterprise')))::int as pro,
            coalesce((select sum(amount_cents) from subscriptions s where s.owner_id = u.id and s.status = 'authorized'), 0)::bigint as mrr
     from users u left join kiosks k on k.owner_id = u.id
     group by u.id order by u.created_at desc`;

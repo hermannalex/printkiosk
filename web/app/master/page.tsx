@@ -20,7 +20,7 @@ export default async function MasterOverview({ searchParams }: { searchParams: S
           (select count(*) from subscriptions where status = 'authorized')::int as subs,
           (select count(*) from kiosks)::int as kiosks,
           (select count(*) from kiosks where paid_until >= ${today})::int as paying,
-          (select count(*) from kiosks where paid_until >= ${today} and plan = 'pro')::int as pro,
+          (select count(*) from kiosks where paid_until >= ${today} and plan in ('pro', 'enterprise'))::int as pro,
           (select count(*) from kiosks where paid_until is null and last_seen_at is not null)::int as demo,
           (select count(*) from kiosks where last_seen_at > now() - interval '24 hours')::int as online,
           (select count(*) from users where role = 'owner')::int as owners`,

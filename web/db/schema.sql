@@ -18,7 +18,7 @@ create table if not exists kiosks (
   secret_hash    text,                              -- set on the kiosk's first contact
   owner_id       bigint references users(id) on delete set null,
   name           text not null default 'Quiosque',
-  plan           text not null default 'basic' check (plan in ('basic', 'pro')),
+  plan           text not null default 'basic' check (plan in ('basic', 'pro', 'enterprise')),
   paid_until     date,                              -- last valid day of the subscription
   platform       text,
   app_version    text,
@@ -34,7 +34,7 @@ create table if not exists subscriptions (
   id                bigserial primary key,
   kiosk_id          bigint not null references kiosks(id) on delete cascade,
   owner_id          bigint not null references users(id) on delete cascade,
-  plan              text not null check (plan in ('basic', 'pro')),
+  plan              text not null check (plan in ('basic', 'pro', 'enterprise')),
   amount_cents      int not null,
   status            text not null default 'pending',   -- pending | authorized | paused | cancelled
   mp_preapproval_id text unique,
@@ -219,3 +219,81 @@ create table if not exists relay_sessions (
 );
 create index if not exists relay_sessions_expires_idx on relay_sessions(expires_at);
 grant select, insert, update, delete on relay_sessions to printkiosk_app;
+
+-- ---------------------------------------------------------------- loja online (plano Enterprise)
+-- One online store per owner: a public page where customers sign up, upload files, choose options
+-- and pay with Pix online into the store's own Mercado Pago account.
+create table if not exists stores (
+  id            bigserial primary key,
+  owner_id      bigint not null unique references users(id) on delete cascade,
+  slug          text not null unique,
+  name          text not null,
+  published     boolean not null default false,
+  pickup_info   text not null default '',          -- where/when to pick up, shown to customers
+  config        jsonb not null default '{}'::jsonb, -- sizes, prices and extras
+  mp_token_enc  text,                               -- Mercado Pago Access Token, AES-256-GCM
+  mp_token_tail text,                               -- last 4 characters, to show in the dashboard
+  notify_email  text,                               -- new paid orders go here (default: owner's e-mail)
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+
+-- Customers of one store (name, e-mail, password). Separate from the dashboard users.
+create table if not exists store_customers (
+  id            bigserial primary key,
+  store_id      bigint not null references stores(id) on delete cascade,
+  name          text not null,
+  email         text not null,
+  password_hash text not null,
+  created_at    timestamptz not null default now(),
+  unique (store_id, email)
+);
+
+create table if not exists customer_sessions (
+  id_hash     text primary key,
+  customer_id bigint not null references store_customers(id) on delete cascade,
+  expires_at  timestamptz not null,
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists store_orders (
+  id            bigserial primary key,
+  store_id      bigint not null references stores(id) on delete cascade,
+  customer_id   bigint references store_customers(id) on delete set null,
+  code          text not null unique,               -- short public code, e.g. "K7P4QX"
+  status        text not null default 'awaiting_payment'
+                check (status in ('awaiting_payment', 'paid', 'printing', 'ready', 'delivered', 'cancelled', 'expired')),
+  total_cents   int not null,
+  note          text not null default '',
+  mp_payment_id text,
+  pix_qr        text,                                -- Pix copia e cola
+  pix_qr_base64 text,
+  pay_expires_at timestamptz,
+  paid_at       timestamptz,
+  ready_at      timestamptz,
+  delivered_at  timestamptz,
+  files_deleted_at timestamptz,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+create index if not exists store_orders_store_idx on store_orders(store_id, created_at desc);
+create index if not exists store_orders_customer_idx on store_orders(customer_id, created_at desc);
+
+create table if not exists store_order_items (
+  id          bigserial primary key,
+  order_id    bigint not null references store_orders(id) on delete cascade,
+  pathname    text not null,                         -- private Vercel Blob path
+  file_name   text not null,
+  kind        text not null check (kind in ('pdf', 'image')),
+  size_bytes  bigint not null,
+  pages       int not null,
+  paper       text not null,                         -- size id from the store config (a4, a3…)
+  color       boolean not null,
+  copies      int not null,
+  extras      jsonb not null default '[]'::jsonb,    -- ids of the chosen extras
+  total_cents int not null
+);
+create index if not exists store_order_items_order_idx on store_order_items(order_id);
+
+grant select, insert, update, delete on stores, store_customers, customer_sessions, store_orders, store_order_items to printkiosk_app;
+grant usage, select on sequence stores_id_seq, store_customers_id_seq, store_orders_id_seq, store_order_items_id_seq to printkiosk_app;

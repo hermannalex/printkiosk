@@ -55,6 +55,13 @@ export async function latestCode(kioskId: number) {
 /** True when the owner has at least one kiosk on the Pro plan with a paid month. */
 export async function ownerHasPro(ownerId: number): Promise<boolean> {
   const row = await one`select 1 from kiosks
-                        where owner_id = ${ownerId} and plan = 'pro' and paid_until >= ${todayIso()} limit 1`;
+                        where owner_id = ${ownerId} and plan in ('pro', 'enterprise') and paid_until >= ${todayIso()} limit 1`;
+  return !!row;
+}
+
+/** True when the owner has at least one kiosk on the Enterprise plan with a paid month (online store). */
+export async function ownerHasEnterprise(ownerId: number): Promise<boolean> {
+  const row = await one`select 1 from kiosks
+                        where owner_id = ${ownerId} and plan = 'enterprise' and paid_until >= ${todayIso()} limit 1`;
   return !!row;
 }

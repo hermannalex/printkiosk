@@ -76,6 +76,7 @@ export default async function MasterKiosk({
               <select id="plano" name="plano" defaultValue={kiosk.plan}>
                 <option value="basic">Básico</option>
                 <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
               </select>
             </div>
             <button className="btn" type="submit">Alterar plano</button>
