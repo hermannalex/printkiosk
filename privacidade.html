@@ -40,6 +40,7 @@ td { color: var(--muted); }
   <p>Fotos e PDFs enviados pelo celular do cliente, ou escolhidos no próprio aparelho, ficam só no aparelho do quiosque enquanto a impressão é preparada. Ao terminar, cancelar ou voltar ao início, eles são apagados. O cliente não precisa se cadastrar nem informar nome, telefone ou e-mail.</p>
   <p><b>Envio pelo Wi-Fi da loja:</b> o arquivo vai do celular direto para o quiosque, pela rede local, sem passar por servidor algum.</p>
   <p><b>Envio pelo 4G/5G (só no imprime.ai):</b> o arquivo vai do celular para um armazenamento privado do imprime.ai (Vercel Blob) e de lá para o quiosque, que o apaga do servidor logo depois de recebê-lo. O que não for recebido é apagado quando o atendimento termina ou, no máximo, 30 minutos depois de o QR Code ser mostrado. O link de cada atendimento é aleatório e só o quiosque que o criou consegue baixar os arquivos. Não usamos esses arquivos para nada além de levá-los até o quiosque.</p>
+  <p><b>Loja online (plano Enterprise):</b> o cliente da loja cria um cadastro com nome, e-mail e senha (guardada só como hash, nunca em texto). Os arquivos de cada pedido ficam num armazenamento privado do imprime.ai (Vercel Blob), visíveis só para o próprio cliente e para a loja, e são apagados 7 dias depois de o pedido ser entregue ou cancelado; envios que não viram pedido, e pedidos não pagos, são apagados em até 1 dia. O Pix é feito direto na conta Mercado Pago da loja, que é a responsável pelos dados do pedido; o Access Token da loja fica guardado criptografado.</p>
 
   <h2>2. imprime-free</h2>
   <p>O imprime-free imprime de graça, sem pagamento, sem conta e sem painel online. Ele não coleta, não armazena fora do aparelho e não compartilha dados pessoais. Os anúncios exibidos são do próprio imprime.ai: um texto e um QR Code que leva a este site. Não usamos redes de anúncios, rastreamento ou identificadores de publicidade.</p>
@@ -56,10 +57,10 @@ td { color: var(--muted); }
   <p>Os pagamentos por Pix e cartão são processados pelo <b>Mercado Pago</b>, na conta da própria loja; não recebemos nem guardamos dados de cartão. O token do Mercado Pago fica guardado criptografado no aparelho do quiosque.</p>
 
   <h2>4. Com quem compartilhamos</h2>
-  <p>Somente com os fornecedores necessários para o serviço funcionar: Mercado Pago (pagamentos), Vercel e Neon (hospedagem do painel, banco de dados e passagem temporária dos arquivos enviados pelo 4G/5G), Resend (envio dos códigos de verificação por e-mail) e Google (entrar com Google). Não vendemos dados.</p>
+  <p>Somente com os fornecedores necessários para o serviço funcionar: Mercado Pago (pagamentos), Vercel e Neon (hospedagem do painel, banco de dados e passagem temporária dos arquivos enviados pelo 4G/5G e da loja online), Resend (envio dos códigos de verificação por e-mail) e Google (entrar com Google). Não vendemos dados.</p>
 
   <h2>5. Por quanto tempo</h2>
-  <p>Os arquivos dos clientes são apagados ao fim de cada impressão; os enviados pelo 4G/5G saem do servidor assim que chegam ao quiosque, e no máximo em 30 minutos. Os dados da conta e o histórico de impressões ficam enquanto a conta existir; cópias de segurança criptografadas são mantidas por até 35 dias.</p>
+  <p>Os arquivos dos clientes são apagados ao fim de cada impressão; os enviados pelo 4G/5G saem do servidor assim que chegam ao quiosque, e no máximo em 30 minutos; os da loja online, 7 dias depois de o pedido ser entregue ou cancelado. Os dados da conta e o histórico de impressões ficam enquanto a conta existir; cópias de segurança criptografadas são mantidas por até 35 dias.</p>
 
   <h2>6. Seus direitos (LGPD)</h2>
   <p>O dono da conta pode pedir acesso, correção ou exclusão dos seus dados escrevendo para <b>privacidade@imprime.ai</b>. Responderemos em até 15 dias.</p>

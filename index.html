@@ -139,7 +139,10 @@ section { padding: 88px 0; }
 @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
 
 /* pricing */
-.plans { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 880px; }
+.plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 980px) { .plans { grid-template-columns: 1fr; max-width: 560px; } }
+.plan.ent { border: 2px solid var(--ink); position: relative; }
+.plan.ent::before { content: "Novo · Loja online"; position: absolute; top: -13px; left: 28px; background: var(--ink); color: var(--bg); font: 500 12px/1 var(--mono); padding: 7px 10px; border-radius: 999px; letter-spacing: .04em; }
 .plan { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 30px; display: grid; gap: 18px; align-content: start; }
 .plan.pro { border: 2px solid var(--brand); position: relative; }
 .plan.pro::before { content: "Mais completo"; position: absolute; top: -13px; left: 28px; background: var(--brand); color: #fff; font: 500 12px/1 var(--mono); padding: 7px 10px; border-radius: 999px; letter-spacing: .04em; }
@@ -553,6 +556,18 @@ footer { border-top: 1px solid var(--line); padding: 28px 0 max(28px, env(safe-a
           </ul>
           <p class="extra">Cada quiosque a mais na mesma conta: R$ 9,99/mês.</p>
           <a class="btn btn-brand" href="https://imprime-ai.vercel.app/cadastro">Começar no Pro</a>
+        </div>
+        <div class="plan ent">
+          <div><h3>Enterprise</h3><p class="extra">Pro + sua loja de impressão na internet.</p></div>
+          <div class="price">R$ 199 <small>/mês</small></div>
+          <ul>
+            <li>Tudo do Pro</li>
+            <li>Página da loja: o cliente se cadastra e envia fotos e PDF de casa</li>
+            <li>Você define formatos, preço em P&amp;B e colorido e adicionais</li>
+            <li>Pix online direto na sua conta, taxa 0% do imprime.ai</li>
+            <li>Pedidos no painel: ver, baixar e avisar quando estiver pronto</li>
+          </ul>
+          <a class="btn btn-line" href="https://imprime-ai.vercel.app/cadastro">Começar no Enterprise</a>
         </div>
       </div>
       <p class="lead" style="margin-top:24px"><b style="color:var(--ink)">Teste antes de assinar:</b> cada aparelho imprime 10 vezes de graça. Depois disso, ele continua funcionando na versão gratuita, com a marca d'água <b style="color:var(--ink)">imprime.ai</b> nas folhas, até você assinar.</p>
