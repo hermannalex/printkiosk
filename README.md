@@ -18,7 +18,7 @@ Estação de impressão self-service para a loja. O cliente escolhe fotos ou PDF
 - Configurações protegidas por PIN (padrão 1234): impressora, preço por página, token do Mercado Pago, Wi-Fi da loja (SSID e senha), limites e tempos
 - Pagamento por Pix, cartão e aproximação (Apple Pay, Google Pay) na maquininha Point do Mercado Pago, ou voucher de crédito criado no painel
 - Token do Mercado Pago guardado criptografado no aparelho (Keychain / Android Keystore / DPAPI do Windows / Chaves do macOS), nunca no código
-- **Assinatura mensal** (Básico R$ 19,99 por quiosque; Pro R$ 49,99 + R$ 9,99 por quiosque adicional), liberada por código de ativação, com **10 impressões grátis** por aparelho e, depois, impressão com marca d'água
+- **Assinatura mensal** (Básico R$ 24,90 por quiosque; Pro R$ 49,90 + R$ 9,99 por quiosque adicional), liberada por código de ativação, com **10 impressões grátis** por aparelho e, depois, impressão com marca d'água
 
 ## Compilar
 
@@ -56,7 +56,7 @@ Preço e contato exibidos no app: `License.swift` (iOS) e `LicenseCodec.kt` (And
 
 Endereço: https://quioco.vercel.app (código em `web/`, Next.js na Vercel + Postgres na Neon).
 
-- **Lojas**: criam conta, adicionam o quiosque pelo código da loja (Configurações → Assinatura), assinam pelo Mercado Pago (Básico R$ 19,99/mês por quiosque; Pro R$ 49,99/mês pelo primeiro quiosque + R$ 9,99/mês por quiosque adicional, com painel) e veem impressões, cópias, páginas e faturamento.
+- **Lojas**: criam conta, adicionam o quiosque pelo código da loja (Configurações → Assinatura), assinam pelo Mercado Pago (Básico R$ 24,90/mês por quiosque; Pro R$ 49,90/mês pelo primeiro quiosque + R$ 9,99/mês por quiosque adicional, com painel) e veem impressões, cópias, páginas e faturamento.
 - **Master**: conta com o e-mail `MASTER_EMAIL`, criada em `/cadastro` com o `MASTER_SETUP_CODE`. Vê todas as lojas, gera códigos de ativação, registra pagamentos manuais, muda plano e bloqueia contas.
 - **Apps**: enviam as impressões para `/api/kiosk/sync` ao abrir, a cada 30 minutos e após cada impressão, e aplicam sozinhos o código de ativação que o painel devolver.
 

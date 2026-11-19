@@ -6,13 +6,13 @@ export type PlanId = "basic" | "pro" | "enterprise";
 export const PLANS: Record<PlanId, { name: string; cents: number; extraCents?: number; summary: string; features: string[] }> = {
   basic: {
     name: "Básico",
-    cents: 1999,
+    cents: 2490,
     summary: "O app do quiosque liberado.",
     features: ["Impressões ilimitadas no quiosque", "Pix e envio pelo celular", "Renovação automática do código"],
   },
   pro: {
     name: "Pro",
-    cents: 4999,
+    cents: 4990,
     extraCents: 999,
     summary: "O app + o dashboard da loja.",
     features: [
@@ -24,7 +24,7 @@ export const PLANS: Record<PlanId, { name: string; cents: number; extraCents?: n
   },
   enterprise: {
     name: "Enterprise",
-    cents: 19900,
+    cents: 9990,
     summary: "Tudo do Pro + loja online de impressão.",
     features: [
       "Tudo do Pro",

@@ -14,7 +14,7 @@ import (
 // "PK1-" + base64url(payload + ECDSA P-256 signature), payload = version(1) + store ID(5) + last day(2).
 const (
 	demoPrints     = 10
-	priceLabel     = "a partir de R$ 19,99/mês"
+	priceLabel     = "a partir de R$ 24,90/mês"
 	vendorEmail    = "alex@somainfo.com.br"
 	licensePubKey  = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvKAdZ2rVE+ExL+GWj0OJcDS05O4NnOBt8hAXeUANqC/aX1J2RW9cpXoDr78Xag57U0tm1Vo2oO90bSO95fiYYw=="
 	base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
