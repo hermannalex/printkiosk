@@ -38,7 +38,7 @@ async function main() {
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   // O 402 do passo 8 é proposital (assinatura vencida simulada): o navegador registra a resposta como erro de rede.
-  page.on("console", (m) => { if (m.type() === "error" && !/status of 402/.test(m.text())) errors.push(m.text()); });
+  page.on("console", (m) => { if (m.type() === "error" && !/status of (402|404)/.test(m.text())) errors.push(m.text()); });
 
   // ---------- servidor simulado
   const srv = {
@@ -46,14 +46,32 @@ async function main() {
     active: false, pixReady: false, validUntil: null, plan: "basic",
     config: null, configVersion: 0,
     paid: false, createError: null, nextId: 100,
+    relay: { opens: [], pending: [], deleted: [], closes: 0, expired: false, auth: [] },
   };
+  const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
   const QR = "00020126580014br.gov.bcb.pix0136123e4567-e89b-12d3-a456-426614174000520400005303986540510.005802BR5913LOJA DO TESTE6009SAO PAULO62070503***63041D3D";
   await context.route(`${API}/**`, async (route) => {
     const request = route.request();
-    const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "Content-Type", "access-control-allow-methods": "POST, OPTIONS" };
+    const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "Content-Type, Authorization", "access-control-allow-methods": "GET, POST, DELETE, OPTIONS" };
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const url = new URL(request.url());
     const body = JSON.parse(request.postData() || "{}");
+    if (url.pathname.startsWith("/api/relay/session")) {
+      const jsonR = (status, data) => route.fulfill({ status, headers: { ...cors, "content-type": "application/json" }, body: JSON.stringify(data) });
+      if (url.pathname === "/api/relay/session" && request.method() === "POST") {
+        srv.relay.opens.push(body);
+        return jsonR(200, { code: "abcd234567", secret: "s".repeat(32), url: `${API}/e/abcd234567`, expiresInSeconds: 1800 });
+      }
+      srv.relay.auth.push(request.headers()["authorization"]);
+      if (srv.relay.expired) return jsonR(404, { error: "Sessão encerrada ou expirada." });
+      if (url.pathname.endsWith("/files")) return jsonR(200, { files: srv.relay.pending.map((f) => ({ pathname: f.pathname, name: f.name, size: 1 })), expiresAt: new Date(Date.now() + 1.8e6).toISOString() });
+      if (url.pathname.endsWith("/file")) {
+        const p = url.searchParams.get("p");
+        if (request.method() === "DELETE") { srv.relay.deleted.push(p); srv.relay.pending = srv.relay.pending.filter((f) => f.pathname !== p); return jsonR(200, { ok: true }); }
+        return route.fulfill({ status: 200, headers: { ...cors, "content-type": "image/png" }, body: PNG });
+      }
+      if (request.method() === "DELETE") { srv.relay.closes++; return jsonR(200, { ok: true }); }
+    }
     const json = (status, data) => route.fulfill({ status, headers: { ...cors, "content-type": "application/json" }, body: JSON.stringify(data) });
     if (url.pathname === "/api/kiosk/sync") {
       srv.syncs.push(body);
@@ -292,6 +310,35 @@ async function main() {
   await page.click("[data-screen=settings] [data-go=welcome]");
   await waitScreen("welcome");
   check("desconectada: início volta ao limite grátis", /Versão gratuita/.test(await text("#free-note")), await text("#free-note"));
+
+  // ---------- 12. envio pelo celular (QR Code)
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const opens0 = srv.relay.opens.length;
+  await page.click("#btn-start");
+  await waitScreen("select");
+  await page.waitForFunction(() => !document.querySelector("#phone-card").hidden, null, { timeout: 10000 });
+  check("celular: abre sessão com o nome da estação", srv.relay.opens.length === opens0 + 1 && typeof srv.relay.opens[0].kioskName === "string");
+  await page.locator("#phone-qr").screenshot({ path: path.join(SHOTS, "06-qr-celular.png") });
+  const phoneQr = decodeQr(path.join(SHOTS, "06-qr-celular.png"));
+  check("celular: o QR leva à página de envio", phoneQr === null || phoneQr === `${API}/e/abcd234567`, phoneQr ?? "sem OpenCV");
+  srv.relay.pending.push({ pathname: "relay/abcd234567/x1y2z3/minha foto.png", name: "minha foto.png" });
+  await page.waitForFunction(() => document.querySelectorAll("#items-list .item").length === 1, null, { timeout: 12000 });
+  check("celular: arquivo enviado aparece na lista", (await text("#items-list")).includes("minha foto.png"));
+  check("celular: arquivo apagado do servidor depois de salvo", srv.relay.deleted.length === 1);
+  check("celular: pedidos levam o segredo da sessão", srv.relay.auth.every((a) => a === "Bearer " + "s".repeat(32)));
+  await page.screenshot({ path: path.join(SHOTS, "07-selecao-com-qr.png") });
+  srv.relay.expired = true;
+  await page.waitForFunction(() => !document.querySelector("#phone-renew").hidden, null, { timeout: 12000 });
+  check("celular: sessão vencida oferece novo código", /expirou/.test(await text("#phone-status")));
+  srv.relay.expired = false;
+  await page.click("#phone-renew");
+  await page.waitForFunction(() => !document.querySelector("#phone-card").hidden && document.querySelector("#phone-renew").hidden);
+  check("celular: novo código abre outra sessão", srv.relay.opens.length === opens0 + 2);
+  const closesBefore = srv.relay.closes;
+  await page.click("[data-screen=select] [data-go=welcome]");
+  await waitScreen("welcome");
+  await page.waitForTimeout(300);
+  check("celular: voltar ao início encerra a sessão", srv.relay.closes > closesBefore && (await page.isHidden("#phone-card")));
 
   // ---------- 11. celular
   await page.setViewportSize({ width: 390, height: 780 });

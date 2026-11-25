@@ -54,6 +54,16 @@
         <input id="input-pdfs" type="file" accept="application/pdf,.pdf" multiple hidden>
       </div>
 
+      <aside class="phone-card" id="phone-card" aria-label="Enviar pelo celular" hidden>
+        <canvas id="phone-qr" width="1" height="1" aria-hidden="true"></canvas>
+        <div class="phone-text">
+          <strong>Enviar pelo celular</strong>
+          <span>Aponte a câmera do celular para este código e escolha as fotos ou PDFs.</span>
+          <span class="small" id="phone-status" role="status" aria-live="polite"></span>
+          <button class="btn btn-ghost" id="phone-renew" type="button" hidden>Gerar novo código</button>
+        </div>
+      </aside>
+
       <div class="dropzone" id="dropzone">Ou arraste fotos e PDFs para esta área</div>
 
       <p class="notice" id="select-notice" role="status" aria-live="polite"></p>

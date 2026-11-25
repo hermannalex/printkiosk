@@ -1,10 +1,11 @@
+import { preflight, withCors } from "@/lib/kiosk-cors";
 import { cleanupRelay, createRelaySession } from "@/lib/relay";
 import { ipFromHeaders, rateLimit } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
 /** The kiosk opens a session for "Do celular". Body: {"kioskName": "..."}. No account needed (imprime-free too). */
-export async function POST(request: Request) {
+async function innerPOST(request: Request) {
   const ip = ipFromHeaders(request.headers);
   if (!(await rateLimit(`relay:${ip}`, 120, 3600))) {
     return Response.json({ error: "Muitas tentativas. Aguarde alguns minutos." }, { status: 429 });
@@ -21,4 +22,12 @@ export async function POST(request: Request) {
     cleanupRelay().catch((error) => console.error("relay cleanup", error));
   }
   return Response.json(session, { headers: { "Cache-Control": "no-store" } });
+}
+
+export async function POST(request: Request) {
+  return withCors(request, await innerPOST(request));
+}
+
+export function OPTIONS(request: Request) {
+  return preflight(request);
 }

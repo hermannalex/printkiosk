@@ -353,3 +353,11 @@ dialog input {
     object-fit: contain;
   }
 }
+
+/* Envio pelo celular */
+.phone-card { display: flex; align-items: center; gap: 20px; padding: 16px 20px; border: 1px solid var(--line, #d8dde6); border-radius: 16px; background: var(--card, #fff); }
+.phone-card[hidden] { display: none; }
+.phone-card canvas { width: 156px; height: 156px; flex: none; image-rendering: pixelated; border-radius: 8px; }
+.phone-text { display: flex; flex-direction: column; gap: 6px; min-width: 0; overflow-wrap: anywhere; align-items: flex-start; }
+.phone-text .small { color: var(--muted); }
+@media (max-width: 560px) { .phone-card { flex-direction: column; text-align: center; } .phone-text { align-items: center; } }

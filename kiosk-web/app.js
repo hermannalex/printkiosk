@@ -188,6 +188,8 @@ function show(name) {
   for (const section of $$("[data-screen]")) section.hidden = section.dataset.screen !== name;
   window.scrollTo(0, 0);
   touch();
+  if (name === "select" && !phone.session && !phone.opening) phoneOpen();
+  else if (name === "select") phoneSchedule();
   const heading = document.querySelector(`[data-screen="${name}"] h1, [data-screen="${name}"] h2`);
   heading?.setAttribute("tabindex", "-1");
   heading?.focus({ preventScroll: true });
@@ -241,6 +243,7 @@ function renderWifi() {
 function resetToWelcome() {
   clearTimeout(state.doneTimer);
   abandonPayment();
+  phoneClose();
   state.paid = null;
   for (const item of state.items) if (item.kind === "image") URL.revokeObjectURL(item.preview);
   state.items = [];
@@ -334,6 +337,113 @@ async function loadItem(file) {
     closePdf(doc);
   }
 }
+
+// ---------------------------------------------------------------- envio pelo celular
+
+const PHONE_POLL_MS = 3000;
+const phone = { session: null, timer: null, opening: false, run: 0, openedAt: 0, polling: false };
+
+function phoneStatus(message) {
+  $("#phone-status").textContent = message ?? "";
+}
+
+async function phoneOpen() {
+  if (phone.opening || state.screen !== "select") return;
+  phone.opening = true;
+  const run = ++phone.run;
+  $("#phone-renew").hidden = true;
+  phoneStatus("Preparando o código…");
+  try {
+    const session = await cloud.relay.open(settings.kioskName);
+    if (run !== phone.run) { cloud.relay.close(session).catch(() => {}); return; }
+    phone.session = session;
+    phone.openedAt = Date.now();
+    const drawn = qrCanvas(session.url, 420, "M");
+    const canvas = $("#phone-qr");
+    if (!drawn) throw new Error("qr");
+    canvas.width = drawn.width;
+    canvas.height = drawn.height;
+    canvas.getContext("2d").drawImage(drawn, 0, 0);
+    $("#phone-card").hidden = false;
+    phoneStatus("Aguardando o envio…");
+    phoneSchedule();
+  } catch {
+    // Sem internet ou servidor fora do ar: o envio pelo celular some, o resto da estação segue.
+    $("#phone-card").hidden = true;
+  } finally {
+    phone.opening = false;
+  }
+}
+
+function phoneSchedule() {
+  clearTimeout(phone.timer);
+  phone.timer = setTimeout(phonePoll, PHONE_POLL_MS);
+}
+
+async function phonePoll() {
+  const session = phone.session;
+  if (!session || state.screen !== "select") return;
+  if (phone.polling) return phoneSchedule();
+  phone.polling = true;
+  const run = phone.run;
+  try {
+    const { files } = await cloud.relay.list(session);
+    if (run !== phone.run) return;
+    if (files.length) await phoneReceive(session, files, run);
+    phoneSchedule();
+  } catch (error) {
+    if (run !== phone.run) return;
+    if (error.status === 404) {
+      // Sessão expirou (30 minutos): pede para gerar outro código.
+      phone.session = null;
+      phoneStatus("O código expirou.");
+      $("#phone-renew").hidden = false;
+      $("#phone-qr").getContext("2d").clearRect(0, 0, 9999, 9999);
+    } else {
+      phoneSchedule();
+    }
+  } finally {
+    phone.polling = false;
+  }
+}
+
+async function phoneReceive(session, files, run) {
+  const room = settings.maxItems - state.items.length;
+  if (room <= 0) {
+    phoneStatus(`Limite de ${settings.maxItems} arquivos atingido. Imprima estes primeiro.`);
+    return;
+  }
+  files = files.slice(0, room);
+  phoneStatus(files.length === 1 ? "Recebendo 1 arquivo…" : `Recebendo ${files.length} arquivos…`);
+  const received = [];
+  for (const file of files) {
+    try {
+      const blob = await cloud.relay.download(session, file);
+      received.push(new File([blob], file.name, { type: blob.type || (/\.pdf$/i.test(file.name) ? "application/pdf" : "") }));
+      await cloud.relay.remove(session, file).catch(() => {});
+    } catch {
+      // Tenta de novo na próxima rodada.
+    }
+  }
+  if (run !== phone.run || !received.length) return;
+  await addFiles(received);
+  phoneStatus(received.length === 1 ? "Recebido 1 arquivo do celular." : `Recebidos ${received.length} arquivos do celular.`);
+}
+
+/** Fecha a sessão e apaga o que ainda estiver no servidor (volta ao início, fim do atendimento). */
+function phoneClose() {
+  phone.run++;
+  clearTimeout(phone.timer);
+  const session = phone.session;
+  phone.session = null;
+  $("#phone-card").hidden = true;
+  if (session) cloud.relay.close(session).catch(() => {});
+}
+
+$("#phone-renew").addEventListener("click", () => {
+  phoneClose();
+  phoneOpen();
+});
 
 async function addFiles(fileList) {
   const files = [...fileList]; // copy now: the input is cleared right after this call

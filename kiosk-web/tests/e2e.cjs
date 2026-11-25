@@ -29,7 +29,8 @@ async function main() {
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
-  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  // O envio pelo celular tenta abrir sessão no servidor; sem internet (como neste teste) a falha de rede é esperada e silenciosa.
+  page.on("console", (m) => { if (m.type() === "error" && !/ERR_(TUNNEL|INTERNET|NAME|CONNECTION)/.test(m.text())) errors.push(m.text()); });
 
   // window.print() bloqueia em modo manual; aqui conta as folhas e dispara 'afterprint' como se o diálogo fechasse.
   const installPrintStub = () => page.evaluate(() => {

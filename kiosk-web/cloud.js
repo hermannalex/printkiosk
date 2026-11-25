@@ -95,3 +95,39 @@ export const pix = {
   cancel: (link, id) => pixCall(link, "cancel", { id }),
   consume: (link, id) => pixCall(link, "consume", { id }),
 };
+
+// ---------------------------------------------------------------- envio pelo celular (QR Code)
+// O celular do cliente abre a página do imprime.ai e manda as fotos/PDFs direto para um armário privado
+// no servidor; esta estação consulta, baixa e apaga cada arquivo. A sessão vale 30 minutos.
+
+async function relayFetch(session, path, options = {}, timeoutMs = 60_000) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE}/api/relay/session/${session.code}${path}`, {
+      ...options,
+      headers: { Authorization: `Bearer ${session.secret}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch {
+    throw new CloudError("Sem conexão com o servidor do imprime.ai.");
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new CloudError(data?.error || `Erro ${response.status} no servidor.`, response.status);
+  }
+  return response;
+}
+
+export const relay = {
+  /** Abre uma sessão: { code, secret, url, expiresInSeconds }. */
+  open: (kioskName) => post("/api/relay/session", { kioskName }),
+  /** Arquivos que já chegaram: { files: [{ pathname, name, size }], expiresAt }. */
+  list: async (session) => (await relayFetch(session, "/files", {}, 15_000)).json(),
+  download: async (session, file) =>
+    (await relayFetch(session, `/file?p=${encodeURIComponent(file.pathname)}`)).blob(),
+  remove: (session, file) =>
+    relayFetch(session, `/file?p=${encodeURIComponent(file.pathname)}`, { method: "DELETE" }, 15_000),
+  /** Encerra a sessão e apaga o que sobrou no servidor. */
+  close: (session) => relayFetch(session, "", { method: "DELETE" }, 15_000),
+};

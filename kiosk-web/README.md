@@ -7,9 +7,9 @@ Há dois modos:
 - **Gratuito** (padrão, como o **imprime-free** do Android): até **20 cópias por dia**, sem pagamento e sem precisar de conta.
 - **Conectado ao painel, com assinatura ativa**: sem limite diário e com **cobrança por Pix**, como o app Android pago. Cada estação web é um quiosque do painel, com a própria assinatura (Básico, Pro…), histórico de impressões e configurações (preço por página, cópias, Wi-Fi…) feitas no painel.
 
-Em qualquer modo dá para mostrar o **Wi-Fi da loja** na tela inicial, com QR Code para o cliente conectar o celular.
+Em qualquer modo a tela de escolha mostra o **QR Code "Enviar pelo celular"**: o cliente aponta a câmera, abre uma página do imprime.ai e manda fotos e PDFs, que aparecem na lista em poucos segundos (sessão de 30 minutos, arquivos apagados do servidor assim que a estação os baixa; é preciso internet na estação). Também dá para mostrar o **Wi-Fi da loja** na tela inicial, com QR Code para o cliente conectar o celular.
 
-Esta versão **não** tem envio pelo celular (QR Code de upload), maquininha Point nem 4G/5G. Essas partes ficam no app Android completo, porque precisam de servidor local ou de uma impressora na mesma rede.
+Esta versão **não** tem maquininha Point nem Wi-Fi local (servidor na rede da loja). Essas partes ficam no app Android completo, porque precisam de servidor local ou de uma impressora na mesma rede.
 
 ## Como rodar
 

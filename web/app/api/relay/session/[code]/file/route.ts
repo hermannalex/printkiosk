@@ -1,3 +1,4 @@
+import { preflight, withCors } from "@/lib/kiosk-cors";
 import { del, get } from "@vercel/blob";
 import { authorizedRelaySession, relayAuthorizedOnly, relayPrefix } from "@/lib/relay";
 
@@ -13,7 +14,7 @@ async function target(request: Request, code: string) {
 }
 
 /** The kiosk downloads one file (?p=<pathname>). */
-export async function GET(request: Request, { params }: { params: Promise<{ code: string }> }) {
+async function innerGET(request: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
   const pathname = await target(request, code);
   if (!pathname) return relayAuthorizedOnly();
@@ -31,10 +32,22 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
 }
 
 /** The kiosk deletes a file right after it is saved on the device. */
-export async function DELETE(request: Request, { params }: { params: Promise<{ code: string }> }) {
+async function innerDELETE(request: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
   const pathname = await target(request, code);
   if (!pathname) return relayAuthorizedOnly();
   await del(pathname);
   return Response.json({ ok: true });
+}
+
+export async function GET(request: Request, ctx: { params: Promise<{ code: string }> }) {
+  return withCors(request, await innerGET(request, ctx));
+}
+
+export async function DELETE(request: Request, ctx: { params: Promise<{ code: string }> }) {
+  return withCors(request, await innerDELETE(request, ctx));
+}
+
+export function OPTIONS(request: Request) {
+  return preflight(request);
 }
