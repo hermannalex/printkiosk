@@ -180,6 +180,7 @@ input, select, textarea { -webkit-user-select: text; user-select: text; }
 
 .notice { margin: 0; min-height: 1.4em; font-weight: 600; color: var(--danger); white-space: pre-line; }
 .notice.ok { color: var(--ok); }
+.notice.info { color: var(--muted); }
 
 /* ---------- review ---------- */
 .summary { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
@@ -226,6 +227,35 @@ input, select, textarea { -webkit-user-select: text; user-select: text; }
   color: var(--ink);
 }
 .small { margin: 0; color: var(--muted); font-size: .95rem; }
+
+/* ---------- wifi card, link card, pix ---------- */
+.wifi {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  align-self: center;
+  max-width: 100%;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 12px 18px 12px 12px;
+}
+.wifi canvas { width: 132px; height: 132px; flex: none; image-rendering: pixelated; border-radius: 8px; }
+.wifi-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.wifi-text .small { color: var(--muted); }
+
+.form h3 { margin: 0; font-size: 1.2rem; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+#link-on, #link-off { display: flex; flex-direction: column; gap: 16px; }
+.codes { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.codes div { background: var(--blue-soft); border-radius: 14px; padding: 12px; text-align: center; }
+.codes dt { color: var(--muted); font-size: .9rem; }
+.codes dd { margin: 4px 0 0; font-size: 1.6rem; font-weight: 800; letter-spacing: .08em; font-variant-numeric: tabular-nums; -webkit-user-select: text; user-select: text; }
+.steps { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 4px; }
+
+.pay-box { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.pay-box canvas { width: min(300px, 80vw); height: min(300px, 80vw); image-rendering: pixelated; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+#pay-timer { text-align: center; font-variant-numeric: tabular-nums; }
 
 /* ---------- dialog (PIN) ---------- */
 dialog {
@@ -288,6 +318,8 @@ dialog input {
   .add-row { grid-template-columns: 1fr; }
   .totals { grid-template-columns: 1fr 1fr; }
   .totals div:last-child { grid-column: 1 / -1; }
+  .codes { grid-template-columns: 1fr; }
+  .wifi { flex-direction: column; text-align: center; }
   .item { grid-template-columns: 64px 1fr; }
   .item .remove { grid-column: 1 / -1; justify-self: stretch; }
   .thumb { width: 64px; height: 80px; }

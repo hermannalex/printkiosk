@@ -1,14 +1,16 @@
 // Cache do app para abrir mesmo sem internet. Sempre tenta a rede primeiro,
 // então uma atualização chega sozinha quando há conexão.
-const CACHE = "imprime-kiosk-v1";
+const CACHE = "imprime-kiosk-v2";
 const SHELL = [
   "./",
   "index.html",
   "styles.css",
   "app.js",
+  "cloud.js",
   "manifest.webmanifest",
   "vendor/pdf.min.mjs",
   "vendor/pdf.worker.min.mjs",
+  "vendor/qr.mjs",
   "icons/icon-192.png",
   "icons/icon-512.png",
 ];

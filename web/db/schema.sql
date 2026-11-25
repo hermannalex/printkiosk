@@ -308,3 +308,25 @@ create table if not exists customer_password_resets (
 );
 create index if not exists customer_password_resets_customer_idx on customer_password_resets(customer_id);
 grant select, insert, update, delete on customer_password_resets to printkiosk_app;
+
+-- Web station (Chrome/Chromebook): Pix charged by the server with the owner's own Mercado Pago token,
+-- because a browser cannot call the Mercado Pago API (no CORS) and a token on a page would be public.
+alter table kiosks add column if not exists mp_token_enc text;    -- sealed (AES-256-GCM), see sealToken()
+alter table kiosks add column if not exists mp_token_tail text;   -- last 4 characters, for the panel
+
+create table if not exists kiosk_pix (
+  id            bigserial primary key,
+  kiosk_id      bigint not null references kiosks(id) on delete cascade,
+  amount_cents  int not null check (amount_cents > 0),
+  sheets        int not null,
+  mp_payment_id text,
+  status        text not null default 'pending' check (status in ('pending', 'approved', 'expired', 'cancelled')),
+  pix_qr        text,
+  expires_at    timestamptz not null,
+  created_at    timestamptz not null default now(),
+  paid_at       timestamptz,
+  used_at       timestamptz                          -- set when the station starts printing: a payment prints once
+);
+create index if not exists kiosk_pix_kiosk_idx on kiosk_pix(kiosk_id, created_at desc);
+grant select, insert, update, delete on kiosk_pix to printkiosk_app;
+grant usage, select on sequence kiosk_pix_id_seq to printkiosk_app;

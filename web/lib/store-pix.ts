@@ -14,7 +14,7 @@ const API = "https://api.mercadopago.com";
 
 export const cleanToken = (token: string) => token.replace(/\s+/g, "").replace(/^Bearer/i, "");
 
-async function mp(token: string, path: string, init: RequestInit = {}): Promise<any> {
+export async function mp(token: string, path: string, init: RequestInit = {}): Promise<any> {
   const response = await fetch(API + path, {
     ...init,
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init.headers ?? {}) },
@@ -38,7 +38,7 @@ export async function checkStoreToken(token: string): Promise<string> {
 }
 
 /** "2026-11-18T14:30:00.000-03:00": the format Mercado Pago expects for date_of_expiration. */
-function brasiliaIso(date: Date): string {
+export function brasiliaIso(date: Date): string {
   const local = new Date(date.getTime() - 3 * 3_600_000);
   return local.toISOString().replace("Z", "-03:00");
 }

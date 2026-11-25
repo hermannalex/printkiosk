@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { cancelSubscription, renameKiosk, subscribe } from "../../../actions";
+import { cancelSubscription, removeKioskPixToken, renameKiosk, saveKioskPixToken, subscribe } from "../../../actions";
 import { requireUser } from "@/lib/auth";
 import { one, sql } from "@/lib/db";
 import { ago, brl, dateBR, dateTimeBR } from "@/lib/format";
@@ -155,6 +155,38 @@ export default async function OwnerKiosk({
           )}
         </div>
       </section>
+
+      {kiosk.platform === "web" && (
+        <section className="card stack">
+          <div className="card-head">
+            <h2>Pix da estação web</h2>
+            <span className={`pill ${kiosk.mp_token_enc ? "pill-active" : "pill-never"}`}>{kiosk.mp_token_enc ? "Configurado" : "Pendente"}</span>
+          </div>
+          <p className="muted small">
+            Esta estação roda no navegador, então o Pix é cobrado pelo servidor com o <b>Access Token de produção</b> do seu Mercado Pago.
+            O token é guardado criptografado e não aparece de novo. O dinheiro cai direto na sua conta.{" "}
+            <a href="https://imprime.ai/mercado-pago.html" target="_blank" rel="noopener">Como gerar o token</a>
+          </p>
+          {kiosk.mp_token_enc && <p>Token cadastrado, terminado em <b className="mono">…{kiosk.mp_token_tail}</b>.</p>}
+          <form action={saveKioskPixToken} className="stack">
+            <input type="hidden" name="id" value={kiosk.id} />
+            <div className="field">
+              <label htmlFor="token">{kiosk.mp_token_enc ? "Trocar o token" : "Access Token"}</label>
+              <input id="token" name="token" type="password" autoComplete="off" spellCheck={false} placeholder="APP_USR-…" required maxLength={300} />
+            </div>
+            <div><button className="btn btn-primary" type="submit">Salvar token</button></div>
+          </form>
+          {kiosk.mp_token_enc && (
+            <form action={removeKioskPixToken}>
+              <input type="hidden" name="id" value={kiosk.id} />
+              <button className="btn btn-sm btn-danger" type="submit">Remover token</button>
+            </form>
+          )}
+          <p className="muted small">
+            O Pix só é cobrado com assinatura ativa e com o preço por página definido em <b>Configurações do quiosque</b>, logo abaixo.
+          </p>
+        </section>
+      )}
 
       <KioskConfigForm kiosk={kiosk} from="painel" />
 
