@@ -24,6 +24,8 @@ import { cancelPreapproval, createPreapproval, mercadoPagoConfigured } from "@/l
 import { DEFAULT_CONFIG, sanitizeConfig } from "@/lib/kiosk-config";
 import { PLANS, monthlyPrice, parsePlan } from "@/lib/plans";
 import { audit, clientIp, rateLimit, safeEqual } from "@/lib/security";
+import { sealToken } from "@/lib/store";
+import { checkStoreToken, cleanToken } from "@/lib/store-pix";
 import { sendLoginEmailCode } from "@/lib/mfa";
 
 /** Trimmed form value, cut to `max` characters so oversized input never reaches the database. */
@@ -184,6 +186,43 @@ export async function saveKioskConfig(form: FormData) {
   await audit(user.id, "config_alterada", row!.store_code, `${brl(config.pricePerPageCents!)} por página, até ${config.maxCopies} cópias`);
   revalidatePath(back);
   go(back, "msg", "Configurações salvas. O quiosque aplica na próxima conexão (em até 30 minutos, ou ao abrir o app).");
+}
+
+/** Mercado Pago token of the owner, kept sealed on the server so the web station can charge Pix. */
+export async function saveKioskPixToken(form: FormData) {
+  const user = await requireUser();
+  const id = Number(text(form, "id", 20));
+  const back = `/painel/quiosques/${id}`;
+  if (!(await rateLimit(`kiosk-token:${user.id}`, 10, 3600))) go(back, "erro", TOO_MANY);
+  const kiosk = await one`select id, store_code from kiosks where id = ${id} and owner_id = ${user.id}`;
+  if (!kiosk) go("/painel/quiosques", "erro", "Quiosque não encontrado.");
+  const token = cleanToken(String(form.get("token") ?? "").slice(0, 300));
+  if (!/^(APP_USR|TEST)-[\w-]{20,}$/.test(token)) {
+    go(back, "erro", "Isso não parece um Access Token do Mercado Pago. Ele começa com APP_USR-.");
+  }
+  if (token.startsWith("TEST-")) go(back, "erro", "Use o Access Token de produção (APP_USR-), não o de teste.");
+  let account = "";
+  try {
+    account = await checkStoreToken(token);
+  } catch (error) {
+    go(back, "erro", `O Mercado Pago recusou este token. Confira se copiou o Access Token de produção inteiro. (${error instanceof Error ? error.message : ""})`);
+  }
+  await sql`update kiosks set mp_token_enc = ${sealToken(token)}, mp_token_tail = ${token.slice(-4)} where id = ${id}`;
+  await audit(user.id, "quiosque_token_salvo", kiosk!.store_code, `final ${token.slice(-4)}`);
+  revalidatePath(back);
+  go(back, "msg", `Token salvo e conferido: conta ${account}. Os Pix desta estação caem direto nela.`);
+}
+
+export async function removeKioskPixToken(form: FormData) {
+  const user = await requireUser();
+  const id = Number(text(form, "id", 20));
+  const back = `/painel/quiosques/${id}`;
+  const row = await one`update kiosks set mp_token_enc = null, mp_token_tail = null
+                        where id = ${id} and owner_id = ${user.id} returning store_code`;
+  if (!row) go("/painel/quiosques", "erro", "Quiosque não encontrado.");
+  await audit(user.id, "quiosque_token_removido", row!.store_code, null);
+  revalidatePath(back);
+  go(back, "msg", "Token removido. A estação deixa de cobrar por Pix.");
 }
 
 export async function subscribe(form: FormData) {

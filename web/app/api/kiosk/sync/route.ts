@@ -3,6 +3,7 @@ import { one, sql } from "@/lib/db";
 import { isoOf, todayIso } from "@/lib/format";
 import { sanitizeConfig } from "@/lib/kiosk-config";
 import { hashSecret, normalizeStoreCode } from "@/lib/license";
+import { preflight, withCors } from "@/lib/kiosk-cors";
 import { ipFromHeaders, rateLimit, safeEqual } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,15 @@ const int = (value: unknown, max = 1_000_000) => {
  * activation code so a paid month reaches the kiosk without anyone typing it.
  */
 export async function POST(request: Request) {
+  return withCors(request, await handle(request));
+}
+
+/** Answers the web station's permission check (CORS); the mobile apps never send it. */
+export function OPTIONS(request: Request) {
+  return preflight(request);
+}
+
+async function handle(request: Request): Promise<Response> {
   // A kiosk calls every 30 minutes and after each print; anything far above that is abuse.
   const ip = ipFromHeaders(request.headers);
   if (!(await rateLimit(`sync:ip:${ip}`, 600, 60 * 60))) {
@@ -59,11 +69,11 @@ export async function POST(request: Request) {
   }
 
   const secretHash = hashSecret(secret);
-  let kiosk = await one`select id, secret_hash, plan, config, config_version from kiosks where store_code = ${storeCode}`;
+  let kiosk = await one`select id, secret_hash, plan, config, config_version, (mp_token_enc is not null) as has_pix from kiosks where store_code = ${storeCode}`;
   if (!kiosk) {
     kiosk = await one`insert into kiosks (store_code, secret_hash) values (${storeCode}, ${secretHash})
                       on conflict (store_code) do update set store_code = excluded.store_code
-                      returning id, secret_hash, plan, config, config_version`;
+                      returning id, secret_hash, plan, config, config_version, (mp_token_enc is not null) as has_pix`;
   } else if (!kiosk.secret_hash) {
     // Registered from the dashboard before the kiosk ever connected: bind this device now.
     await sql`update kiosks set secret_hash = ${secretHash} where id = ${kiosk.id}`;
@@ -120,6 +130,9 @@ export async function POST(request: Request) {
     activationCode: code?.code ?? null,
     validUntil: code ? isoOf(code.valid_until) : null,
     plan: kiosk.plan,
+    // For the web station: a paid month is running, and the owner has set up the Pix token in the dashboard.
+    active: !!code,
+    pixReady: !!kiosk.has_pix,
     // Settings saved in the dashboard: the kiosk applies them when configVersion is newer than its own.
     config: Number(kiosk.config_version) > 0 ? sanitizeConfig(kiosk.config) : null,
     configVersion: Number(kiosk.config_version ?? 0),
