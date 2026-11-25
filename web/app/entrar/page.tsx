@@ -27,6 +27,7 @@ export default async function SignIn({ searchParams }: { searchParams: SearchPar
           </div>
           <button className="btn btn-primary" type="submit">Entrar</button>
         </form>
+        <p className="small"><Link href="/entrar/esqueci">Esqueci minha senha</Link></p>
         <p className="small muted">
           Ainda não tem conta? <Link href="/cadastro">Criar conta da loja</Link>
         </p>

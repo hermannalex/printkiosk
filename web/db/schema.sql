@@ -330,3 +330,14 @@ create table if not exists kiosk_pix (
 create index if not exists kiosk_pix_kiosk_idx on kiosk_pix(kiosk_id, created_at desc);
 grant select, insert, update, delete on kiosk_pix to printkiosk_app;
 grant usage, select on sequence kiosk_pix_id_seq to printkiosk_app;
+
+-- Portal: "esqueci minha senha" links for owners and the master account (only the hash of the token is kept).
+create table if not exists user_password_resets (
+  token_hash text primary key,
+  user_id    bigint not null references users(id) on delete cascade,
+  expires_at timestamptz not null,
+  used_at    timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists user_password_resets_user_idx on user_password_resets(user_id);
+grant select, insert, update, delete on user_password_resets to printkiosk_app;
