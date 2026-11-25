@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>imprime.ai · Estação web</title>
+  <meta name="description" content="Estação de impressão self-service: fotos e PDFs direto para a impressora, no Chrome.">
+  <meta name="theme-color" content="#1D6FE0">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app">
+
+    <!-- 1. Início -->
+    <section class="screen" data-screen="welcome" aria-labelledby="welcome-title">
+      <header class="hero">
+        <p class="kicker">AUTO SERVIÇO</p>
+        <h1 id="welcome-title" data-station>Estação de Impressão</h1>
+        <p class="lead">Imprima aqui</p>
+        <p class="tagline">Fotos e PDFs, direto para a impressora</p>
+      </header>
+      <button class="btn btn-primary btn-xl" id="btn-start" type="button">Toque para imprimir</button>
+      <p class="notice" id="welcome-notice" role="status" aria-live="polite"></p>
+      <p class="free-note" id="free-note"></p>
+      <p class="pin-warning" id="pin-warning" hidden>PIN padrão ainda em uso. Troque em Configurações.</p>
+      <footer class="page-foot">
+        <a class="ad" href="https://imprime.ai/?origem=kiosk-web" target="_blank" rel="noopener">imprime.ai · versão gratuita</a>
+        <button class="btn btn-ghost" id="btn-open-settings" type="button">Configurações</button>
+      </footer>
+    </section>
+
+    <!-- 2. Escolha dos arquivos -->
+    <section class="screen" data-screen="select" aria-labelledby="select-title" hidden>
+      <header class="topbar">
+        <button class="btn btn-ghost" type="button" data-go="welcome">← Início</button>
+        <h2 id="select-title">Escolha o que imprimir</h2>
+      </header>
+
+      <div class="add-row">
+        <label class="btn btn-secondary btn-xl" for="input-images">+ Fotos</label>
+        <input id="input-images" type="file" accept="image/*" multiple hidden>
+        <label class="btn btn-secondary btn-xl" for="input-pdfs">+ PDF</label>
+        <input id="input-pdfs" type="file" accept="application/pdf,.pdf" multiple hidden>
+      </div>
+
+      <div class="dropzone" id="dropzone">Ou arraste fotos e PDFs para esta área</div>
+
+      <p class="notice" id="select-notice" role="status" aria-live="polite"></p>
+      <p class="empty" id="items-empty">Nenhum arquivo ainda.</p>
+      <ul class="items" id="items-list"></ul>
+
+      <footer class="bottombar">
+        <span class="count" id="items-count"></span>
+        <button class="btn btn-primary btn-xl" id="btn-to-review" type="button">Continuar</button>
+      </footer>
+    </section>
+
+    <!-- 3. Conferência e cópias -->
+    <section class="screen" data-screen="review" aria-labelledby="review-title" hidden>
+      <header class="topbar">
+        <button class="btn btn-ghost" type="button" data-go="select">← Voltar</button>
+        <h2 id="review-title">Confira sua impressão</h2>
+      </header>
+      <p class="lead-small">Depois, escolha a impressora na janela de impressão e toque em Imprimir.</p>
+
+      <ul class="summary" id="review-list"></ul>
+
+      <div class="copies">
+        <span class="label">Cópias</span>
+        <div class="stepper">
+          <button class="btn btn-secondary step" id="copies-minus" type="button" aria-label="Menos cópias">−</button>
+          <output id="copies-value">1</output>
+          <button class="btn btn-secondary step" id="copies-plus" type="button" aria-label="Mais cópias">+</button>
+        </div>
+      </div>
+
+      <dl class="totals">
+        <div><dt>Páginas por cópia</dt><dd id="pages-per-copy">0</dd></div>
+        <div><dt>Folhas no total</dt><dd id="total-sheets">0</dd></div>
+        <div><dt>Restam hoje</dt><dd id="left-today">0</dd></div>
+      </dl>
+
+      <p class="notice" id="review-notice" role="status" aria-live="polite"></p>
+
+      <footer class="bottombar">
+        <button class="btn btn-primary btn-xl" id="btn-print" type="button">Imprimir</button>
+      </footer>
+    </section>
+
+    <!-- 4. Confirmação depois da janela de impressão -->
+    <section class="screen" data-screen="check" aria-labelledby="check-title" hidden>
+      <header class="hero">
+        <h2 id="check-title">A impressão saiu?</h2>
+        <p class="lead-small">Só contamos as cópias do dia quando você confirma. Se cancelou a janela de impressão, toque em “Não saiu”.</p>
+      </header>
+      <div class="stack">
+        <button class="btn btn-primary btn-xl" id="btn-printed" type="button">Sim, saiu</button>
+        <button class="btn btn-secondary btn-xl" id="btn-not-printed" type="button">Não saiu</button>
+      </div>
+    </section>
+
+    <!-- 5. Concluído -->
+    <section class="screen" data-screen="done" aria-labelledby="done-title" hidden>
+      <header class="hero">
+        <h2 id="done-title">Pronto!</h2>
+        <p class="lead-small">Retire suas páginas na impressora. Esta tela volta ao início em alguns segundos.</p>
+      </header>
+      <button class="btn btn-primary btn-xl" id="btn-new" type="button">Nova impressão</button>
+    </section>
+
+    <!-- 6. Configurações (protegidas por PIN) -->
+    <section class="screen" data-screen="settings" aria-labelledby="settings-title" hidden>
+      <header class="topbar">
+        <button class="btn btn-ghost" type="button" data-go="welcome">← Voltar</button>
+        <h2 id="settings-title">Configurações</h2>
+      </header>
+
+      <form class="form" id="settings-form" autocomplete="off">
+        <label>
+          <span>Nome da estação</span>
+          <input name="kioskName" maxlength="40" required>
+        </label>
+        <label>
+          <span>Voltar ao início depois de</span>
+          <select name="idleSeconds">
+            <option value="30">30 segundos</option>
+            <option value="60">1 minuto</option>
+            <option value="90">1 min 30 s</option>
+            <option value="120">2 minutos</option>
+            <option value="300">5 minutos</option>
+          </select>
+        </label>
+        <label>
+          <span>Cópias máximas por pedido</span>
+          <input name="maxCopies" type="number" min="1" max="50" inputmode="numeric" required>
+        </label>
+        <label>
+          <span>Arquivos máximos por pedido</span>
+          <input name="maxItems" type="number" min="1" max="50" inputmode="numeric" required>
+        </label>
+        <label>
+          <span>Novo PIN (4 a 8 números, opcional)</span>
+          <input name="newPin" type="password" inputmode="numeric" pattern="[0-9]{4,8}" maxlength="8">
+        </label>
+        <p class="notice" id="settings-notice" role="status" aria-live="polite"></p>
+        <button class="btn btn-primary btn-xl" type="submit">Salvar</button>
+      </form>
+
+      <button class="btn btn-secondary" id="btn-reset-quota" type="button">Zerar a contagem de cópias de hoje</button>
+      <p class="small">Versão gratuita: até 20 cópias por dia, contadas neste navegador.</p>
+    </section>
+
+  </main>
+
+  <!-- Janela do PIN -->
+  <dialog id="pin-dialog" aria-labelledby="pin-title">
+    <form method="dialog" id="pin-form">
+      <h2 id="pin-title">Digite o PIN</h2>
+      <input id="pin-input" type="password" inputmode="numeric" maxlength="8" autocomplete="off" required>
+      <p class="notice" id="pin-notice" role="status"></p>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" type="button" id="pin-cancel">Cancelar</button>
+        <button class="btn btn-primary" type="submit" id="pin-ok">Entrar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Tela de espera enquanto a página é preparada para impressão -->
+  <div class="busy" id="busy" hidden>
+    <div class="busy-card">
+      <div class="spinner" aria-hidden="true"></div>
+      <p id="busy-text">Preparando a impressão…</p>
+    </div>
+  </div>
+
+  <!-- Só aparece na impressão -->
+  <div id="print-area" aria-hidden="true"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
