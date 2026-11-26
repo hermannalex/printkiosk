@@ -1152,3 +1152,14 @@ if (link.enabled) void runSync();
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
+
+$("#silent-copy").addEventListener("click", async () => {
+  const text = `chrome --kiosk --kiosk-printing ${location.origin}/`;
+  $("#silent-cmd").textContent = text;
+  try {
+    await navigator.clipboard.writeText(text);
+    $("#silent-copy").textContent = "Copiado";
+  } catch {
+    $("#silent-copy").textContent = "Selecione o texto acima e copie";
+  }
+});

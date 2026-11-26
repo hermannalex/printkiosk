@@ -193,6 +193,19 @@
         <button class="btn btn-primary btn-xl" type="submit">Salvar</button>
       </form>
 
+      <section class="form" id="silent-card" aria-labelledby="silent-title">
+        <h3 id="silent-title">Imprimir sem janela (última impressora)</h3>
+        <p class="small">Uma página da internet não pode pular a janela de impressão sozinha: é uma regra de segurança do navegador. O próprio Chrome tem um modo para isso, e a estação funciona com ele.</p>
+        <ol class="small">
+          <li>Imprima uma vez normalmente, escolha a impressora, desmarque “Cabeçalhos e rodapés” e confirme. O Chrome guarda essa escolha.</li>
+          <li>Feche o Chrome e abra de novo com o modo de impressão direta:
+            <br><code id="silent-cmd">chrome --kiosk --kiosk-printing https://app.imprime.ai</code>
+            <br><button class="btn btn-ghost" id="silent-copy" type="button">Copiar comando</button></li>
+          <li>Pronto: ao tocar em Imprimir, a folha sai direto na última impressora usada, sem janela.</li>
+        </ol>
+        <p class="small">No atalho do Windows, acrescente <code>--kiosk-printing</code> ao final do campo “Destino”. No Chromebook gerenciado, o administrador ativa isso no console do Google (política “Imprimir sem confirmação”, para impressoras já cadastradas).</p>
+      </section>
+
       <section class="form" id="link-card" aria-labelledby="link-title">
         <h3 id="link-title">Painel e assinatura (Pix)</h3>
         <p class="small" id="link-status"></p>

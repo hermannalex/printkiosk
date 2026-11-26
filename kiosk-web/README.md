@@ -38,6 +38,8 @@ No Chromebook, abra o endereço e use *Instalar* ou o modo tela cheia. Para deix
 
 ## Impressão
 
+**Sem janela, na última impressora:** nenhuma página consegue pular o diálogo de impressão por conta própria. Abra o Chrome com `--kiosk-printing` (comando acima): ele imprime direto na última impressora usada e com as últimas opções. Passos: imprima uma vez normalmente escolhendo a impressora e desmarcando “Cabeçalhos e rodapés”, feche o Chrome e abra de novo com a opção. A tela de Configurações tem esse passo a passo e o comando para copiar. Neste modo o app continua perguntando “A impressão saiu?” ao final.
+
 O app abre a janela de impressão do navegador, com uma folha A4 por página (fotos centralizadas, PDFs página a página). Cada cópia repete o pedido inteiro.
 
 - O navegador **não informa** se a folha saiu. Por isso, depois da janela de impressão, o app pergunta **“A impressão saiu?”**. Só conta as cópias do dia quando a resposta é *Sim*. Se a pessoa cancelou a janela, ela toca em *Não saiu* e nada é contado.
