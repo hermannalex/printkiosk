@@ -5,7 +5,7 @@ A versão Android da estação de impressão self-service. O fluxo é o mesmo do
 1. O cliente toca em **Toque para imprimir** e escolhe fotos ou PDFs.
 2. Ele escolhe quantas cópias quer e vê o valor total.
 3. Ele paga com **Pix** lendo o QR Code gerado pelo Mercado Pago.
-4. Assim que o pagamento é confirmado, abre a janela de impressão do Android.
+4. Assim que o pagamento é confirmado, imprime: direto na impressora de rede configurada ou, sem ela, pela janela de impressão do Android.
 
 Feito em Kotlin com Jetpack Compose. Funciona em Android 8.0 ou mais recente.
 
@@ -29,10 +29,14 @@ Feito em Kotlin com Jetpack Compose. Funciona em Android 8.0 ou mais recente.
 
 ## Diferenças em relação ao iPad
 
-O Android não deixa um app comum imprimir direto numa impressora salva. Toda impressão passa pela **janela de impressão do Android**, e o cliente toca em **Imprimir** nela. Essa janela lembra a última impressora usada. Por isso:
+O Android não deixa um app comum usar uma impressora salva do sistema sem mostrar a janela de impressão. Por isso o app tem **dois modos**:
 
-- Para escolher a impressora da loja, faça uma página de teste (em Configurações › Impressora) e selecione a impressora na janela.
-- O app não consegue verificar se a impressora está ligada antes de cobrar. Se o cliente pagar e a impressão falhar, ele pode tentar de novo sem pagar outra vez.
+- **Impressão direta (sem janela)**: em Configurações › Impressora, toque em *Procurar impressoras* (ou digite o endereço, como `192.168.0.20`), toque em *Testar conexão* e depois em *Imprimir página de teste*. O app monta o PDF (A4) e envia direto para a impressora pelo protocolo IPP, na porta 631, sem nenhuma janela. Serve para a maioria das impressoras de rede feitas desde 2015 que aceitam PDF; o teste avisa se a sua não aceita. Impressoras que exigem senha ou só aceitam conexão segura (ipps) não funcionam neste modo. O tablet precisa estar na mesma rede da impressora. Esse endereço fica só no tablet.
+- **Janela de impressão do Android** (campo em branco): o cliente toca em **Imprimir** na janela, que lembra a última impressora usada. Faça uma página de teste e escolha a impressora da loja nela.
+
+Nos dois modos, o app não consegue verificar se a impressora está ligada antes de cobrar. No modo direto ele acompanha o trabalho por cerca de 40 segundos e avisa se a impressora o descartar. Se o cliente pagar e a impressão falhar, ele pode tentar de novo sem pagar outra vez.
+
+No iPad/iPhone a impressão já é direta (AirPrint na impressora salva) e o app de computador já imprime direto na impressora padrão.
 
 ## Compilar no Android Studio
 
@@ -103,6 +107,8 @@ O APK gerado assim é de depuração e serve para uso na loja. Para publicar na 
 
 | Arquivo | Função |
 | --- | --- |
+| `IppClient.kt` | Impressão direta: envia o PDF à impressora por IPP (sockets simples, testável na JVM) |
+| `PrinterDiscovery.kt` | Procura impressoras de rede (Bonjour `_ipp._tcp`) |
 | `MainActivity.kt` | Entrada do app; tela acesa, detector de toques, janela de impressão |
 | `KioskViewModel.kt` | Estado da sessão, itens, fluxo de pagamento, impressão e reinício |
 | `PixService.kt` | API do Mercado Pago: criar cobrança Pix, consultar status, cancelar |

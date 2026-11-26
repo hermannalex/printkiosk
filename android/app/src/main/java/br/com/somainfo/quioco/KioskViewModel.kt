@@ -740,7 +740,92 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
 
     // region Printing
 
+    /** The printer is taking the job: counts the print (voucher, demo, free quota, history) and shows "done". */
+    private fun printSucceeded() {
+        paidPrinted = true
+        val demo = !Edition.FREE && license !is LicenseState.Active
+        if (demo) {
+            licenseStore.recordDemoPrint()
+            refreshLicense()
+        }
+        recordPrint(success = true, demo = demo)
+        if (Edition.FREE) {
+            freeQuota.add(totalPages)
+            freeLeft = freeQuota.left()
+        }
+        step = KioskStep.Finished(true, null)
+    }
+
+    /** Staff-set network printer for printing without Android's print window; null = use the window. */
+    private fun directTarget(): Ipp.Target? = Ipp.parseTarget(settings.printerAddress)
+
+    /** Sends the job as a PDF straight to the saved printer over IPP and follows it until it is done. */
+    private fun sendDirect(target: Ipp.Target) {
+        step = KioskStep.Printing
+        val adapter = KioskPrintAdapter(app, items.toList(), copies, watermarked)
+        val jobName = settings.kioskName
+        viewModelScope.launch {
+            val error: String? = withContext(Dispatchers.IO) {
+                try {
+                    val pdf = java.io.ByteArrayOutputStream().also { adapter.writePdf(it, directPrintAttributes()) }.toByteArray()
+                    val jobId = Ipp.printPdf(target, pdf, jobName)
+                    var failure: String? = null
+                    if (jobId != null) {
+                        // Watch for up to ~40 s: a job the printer drops should not read as "printed".
+                        for (i in 0 until 20) {
+                            delay(2_000)
+                            val state = runCatching { Ipp.jobState(target, jobId) }.getOrNull()
+                            if (state == Ipp.JOB_COMPLETED) break
+                            if (state == Ipp.JOB_ABORTED || state == Ipp.JOB_CANCELED) {
+                                failure = "A impressora não conseguiu imprimir. Verifique papel e tinta, e tente de novo."
+                                break
+                            }
+                        }
+                    }
+                    failure
+                } catch (e: Ipp.IppException) {
+                    e.message ?: "A impressora não respondeu."
+                } catch (e: Exception) {
+                    "Não foi possível preparar a impressão. Tente de novo."
+                }
+            }
+            if (error == null) {
+                printSucceeded()
+            } else {
+                recordPrint(success = false, demo = license !is LicenseState.Active)
+                step = KioskStep.Finished(false, error)
+            }
+        }
+    }
+
+    // Staff settings: checking the saved printer address.
+    var printerCheck by mutableStateOf<String?>(null)
+    var printerChecking by mutableStateOf(false)
+
+    fun checkPrinter() {
+        val target = directTarget()
+        if (target == null) {
+            printerCheck = "Digite o endereço da impressora, por exemplo 192.168.0.20."
+            return
+        }
+        printerChecking = true
+        printerCheck = null
+        viewModelScope.launch {
+            printerCheck = withContext(Dispatchers.IO) {
+                try {
+                    val probe = Ipp.probe(target)
+                    if (probe.acceptsPdf) "Encontrada: ${probe.name}. Pronta para imprimir direto."
+                    else "Encontrada: ${probe.name}, mas ela não aceita PDF. Deixe o endereço em branco para usar a janela de impressão do Android."
+                } catch (e: Ipp.IppException) {
+                    e.message ?: "A impressora não respondeu."
+                }
+            }
+            printerChecking = false
+        }
+    }
+
     fun sendToPrinter() {
+        directTarget()?.let { return sendDirect(it) }
         val launcher = printLauncher
         if (launcher == null) {
             step = KioskStep.Finished(false, "Não foi possível abrir a impressão. Tente de novo.")
@@ -761,18 +846,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                 delay(1_000)
                 when {
                     job.isQueued || job.isStarted || job.isCompleted -> {
-                        paidPrinted = true
-                        val demo = !Edition.FREE && license !is LicenseState.Active
-                        if (demo) {
-                            licenseStore.recordDemoPrint()
-                            refreshLicense()
-                        }
-                        recordPrint(success = true, demo = demo)
-                        if (Edition.FREE) {
-                            freeQuota.add(totalPages)
-                            freeLeft = freeQuota.left()
-                        }
-                        step = KioskStep.Finished(true, null)
+                        printSucceeded()
                         return@launch
                     }
                     job.isCancelled -> {
@@ -794,7 +868,24 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun printTestPage() {
-        printLauncher?.invoke(TestPageAdapter(app, settings.kioskName), "${settings.kioskName} – teste")
+        val target = directTarget()
+        if (target == null) {
+            printLauncher?.invoke(TestPageAdapter(app, settings.kioskName), "${settings.kioskName} – teste")
+            return
+        }
+        printerChecking = true
+        printerCheck = null
+        viewModelScope.launch {
+            printerCheck = withContext(Dispatchers.IO) {
+                try {
+                    Ipp.printPdf(target, testPagePdf(app, settings.kioskName), "${settings.kioskName} – teste")
+                    "Página de teste enviada para a impressora."
+                } catch (e: Ipp.IppException) {
+                    e.message ?: "A impressora não respondeu."
+                }
+            }
+            printerChecking = false
+        }
     }
 
     // endregion

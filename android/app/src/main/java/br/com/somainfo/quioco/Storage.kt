@@ -29,6 +29,7 @@ class SettingsStore(context: Context) {
             paymentTimeoutSeconds = prefs.getInt("paymentTimeoutSeconds", d.paymentTimeoutSeconds),
             wifiName = prefs.getString("wifiName", d.wifiName) ?: d.wifiName,
             wifiPassword = prefs.getString("wifiPassword", d.wifiPassword) ?: d.wifiPassword,
+            printerAddress = prefs.getString("printerAddress", d.printerAddress) ?: d.printerAddress,
         )
     }
 
@@ -44,6 +45,7 @@ class SettingsStore(context: Context) {
             .putInt("paymentTimeoutSeconds", s.paymentTimeoutSeconds)
             .putString("wifiName", s.wifiName)
             .putString("wifiPassword", s.wifiPassword)
+            .putString("printerAddress", s.printerAddress)
             .apply()
     }
 }

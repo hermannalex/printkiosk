@@ -34,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -237,11 +238,46 @@ private fun SettingsForm(vm: KioskViewModel, onPinScreen: () -> Unit, onUnpinScr
 
         Section("Impressora") {
             Text(
-                "No Android, a impressora é escolhida na janela de impressão, que lembra a última usada. " +
-                    "Imprima uma página de teste e escolha a impressora da loja nessa janela.",
+                "Para imprimir sem nenhuma janela, informe a impressora de rede (IPP) da loja. O app envia o PDF direto " +
+                    "para ela, em A4. Com o campo em branco, vale a janela de impressão do Android, que lembra a última impressora usada.",
                 style = MaterialTheme.typography.bodyLarge,
             )
-            OutlinedButton(onClick = { vm.printTestPage() }) { Text("Imprimir página de teste") }
+            OutlinedTextField(
+                value = settings.printerAddress,
+                onValueChange = { value -> vm.updateSettings { it.copy(printerAddress = value.trim().take(120)) } },
+                label = { Text("Endereço da impressora (ex.: 192.168.0.20)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            val discovery = remember { PrinterDiscovery(vm.getApplication<android.app.Application>()) }
+            var searching by remember { mutableStateOf(false) }
+            val found = remember { mutableStateListOf<PrinterDiscovery.Found>() }
+            androidx.compose.runtime.DisposableEffect(Unit) { onDispose { discovery.stop() } }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    enabled = !searching,
+                    onClick = {
+                        found.clear()
+                        searching = true
+                        discovery.start(
+                            onFound = { item -> if (found.none { it.address == item.address }) found.add(item) },
+                            onFinished = { searching = false },
+                        )
+                    },
+                ) { Text(if (searching) "Procurando…" else "Procurar impressoras") }
+                OutlinedButton(enabled = !vm.printerChecking, onClick = { vm.checkPrinter() }) { Text("Testar conexão") }
+            }
+            found.forEach { item ->
+                OutlinedButton(
+                    onClick = {
+                        vm.updateSettings { it.copy(printerAddress = item.address) }
+                        found.clear()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("${item.name} · ${item.address}") }
+            }
+            vm.printerCheck?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
+            OutlinedButton(enabled = !vm.printerChecking, onClick = { vm.printTestPage() }) { Text("Imprimir página de teste") }
         }
 
         Section("Wi-Fi da loja") {

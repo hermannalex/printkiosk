@@ -82,31 +82,41 @@ class KioskPrintAdapter(
 
         // Rendering many pages takes a while, so it runs off the main thread.
         Thread {
-            val document = PrintedPdfDocument(context, printAttributes)
-            val renderers = mutableMapOf<File, Pair<ParcelFileDescriptor, PdfRenderer>>()
             try {
-                for ((index, ref) in pages.withIndex()) {
-                    if (cancellationSignal.isCanceled) {
-                        mainHandler.post { callback.onWriteCancelled() }
-                        return@Thread
-                    }
-                    val page = document.startPage(index)
-                    drawPage(page.canvas, page.info.contentRect, ref, renderers)
-                    if (watermark) Watermark.stamp(page.canvas, page.info.contentRect)
-                    document.finishPage(page)
+                val finished = FileOutputStream(destination.fileDescriptor).use { writePdf(it, printAttributes, cancellationSignal) }
+                mainHandler.post {
+                    if (finished) callback.onWriteFinished(arrayOf(PageRange.ALL_PAGES)) else callback.onWriteCancelled()
                 }
-                FileOutputStream(destination.fileDescriptor).use { document.writeTo(it) }
-                mainHandler.post { callback.onWriteFinished(arrayOf(PageRange.ALL_PAGES)) }
             } catch (e: Exception) {
                 mainHandler.post { callback.onWriteFailed(e.message) }
-            } finally {
-                renderers.values.forEach { (descriptor, renderer) ->
-                    renderer.close()
-                    descriptor.close()
-                }
-                document.close()
             }
         }.start()
+    }
+
+    /**
+     * Renders every page into one PDF. Used by Android's print window and by direct IPP printing.
+     * Returns false if [cancellationSignal] was triggered (nothing is written then).
+     */
+    fun writePdf(out: java.io.OutputStream, printAttributes: PrintAttributes, cancellationSignal: CancellationSignal? = null): Boolean {
+        val document = PrintedPdfDocument(context, printAttributes)
+        val renderers = mutableMapOf<File, Pair<ParcelFileDescriptor, PdfRenderer>>()
+        try {
+            for ((index, ref) in pages.withIndex()) {
+                if (cancellationSignal?.isCanceled == true) return false
+                val page = document.startPage(index)
+                drawPage(page.canvas, page.info.contentRect, ref, renderers)
+                if (watermark) Watermark.stamp(page.canvas, page.info.contentRect)
+                document.finishPage(page)
+            }
+            document.writeTo(out)
+            return true
+        } finally {
+            renderers.values.forEach { (descriptor, renderer) ->
+                renderer.close()
+                descriptor.close()
+            }
+            document.close()
+        }
     }
 
     private fun drawPage(
@@ -220,5 +230,38 @@ object Watermark {
             textAlign = Paint.Align.CENTER
         }
         canvas.drawText("Impresso na versão gratuita do imprime.ai · imprime.ai", area.exactCenterX(), area.bottom - 6f, foot)
+    }
+}
+
+
+/** A4 with a small margin: the paper direct IPP jobs use, since there is no print window to choose it. */
+fun directPrintAttributes(): PrintAttributes = PrintAttributes.Builder()
+    .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+    .setResolution(PrintAttributes.Resolution("pdf", "pdf", 300, 300))
+    .setMinMargins(PrintAttributes.Margins(250, 250, 250, 250))
+    .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
+    .build()
+
+/** The staff test page as PDF bytes, for direct IPP printing. */
+fun testPagePdf(context: Context, kioskName: String): ByteArray {
+    val document = PrintedPdfDocument(context, directPrintAttributes())
+    try {
+        val page = document.startPage(0)
+        val area = page.info.contentRect
+        val title = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 28f; isFakeBoldText = true; color = Color.BLACK }
+        val body = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 14f; color = Color.DKGRAY }
+        val left = area.left + 36f
+        var y = area.top + 72f
+        page.canvas.drawText("Página de teste", left, y, title)
+        y += 36f
+        page.canvas.drawText(kioskName, left, y, body)
+        y += 22f
+        page.canvas.drawText("Se você está lendo isto, a impressão direta está funcionando.", left, y, body)
+        document.finishPage(page)
+        val out = java.io.ByteArrayOutputStream()
+        document.writeTo(out)
+        return out.toByteArray()
+    } finally {
+        document.close()
     }
 }

@@ -58,6 +58,8 @@ data class KioskSettings(
     /** Optional guest Wi-Fi shown as a QR Code, so customers' phones can join before sending files. */
     val wifiName: String = "",
     val wifiPassword: String = "",
+    /** Network printer for direct (no print window) printing, e.g. "192.168.0.20". Empty = Android's print window. Stays on the device. */
+    val printerAddress: String = "",
 ) {
     /** What the dashboard sees and can change (printer, PIN and Pix token stay on the device). */
     fun toRemoteJson(): org.json.JSONObject = org.json.JSONObject()

@@ -500,7 +500,7 @@ private fun ReviewScreen(vm: KioskViewModel) {
     ScreenColumn {
         Header(
             title = "Confira sua impressão",
-            subtitle = "Depois, escolha a impressora na janela de impressão e toque em Imprimir.",
+            subtitle = if (vm.settings.printerAddress.isBlank()) "Depois, escolha a impressora na janela de impressão e toque em Imprimir." else "Confira e toque em Imprimir. A folha sai direto na impressora.",
         )
 
         LazyVerticalGrid(
@@ -900,7 +900,7 @@ private fun PrintingScreen(vm: KioskViewModel) {
         }
         Text("Preparando a impressão…", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Text(
-            "Na janela que abrir, confira a impressora e toque no botão de imprimir.",
+            if (vm.settings.printerAddress.isBlank()) "Na janela que abrir, confira a impressora e toque no botão de imprimir." else "Enviando para a impressora…",
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
